@@ -19,10 +19,42 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>IOKitPersonalities</key>
-	<dict/>
+	<dict>
+		<key>RMIBus</key>
+		<dict>
+			<key>IOProbeScore</key>
+			<integer>2046</integer>
+			<key>IOProviderClass</key>
+			<string>RMISMBus</string>
+			<key>IOClass</key>
+			<string>RMIBus</string>
+			<key>CFBundleIdentifier</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		</dict>
+		<key>RMISMBus</key>
+		<dict>
+			<key>IOProbeScore</key>
+			<integer>2046</integer>
+			<key>IOProviderClass</key>
+			<string>VoodooSMBusDeviceNub</string>
+			<key>IOClass</key>
+			<string>RMISMBus</string>
+			<key>CFBundleIdentifier</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		</dict>
+	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2020 1Revenger1. All rights reserved.</string>
 	<key>OSBundleLibraries</key>
-	<dict/>
+	<dict>
+		<key>com.apple.kpi.iokit</key>
+		<string>18.5</string>
+		<key>com.apple.kpi.libkern</key>
+		<string>18.5</string>
+		<key>com.apple.kpi.mach</key>
+		<string>18.5</string>
+		<key>com.apple.iokit.IOHIDFamily</key>
+		<string>2.0</string>
+	</dict>
 </dict>
 </plist>

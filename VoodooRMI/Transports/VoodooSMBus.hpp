@@ -6,8 +6,9 @@
  *
  */
 
-#ifndef VoodooSMBus_h
-#define VoodooSMBus_h
+
+#ifndef VoodooSMBusDeviceNub_hpp
+#define VoodooSMBusDeviceNub_hpp
 
 #include "../LinuxCompat.h"
 
@@ -27,10 +28,10 @@ public:
     void setSlaveDeviceFlags(unsigned short flags);
     
     IOReturn writeByteData(u8 command, u8 value);
+    IOReturn readByteData(u8 command);
     IOReturn readBlockData(u8 command, u8 *values);
     IOReturn writeByte(u8 value);
     IOReturn writeBlockData(u8 command, u8 length, const u8 *values);
-    IOReturn readByteData(u8 command);
     
 private:
     VoodooSMBusControllerDriver* controller;
@@ -39,4 +40,5 @@ private:
     void handleHostNotifyThreaded();
 };
 
-#endif /* VoodooSMBus_h */
+#endif /* VoodooSMBusDeviceNub_hpp */
+

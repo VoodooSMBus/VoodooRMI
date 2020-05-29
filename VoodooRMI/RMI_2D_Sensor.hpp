@@ -1,16 +1,16 @@
-//
-//  RMI_2D_Sensor.hpp
-//  VoodooSMBus
-//
-//  Created by Avery Black on 5/20/20.
-//  Copyright © 2020 leo-labs. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_2d_sensor.h
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ */
 
 #ifndef RMI_2D_Sensor_hpp
 #define RMI_2D_Sensor_hpp
 
-//#include <RMIBus.hpp>
-#include "types.h"
+#include "LinuxCompat.h"
 #include "rmi.h"
 
 enum rmi_2d_sensor_object_type {

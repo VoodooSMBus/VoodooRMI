@@ -14,7 +14,7 @@
 		A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */; };
 		A4560EE4247F2A660009CBE0 /* RMI_2D_Sensor.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDA247F2A650009CBE0 /* RMI_2D_Sensor.hpp */; };
 		A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EDB247F2A660009CBE0 /* RMIBus.cpp */; };
-		A4560EE7247F2A660009CBE0 /* types.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDD247F2A660009CBE0 /* types.h */; };
+		A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDD247F2A660009CBE0 /* LinuxCompat.h */; };
 		A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
 		A4560EF9247F32760009CBE0 /* F01.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EF1247F32760009CBE0 /* F01.cpp */; };
 		A4560EFA247F32760009CBE0 /* F34.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EF2247F32760009CBE0 /* F34.hpp */; };
@@ -29,6 +29,8 @@
 		A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F05247F38670009CBE0 /* VoodooInputTransducer.h */; };
 		A4560F0A247F38670009CBE0 /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F06247F38670009CBE0 /* VoodooInputEvent.h */; };
 		A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
+		A4560F102480757F0009CBE0 /* F03.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0E2480757F0009CBE0 /* F03.cpp */; };
+		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,7 +43,7 @@
 		A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rmi_driver.cpp; sourceTree = "<group>"; };
 		A4560EDA247F2A650009CBE0 /* RMI_2D_Sensor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMI_2D_Sensor.hpp; sourceTree = "<group>"; };
 		A4560EDB247F2A660009CBE0 /* RMIBus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RMIBus.cpp; sourceTree = "<group>"; };
-		A4560EDD247F2A660009CBE0 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
+		A4560EDD247F2A660009CBE0 /* LinuxCompat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LinuxCompat.h; sourceTree = "<group>"; };
 		A4560EEB247F32600009CBE0 /* RMITransport.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMITransport.hpp; sourceTree = "<group>"; };
 		A4560EF1247F32760009CBE0 /* F01.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = F01.cpp; sourceTree = "<group>"; };
 		A4560EF2247F32760009CBE0 /* F34.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = F34.hpp; sourceTree = "<group>"; };
@@ -56,6 +58,9 @@
 		A4560F05247F38670009CBE0 /* VoodooInputTransducer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputTransducer.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputTransducer.h; sourceTree = "<group>"; };
 		A4560F06247F38670009CBE0 /* VoodooInputEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputEvent.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputEvent.h; sourceTree = "<group>"; };
 		A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMISMBus.cpp; sourceTree = "<group>"; };
+		A4560F0D248073410009CBE0 /* VoodooSMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VoodooSMBus.hpp; sourceTree = "<group>"; };
+		A4560F0E2480757F0009CBE0 /* F03.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F03.cpp; sourceTree = "<group>"; };
+		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,7 +103,7 @@
 				A4560ED8247F2A650009CBE0 /* rmi.h */,
 				A4560ED6247F2A650009CBE0 /* RMIBus.hpp */,
 				A4560EDB247F2A660009CBE0 /* RMIBus.cpp */,
-				A4560EDD247F2A660009CBE0 /* types.h */,
+				A4560EDD247F2A660009CBE0 /* LinuxCompat.h */,
 				A4560ECE247F29EC0009CBE0 /* Info.plist */,
 			);
 			path = VoodooRMI;
@@ -107,6 +112,7 @@
 		A4560EE9247F32600009CBE0 /* Transports */ = {
 			isa = PBXGroup;
 			children = (
+				A4560F0D248073410009CBE0 /* VoodooSMBus.hpp */,
 				A4560EEB247F32600009CBE0 /* RMITransport.hpp */,
 				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 			);
@@ -118,6 +124,8 @@
 			children = (
 				A4560EF6247F32760009CBE0 /* F01.hpp */,
 				A4560EF1247F32760009CBE0 /* F01.cpp */,
+				A4560F0E2480757F0009CBE0 /* F03.cpp */,
+				A4560F0F2480757F0009CBE0 /* F03.hpp */,
 				A4560EF7247F32760009CBE0 /* F11.hpp */,
 				A4560EF4247F32760009CBE0 /* F11.cpp */,
 				A4560EF3247F32760009CBE0 /* F30.hpp */,
@@ -148,7 +156,8 @@
 			files = (
 				A4560EFE247F32760009CBE0 /* F01.hpp in Headers */,
 				A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */,
-				A4560EE7247F2A660009CBE0 /* types.h in Headers */,
+				A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */,
+				A4560F112480757F0009CBE0 /* F03.hpp in Headers */,
 				A4560EFA247F32760009CBE0 /* F34.hpp in Headers */,
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
 				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
@@ -248,6 +257,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4560F102480757F0009CBE0 /* F03.cpp in Sources */,
 				A4560EFC247F32760009CBE0 /* F11.cpp in Sources */,
 				A4560F00247F32760009CBE0 /* F30.cpp in Sources */,
 				A4560EFD247F32760009CBE0 /* F34.cpp in Sources */,

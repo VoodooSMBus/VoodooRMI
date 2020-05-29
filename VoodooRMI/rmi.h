@@ -1,10 +1,11 @@
-//
-//  rmi.h
-//  VoodooSMBus
-//
-//  Created by Avery Black on 5/6/20.
-//  Copyright © 2020 leo-labs. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/include/linux/rmi.h
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ */
 
 #ifndef rmi_h
 #define rmi_h
@@ -258,7 +259,6 @@ struct rmi_driver_data {
         };
         rmi4_attn_data buf[16];
     } attn_fifo;
-//    DECLARE_KFIFO(attn_fifo, struct rmi4_attn_data, 16);
 };
 
 #endif /* rmi_h */

@@ -1,10 +1,8 @@
-//
-//  RMIBus.h
-//  VoodooSMBus
-//
-//  Created by Avery Black on 4/30/20.
-//  Copyright © 2020 leo-labs. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * RMI4 Sensor Controller for macOS
+ *
+ * Copyright (c) 2020 Avery Black
+ */
 
 #ifndef RMIBus_h
 #define RMIBus_h
@@ -15,7 +13,7 @@ class RMIFunction;
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
 #include <IOKit/IOMessage.h>
-#include "types.h"
+#include "LinuxCompat.h"
 #include "RMITransport.hpp"
 #include "rmi.h"
 #include "rmi_driver.hpp"
@@ -25,14 +23,8 @@ class RMIFunction;
 #include <F30.hpp>
 #include <F34.hpp>
 
-#define container_of(ptr, type, member) ({  \
-    type *__mptr = (type *)(ptr);           \
-    ((type *)(__mptr - offsetof(type, member))); })
-
 #define IOLogError(arg...) IOLog("Error: " arg)
 #define IOLogDebug(arg...) IOLog("Debug: " arg)
-
-#define BIT(nr) (1UL << (nr))
 
 enum {
     kHandleRMIInterrupt = iokit_vendor_specific_msg(1100)

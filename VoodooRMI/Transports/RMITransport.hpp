@@ -1,9 +1,19 @@
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_smbus.c
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_i2c.c
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ */
 
 #ifndef RMITransport_H
 #define RMITransport_H
 
 #include <IOKit/IOService.h>
-#include "../types.h"
+#include "../LinuxCompat.h"
+#include "VoodooSMBus.hpp"
 
 enum {
     kSmbusAlert = iokit_vendor_specific_msg(2046)
@@ -51,40 +61,13 @@ struct mapping_table_entry {
     u8 flags;
 };
 
-class VoodooSMBusControllerDriver;
-class VoodooSMBusSlaveDevice;
-class VoodooSMBusDeviceNub : public IOService {
-    OSDeclareDefaultStructors(VoodooSMBusDeviceNub);
-    
-public:
-    bool init() override;
-    bool attach(IOService* provider, UInt8 address);
-    bool start(IOService* provider) override;
-    void stop(IOService* provider) override;
-    void free(void) override;
-    
-    void handleHostNotify();
-    void setSlaveDeviceFlags(unsigned short flags);
-    
-    IOReturn writeByteData(u8 command, u8 value);
-    IOReturn readBlockData(u8 command, u8 *values);
-    IOReturn writeByte(u8 value);
-    IOReturn writeBlockData(u8 command, u8 length, const u8 *values);
-    IOReturn readByteData(u8 command);
-    
-private:
-    VoodooSMBusControllerDriver* controller;
-    void releaseResources();
-    VoodooSMBusSlaveDevice* slave_device;
-    void handleHostNotifyThreaded();
-};
-
 class RMISMBus : public RMITransport {
     OSDeclareDefaultStructors(RMISMBus);
     
 public:
     bool init(OSDictionary *dictionary) override;
     RMISMBus *probe(IOService *provider, SInt32 *score) override;
+    bool start(IOService *provider) override;
     void free() override;
     
     int read(u16 addr, u8 *buf) override;

@@ -1,10 +1,18 @@
-//
-//  rmi_driver.c
-//  VoodooSMBus
-//
-//  Created by Avery Black on 5/6/20.
-//  Copyright © 2020 leo-labs. All rights reserved.
-//
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_driver.c
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ * This driver provides the core support for a single RMI4-based device.
+ *
+ * The RMI4 specification can be found here (URL split for line length):
+ *
+ * http://www.synaptics.com/sites/default/files/
+ *      511-000136-01-Rev-E-RMI4-Interfacing-Guide.pdf
+ */
 
 #include "rmi_driver.hpp"
 

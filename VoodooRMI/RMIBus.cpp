@@ -1,10 +1,8 @@
-//
-//  RMIBus.c
-//  VoodooSMBus
-//
-//  Created by Avery Black on 4/30/20.
-//  Copyright © 2020 leo-labs. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * RMI4 Sensor Controller for macOS
+ *
+ * Copyright (c) 2020 Avery Black
+ */
 
 #include "RMIBus.hpp"
 
@@ -26,7 +24,6 @@ bool RMIBus::init(OSDictionary *dictionary) {
 }
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
-    IOLog("Probe");
     if (!super::probe(provider, score))
         return NULL;
     

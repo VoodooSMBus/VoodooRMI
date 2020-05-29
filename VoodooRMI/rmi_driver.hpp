@@ -1,10 +1,11 @@
-//
-//  rmi_driver.h
-//  VoodooSMBus
-//
-//  Created by Avery Black on 5/6/20.
-//  Copyright © 2020 leo-labs. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_driver.h
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ */
 
 #ifndef rmi_driver_h
 #define rmi_driver_h
@@ -70,12 +71,6 @@ static inline unsigned long OSBitOrAtomic64(unsigned long mask, unsigned long * 
 {
     return OSBitwiseAtomic64(-1, mask, 0, value);
 }
-
-// bits.h
-
-#define BITS_PER_LONG       (__CHAR_BIT__ * __SIZEOF_LONG__)
-#define BIT_MASK(nr)        ((1) << ((nr) % BITS_PER_LONG))
-#define BIT_WORD(nr)        ((nr) / BITS_PER_LONG)
 
 // asm-generic/bitops/atomic.h
 

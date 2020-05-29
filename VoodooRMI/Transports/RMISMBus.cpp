@@ -1,10 +1,11 @@
-//
-//  RMISMBus.cpp
-//  VoodooRMI
-//
-//  Created by Gwy on 5/27/20.
-//  Copyright © 2020 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_smbus.c
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ */
 
 #include "RMITransport.hpp"
 
@@ -32,6 +33,12 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
     IOLog("SMBus version %u\n", retval);
     
     return this;
+}
+
+bool RMISMBus::start(IOService *provider)
+{
+    registerService();
+    return super::start(provider);
 }
 
 void RMISMBus::free()
@@ -70,7 +77,7 @@ int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
     for (i = 0; i < RMI_SMB2_MAP_SIZE; i++) {
         struct mapping_table_entry *entry = &mapping_table[i];
         
-        if (le16_to_cpu(entry->rmiaddr) == rmiaddr) {
+        if (OSSwapLittleToHostInt16(entry->rmiaddr) == rmiaddr) {
             if (isread) {
                 if (entry->readcount == bytecount)
                     goto exit;
@@ -87,7 +94,7 @@ int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
     
     /* constructs mapping table data entry. 4 bytes each entry */
     memset(&new_map, 0, sizeof(new_map));
-    new_map.rmiaddr = cpu_to_le16(rmiaddr);
+    new_map.rmiaddr = OSSwapHostToLittleInt16(rmiaddr);
     new_map.readcount = bytecount;
     new_map.flags = !isread ? RMI_SMB2_MAP_FLAGS_WE : 0;
     retval = device_nub->writeBlockData(i + 0x80,

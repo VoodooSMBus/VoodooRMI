@@ -20,33 +20,35 @@
 	<string>1</string>
 	<key>IOKitPersonalities</key>
 	<dict>
-		<key>RMIBus</key>
+		<key>RMIDevice</key>
 		<dict>
 			<key>IOProbeScore</key>
-			<integer>2046</integer>
+			<integer>500</integer>
 			<key>IOProviderClass</key>
 			<string>RMISMBus</string>
 			<key>IOClass</key>
 			<string>RMIBus</string>
 			<key>CFBundleIdentifier</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<string>com.1Revenger1.VoodooRMI</string>
 		</dict>
 		<key>RMISMBus</key>
 		<dict>
 			<key>IOProbeScore</key>
-			<integer>2046</integer>
+			<integer>500</integer>
 			<key>IOProviderClass</key>
 			<string>VoodooSMBusDeviceNub</string>
 			<key>IOClass</key>
 			<string>RMISMBus</string>
 			<key>CFBundleIdentifier</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<string>com.1Revenger1.VoodooRMI</string>
 		</dict>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2020 1Revenger1. All rights reserved.</string>
 	<key>OSBundleLibraries</key>
 	<dict>
+		<key>de.leo-labs.VoodooSMBus</key>
+		<string>2.1</string>
 		<key>com.apple.kpi.iokit</key>
 		<string>18.5</string>
 		<key>com.apple.kpi.libkern</key>
@@ -56,5 +58,7 @@
 		<key>com.apple.iokit.IOHIDFamily</key>
 		<string>2.0</string>
 	</dict>
+	<key>OSBundleRequired</key>
+	<string>Console</string>
 </dict>
 </plist>

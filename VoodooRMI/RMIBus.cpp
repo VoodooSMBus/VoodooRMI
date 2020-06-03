@@ -119,7 +119,7 @@ void RMIBus::handleHostNotify()
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
-        case kSmbusAlert:
+        case kIOMessageVoodooSMBusHostNotify:
             handleHostNotify();
             return kIOReturnSuccess;
         default:
@@ -148,6 +148,11 @@ void RMIBus::free() {
     IOLockFree(data->irq_mutex);
     OSSafeReleaseNULL(functions);
     super::free();
+}
+
+int RMIBus::reset()
+{
+    return transport->reset();
 }
 
 int RMIBus::rmi_register_function(rmi_function *fn) {

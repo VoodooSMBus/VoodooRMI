@@ -1,3 +1,4 @@
 VoodooInput/
 **/.DS_STORE
 **/xcuserdata/
+**/*.kext

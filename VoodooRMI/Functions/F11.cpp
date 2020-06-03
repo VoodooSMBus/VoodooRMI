@@ -57,11 +57,12 @@ bool F11::start(IOService *provider)
     
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, sensor.max_x, 16);
     setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, sensor.max_y, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, sens_query.x_sensor_size_mm * 10, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, sens_query.y_sensor_size_mm * 10, 16);
+    // Need to be in 0.01mm units
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, sens_query.x_sensor_size_mm * 100, 16);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, sens_query.y_sensor_size_mm * 100, 16);
+    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
-    
-    setProperty("VoodooInputSupport", kOSBooleanTrue);
+    setProperty("VoodooInputSupported", kOSBooleanTrue);
     
     registerService();
     return true;
@@ -172,7 +173,7 @@ bool F11::getReport()
             
             transducer.previousCoordinates = transducer.currentCoordinates;
             
-            transducer.currentCoordinates.width = wx;
+            transducer.currentCoordinates.width = z / 1.5;
             transducer.currentCoordinates.x = pos_x;
             transducer.currentCoordinates.y = sensor.max_y - pos_y;
             transducer.timestamp = timestamp;

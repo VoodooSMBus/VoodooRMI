@@ -9,6 +9,7 @@
 
 #include "RMITransport.hpp"
 
+OSDefineMetaClassAndStructors(RMITransport, IOService)
 OSDefineMetaClassAndStructors(RMISMBus, RMITransport)
 #define super IOService
 
@@ -16,35 +17,49 @@ bool RMISMBus::init(OSDictionary *dictionary)
 {
     page_mutex = IOLockAlloc();
     mapping_table_mutex = IOLockAlloc();
-    return true;
+    return super::init(dictionary);
 }
 
 RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 {
-    if (!super::probe(provider, score))
+    IOService *service = super::probe(provider, score);
+    if(!service) {
+        IOLog("Failed probe");
         return NULL;
+    }
+//    return OSDynamicCast(RMISMBus, service);
     
     device_nub = OSDynamicCast(VoodooSMBusDeviceNub, provider);
+    if (!device_nub) {
+        IOLog("Could not cast nub\n");
+        return NULL;
+    }
+    
     device_nub->setSlaveDeviceFlags(I2C_CLIENT_HOST_NOTIFY);
     
     int retval = rmi_smb_get_version();
-        if (retval < 0) return NULL;
+    if (retval < 0) {
+        IOLog("Error: Failed to read SMBus version. Code: 0x%02X", retval);
+        return NULL;
+    }
     
     IOLog("SMBus version %u\n", retval);
     
-    return this;
+    return OSDynamicCast(RMISMBus, service);
 }
 
 bool RMISMBus::start(IOService *provider)
 {
+    bool res = super::start(provider);
     registerService();
-    return super::start(provider);
+    return res;
 }
 
 void RMISMBus::free()
 {
     IOLockFree(page_mutex);
     IOLockFree(mapping_table_mutex);
+    super::free();
 }
 
 int RMISMBus::rmi_smb_get_version()

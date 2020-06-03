@@ -13,40 +13,37 @@
 
 #include <IOKit/IOService.h>
 #include "../LinuxCompat.h"
-#include "VoodooSMBus.hpp"
+#include "VoodooSMBusDeviceNub.hpp"
 
-enum {
-    kSmbusAlert = iokit_vendor_specific_msg(2046)
-};
-
-#define super IOService
+#define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
 
 class RMITransport : public IOService {
     OSDeclareDefaultStructors(RMITransport);
     
 public:
-    virtual int read(u16 addr, u8 *buf);
+    virtual int read(u16 addr, u8 *buf) {return 0;};
     // rmi_read_block
-    virtual int readBlock(u16 rmiaddr, u8 *databuff, size_t len);
+    virtual int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {return 0;};
     // rmi_write
-    virtual int write(u16 rmiaddr, u8 *buf);
+    virtual int write(u16 rmiaddr, u8 *buf) {return 0;};
     // rmi_block_write
-    virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len);
+    virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {return 0;};
+    
+    virtual int reset() {return 0;};
     
     inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override {
         IOService *client = getClient();
         if (!client) return kIOReturnError;
         
         switch (type) {
-            case kSmbusAlert:
-                return messageClient(kSmbusAlert, client);
+            case kIOMessageVoodooSMBusHostNotify:
+                return messageClient(kIOMessageVoodooSMBusHostNotify, client);
             default:
-                return super::message(type, provider, argument);
+                return IOService::message(type, provider, argument);
         }
     };
 };
 
-//OSDefineMetaClassAndAbstractStructors(RMITransport, IOService)
 
 // VoodooSMBus/VoodooSMBusDeviceNub.hpp
 #define I2C_CLIENT_HOST_NOTIFY          0x40    /* We want to use I2C host notify */
@@ -74,6 +71,10 @@ public:
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) override;
     int write(u16 rmiaddr, u8 *buf) override;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
+    
+    inline int reset() override {
+        return rmi_smb_get_version();
+    }
 private:
     VoodooSMBusDeviceNub *device_nub;
     IOLock *page_mutex;
@@ -86,9 +87,9 @@ private:
     int rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
                                  bool isread, u8 *commandcode);
 };
-
-class RMII2C : public RMITransport {
-    OSDeclareDefaultStructors(RMII2C);
-};
+//
+//class RMII2C : public RMITransport {
+//    OSDeclareDefaultStructors(RMII2C);
+//};
 
 #endif // RMITransport_H

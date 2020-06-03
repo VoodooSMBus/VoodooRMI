@@ -34,11 +34,11 @@ class RMIBus : public IOService {
     OSDeclareDefaultStructors(RMIBus);
     
 public:
-    RMIBus * probe(IOService *provider, SInt32 *score) override;
-    bool init(OSDictionary *dictionary) override;
-    bool start(IOService *provider) override;
-    void stop(IOService *provider) override;
-    void free() override;
+    virtual RMIBus * probe(IOService *provider, SInt32 *score) override;
+    virtual bool init(OSDictionary *dictionary) override;
+    virtual bool start(IOService *provider) override;
+    virtual void stop(IOService *provider) override;
+    virtual void free() override;
     
     rmi_driver_data *data;
     RMITransport *transport;
@@ -64,7 +64,7 @@ public:
     
     inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     int rmi_register_function(rmi_function* fn);
-    int rmi_smb_get_version();
+    int reset();
 private:
     void handleHostNotify();
 };

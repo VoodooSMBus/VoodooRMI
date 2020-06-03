@@ -186,7 +186,8 @@ int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt)
         bool smbus = true;
         
         if (smbus) {
-            error = dev->rmi_smb_get_version();
+            error = dev->reset();
+//            error = dev->rmi_smb_get_version();
             if (error < 0) {
                 IOLog("Unable to reset");
                 return error;

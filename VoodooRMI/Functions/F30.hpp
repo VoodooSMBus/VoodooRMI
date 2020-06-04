@@ -64,6 +64,7 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void free() override;
+    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
     RMIBus *rmiBus;
@@ -98,6 +99,8 @@ private:
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
                                int *ctrl_addr, int len, u8 **reg);
     int rmi_f30_read_control_parameters();
+    int rmi_f30_map_gpios();
+    int rmi_f30_is_valid_button(int button);
 };
 
 #endif /* F30_hpp */

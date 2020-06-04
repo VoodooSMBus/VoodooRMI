@@ -122,8 +122,8 @@
 			children = (
 				A4560EF6247F32760009CBE0 /* F01.hpp */,
 				A4560EF1247F32760009CBE0 /* F01.cpp */,
-				A4560F0E2480757F0009CBE0 /* F03.cpp */,
 				A4560F0F2480757F0009CBE0 /* F03.hpp */,
+				A4560F0E2480757F0009CBE0 /* F03.cpp */,
 				A4560EF7247F32760009CBE0 /* F11.hpp */,
 				A4560EF4247F32760009CBE0 /* F11.cpp */,
 				A4560EF3247F32760009CBE0 /* F30.hpp */,
@@ -241,18 +241,14 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 			);
 			name = "Copy VoodooInput";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nmkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\ncp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [! -f \"${PROJECT_DIR}/VoodooRMI.kext/Contexts/PlugIns\"]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;

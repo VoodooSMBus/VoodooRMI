@@ -67,4 +67,8 @@ static inline u64 get_unaligned_le64(const void *p)
     return __get_unaligned_le64((const u8 *)p);
 }
 
+// input.h
+#define KEY_RESERVED        0
+#define BTN_LEFT        0x110
+
 #endif /* linux_compat_h */

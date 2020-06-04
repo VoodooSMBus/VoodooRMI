@@ -41,7 +41,7 @@ bool F30::start(IOService *provider)
                                    ctrl_regs, ctrl_regs_size);
     
     if (error) {
-        IOLogError("%s: Could not write control registers at 0x%x: %d\n",
+        IOLogError("%s: Could not write control registers at 0x%x: 0x%x\n",
                    __func__, fn_descriptor->control_base_addr, error);
         return false;;
     }
@@ -55,6 +55,31 @@ void F30::free()
 {
     clearDesc();
     super::free();
+}
+
+IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
+{
+    IOLog("F30 interrupt");
+    
+    switch (type) {
+        case kHandleRMIInterrupt:
+            int error = rmiBus->readBlock(fn_descriptor->data_base_addr,
+                                          data_regs, register_count);
+            
+            if (error < 0) {
+                IOLogError("Could not read F30 data: 0x%x\n", error);
+            }
+            
+            if (has_gpio) {
+                for (int i = 0; i < gpioled_count; i++)
+                    if (gpioled_key_map[i] != KEY_RESERVED)
+                        IOLog("Button: %d", i);
+            }
+            
+            break;
+    }
+    
+    return kIOReturnSuccess;
 }
 
 int F30::rmi_f30_initialize()
@@ -141,11 +166,52 @@ int F30::rmi_f30_initialize()
     }
     
     if (has_gpio) {
-        // TODO: Handle buttons
-        // error = rmi_f30_map_gpios(fn, f30);
+        error = rmi_f30_map_gpios();
         if (error)
             return error;
     }
+    
+    return 0;
+}
+
+int F30::rmi_f30_is_valid_button(int button)
+{
+    int byte_position = button >> 3;
+    int bit_position = button & 0x07;
+    
+    /*
+     * ctrl2 -> dir == 0 -> input mode
+     * ctrl3 -> data == 1 -> actual button
+     */
+    return !(ctrl[2].regs[byte_position] & BIT(bit_position)) &&
+            (ctrl[3].regs[byte_position] & BIT(bit_position));
+}
+
+int F30::rmi_f30_map_gpios()
+{
+    unsigned int button = BTN_LEFT;
+    unsigned int trackstick_button = BTN_LEFT;
+    bool button_mapped = false;
+    int button_count = min(gpioled_count, TRACKSTICK_RANGE_END);
+    setProperty("Button Count", button_count, 32);
+    
+    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(button_count * sizeof(gpioled_key_map[0])));
+    memset(gpioled_key_map, 0, button_count * sizeof(gpioled_key_map[0]));
+    
+    for (int i = 0; i < button_count; i++) {
+        if (!rmi_f30_is_valid_button(i))
+            continue;
+        
+        if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
+            gpioled_key_map[i] = trackstick_button++;
+        } else if(!button_mapped) {
+            gpioled_key_map[i] = button;
+            button++;
+            button_mapped = true;
+        }
+    }
+    
+    setProperty("Buttonpad", button - BTN_LEFT == 1 ? kOSBooleanTrue : kOSBooleanFalse);
     
     return 0;
 }

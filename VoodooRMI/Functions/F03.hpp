@@ -27,17 +27,23 @@
 
 #define PSMOUSE_OOB_EXTRA_BTNS        0x01
 
+/*
+ * Fairly simple class - PS/2 passthrough for trackpoint
+ * 
+ */
 class F03 : public RMIFunction {
     OSDeclareDefaultStructors(F03)
     
-
 public:
-    bool init(OSDictionary *dictionary) override;
+//    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
-    void stop(IOService *provider) override;
-    void free() override;
-
+//    void stop(IOService *provider) override;
+//    void free() override;
+    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    
 private:
+    RMIBus *rmiBus;
+    
     // F03 Data
     unsigned int overwrite_buttons;
     

@@ -24,9 +24,11 @@ bool RMIBus::init(OSDictionary *dictionary) {
 }
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
-    if (!super::probe(provider, score))
+    if (!super::probe(provider, score)) {
+        IOLog("IOService said no to probing\n");
         return NULL;
-    
+    }
+        
     transport = OSDynamicCast(RMITransport, provider);
     
     if (!transport) {
@@ -161,6 +163,9 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     switch(fn->fd.function_number) {
         case 0x01:
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F01));
+            break;
+        case 0x03:
+            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F03));
             break;
         case 0x11:
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));

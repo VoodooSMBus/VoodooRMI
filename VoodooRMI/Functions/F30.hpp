@@ -11,6 +11,7 @@
 #define F30_hpp
 
 #include <RMIBus.hpp>
+#include "../ButtonDevice.hpp"
 
 #define RMI_F30_QUERY_SIZE            2
 
@@ -63,11 +64,13 @@ class F30 : public RMIFunction {
 public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
+    void stop(IOService *providerr) override;
     void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
     RMIBus *rmiBus;
+    ButtonDevice *buttonDevice;
     
     /* Query Data */
     bool has_extended_pattern;
@@ -79,6 +82,7 @@ private:
     bool has_mech_mouse_btns;
     uint8_t gpioled_count;
     uint8_t clickpad_index {0};
+    uint8_t numButtons {0};
     
     uint8_t register_count;
     
@@ -102,7 +106,10 @@ private:
     int rmi_f30_read_control_parameters();
     int rmi_f30_map_gpios();
     int rmi_f30_is_valid_button(int button);
-    void rmi_f30_report_button(unsigned int button);
+    int rmi_f30_report_button(unsigned int button);
+    
+    bool publishButtons();
+    void unpublishButtons();
 };
 
 #endif /* F30_hpp */

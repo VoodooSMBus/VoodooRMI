@@ -47,8 +47,16 @@ bool F30::start(IOService *provider)
     }
     
     registerService();
+//    if (numButtons != 1)
+    publishButtons();
     
     return true;
+}
+
+void F30::stop(IOService *provider)
+{
+    unpublishButtons();
+    super::stop(provider);
 }
 
 void F30::free()
@@ -72,9 +80,14 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
             }
             
             if (has_gpio) {
-                for (int i = 0; i < button_count; i++)
+                int btns = 0;
+                for (int i = 0; i < button_count; i++) {
                     if (gpioled_key_map[i] != KEY_RESERVED)
-                        rmi_f30_report_button(i);
+                        btns |= rmi_f30_report_button(i);
+                    
+                    buttonDevice->updateButtons(btns);
+                }
+                
             }
             
             break;
@@ -192,7 +205,6 @@ int F30::rmi_f30_map_gpios()
 {
     unsigned int button = BTN_LEFT;
     unsigned int trackstick_button = BTN_LEFT;
-    bool button_mapped = false;
     int button_count = min(gpioled_count, TRACKSTICK_RANGE_END);
     setProperty("Button Count", button_count, 32);
     
@@ -205,15 +217,15 @@ int F30::rmi_f30_map_gpios()
         
         if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
             gpioled_key_map[i] = trackstick_button++;
-        } else if(!button_mapped) {
-            gpioled_key_map[i] = button;
-            button++;
+        } else {
+            IOLog("Found Button %d\n", button);
+            gpioled_key_map[i] = button++;
+            numButtons++;
             clickpad_index = i;
-            button_mapped = true;
         }
     }
     
-    setProperty("Buttonpad", button - BTN_LEFT == 1 ? kOSBooleanTrue : kOSBooleanFalse);
+    setProperty("Clickpad", numButtons == 1 ? kOSBooleanTrue : kOSBooleanFalse);
     
     return 0;
 }
@@ -243,7 +255,7 @@ int F30::rmi_f30_read_control_parameters()
     return 0;
 }
 
-void F30::rmi_f30_report_button(unsigned int button)
+int F30::rmi_f30_report_button(unsigned int button)
 {
     unsigned int reg_num = button >>3;
     unsigned int bit_num = button & 0x07;
@@ -253,9 +265,47 @@ void F30::rmi_f30_report_button(unsigned int button)
     if (button >= TRACKSTICK_RANGE_START &&
         button <= TRACKSTICK_RANGE_END) {
         if (key_down) IOLog("F30 Trackstick Button");
+        return 0;
     } else {
-        if (button == clickpad_index) rmiBus->notify(kHandleRMIClickpadSet, key_down);
-        if (key_code == BTN_LEFT) {}
-        if (key_down) IOLog("Key: %u", key_code);
+        if (numButtons == 1 && button == clickpad_index) {
+            rmiBus->notify(kHandleRMIClickpadSet, key_down);
+            return 0;
+        } else {
+            IOLog("Key %u is %s", key_code, key_down ? "Down": "Up");
+            // Key code is one above the shift value as key code 0 is "Reserved" or "not present"
+            return ((int) key_down) << (key_code - 1);
+        }
+    }
+}
+
+bool F30::publishButtons() {
+    buttonDevice = OSTypeAlloc(ButtonDevice);
+    if (!buttonDevice) {
+        IOLogError("No memory to allocate TrackpointDevice instance\n");
+        goto trackpoint_exit;
+    }
+    if (!buttonDevice->init(NULL)) {
+        IOLogError("Failed to init TrackpointDevice\n");
+        goto trackpoint_exit;
+    }
+    if (!buttonDevice->attach(this)) {
+        IOLogError("Failed to attach TrackpointDevice\n");
+        goto trackpoint_exit;
+    }
+    if (!buttonDevice->start(this)) {
+        IOLogError("Failed to start TrackpointDevice \n");
+        goto trackpoint_exit;
+    }
+    
+    return true;
+trackpoint_exit:
+    unpublishButtons();
+    return false;
+}
+
+void F30::unpublishButtons() {
+    if (buttonDevice) {
+        buttonDevice->stop(this);
+        OSSafeReleaseNULL(buttonDevice);
     }
 }

@@ -209,7 +209,6 @@ bool F11::getReport()
         transducer.secondaryId = i;
     }
     
-    // Thumb Detection
     if (realFingerCount == 4 && freeFingerType[kMT2FingerTypeThumb]) {
         setThumbFingerType(fingers);
     }
@@ -306,7 +305,7 @@ int F11::f11_2d_construct_data()
     
     if (query->has_touch_shapes)
         sensor.pkt_size +=
-        DIV_ROUND_UP(query->nr_touch_shapes + 1, 8);
+            DIV_ROUND_UP(query->nr_touch_shapes + 1, 8);
     
     sensor.data_pkt = reinterpret_cast<u8*>(IOMalloc(sensor.pkt_size));
     
@@ -318,50 +317,7 @@ int F11::f11_2d_construct_data()
     
     if (query->has_abs) {
         data->abs_pos = &sensor.data_pkt[i];
-        i += (sensor.nbr_fingers * RMI_F11_ABS_BYTES);
     }
-    
-    if (query->has_rel) {
-        data->rel_pos = reinterpret_cast<s8*>(&sensor.data_pkt[i]);
-        i += (sensor.nbr_fingers * RMI_F11_REL_BYTES);
-    }
-    
-    if (query->query7_nonzero) {
-        data->gest_1 = &sensor.data_pkt[i];
-        i++;
-    }
-    
-    if (query->query7_nonzero || query->query8_nonzero) {
-        data->gest_2 = &sensor.data_pkt[i];
-        i++;
-    }
-    
-    if (query->has_pinch) {
-        data->pinch = reinterpret_cast<s8*>(&sensor.data_pkt[i]);
-        i++;
-    }
-    
-    if (query->has_flick) {
-        if (query->has_pinch) {
-            data->flick = reinterpret_cast<u8*>(data->pinch);
-            i += 2;
-        } else {
-            data->flick = &sensor.data_pkt[i];
-            i += 3;
-        }
-    }
-    
-    if (query->has_rotate) {
-        if (query->has_flick) {
-            data->rotate = data->flick + 1;
-        } else {
-            data->rotate = &sensor.data_pkt[i];
-            i += 2;
-        }
-    }
-    
-    if (query->has_touch_shapes)
-        data->shapes = &sensor.data_pkt[i];
     
     return 0;
 }
@@ -747,48 +703,14 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
 
 int F11::rmi_f11_initialize()
 {
-    struct f11_2d_ctrl *ctrl;
-    u8 query_offset;
-    u16 query_base_addr;
-    u16 control_base_addr;
+    u8 query_offset, buf;
+    u16 query_base_addr, control_base_addr;
     u16 max_x_pos, max_y_pos;
     int rc;
-//    struct rmi_2d_sensor *sensor;
-    u8 buf;
-    int mask_size;
-    
-    mask_size = BITS_TO_LONGS(rmiBus->data->irq_count) * sizeof(unsigned long);
-    
-    /*
-     ** init instance data, fill in values and create any sysfs files
-     */
-//    sensor_pdata = pdata->sensor_pdata;
-    // temp data
-//    sensor_pdata.axis_align.swap_axes = false;
-//    sensor_pdata.axis_align.flip_x = false;
-//    sensor_pdata.axis_align.flip_y = false;
-//    sensor_pdata.axis_align.clip_x_low = 1;
-//    sensor_pdata.axis_align.clip_y_low = 1;
-//    sensor_pdata.axis_align.clip_y_high = 1;
-//    sensor_pdata.axis_align.clip_y_high = 1;
-//    sensor_pdata.axis_align.offset_x = 1;
-//    sensor_pdata.axis_align.offset_y = 1;
-//    sensor_pdata.axis_align.delta_x_threshold = 1;
-//    sensor_pdata.axis_align.delta_y_threshold = 1;
-//    sensor_pdata.sensor_type = rmi_sensor_touchscreen;
-    
     
     // supposed to be default platform data - I can't find it though
     // Going to assume 100ms as in other places
     rezero_wait_ms = REZERO_WAIT_MS;
-    
-//    data->abs_mask = (unsigned long *)((char *)data
-//                                      + sizeof(struct f11_data));
-//    data->rel_mask = (unsigned long *)((char *)data
-//                                      + sizeof(struct f11_data) + mask_size);
-//    
-//    set_bit(getIRQPos(), data->abs_mask);
-//    set_bit(getIRQPos() + 1, data->rel_mask);
     
     query_base_addr = fn_descriptor->query_base_addr;
     control_base_addr = fn_descriptor->control_base_addr;
@@ -814,55 +736,18 @@ int F11::rmi_f11_initialize()
     }
     query_offset += rc;
     
-    rc = f11_read_control_regs(&dev_controls,
-                               control_base_addr);
-    if (rc < 0) {
-        IOLogError("Failed to read F11 control params.\n");
-        return rc;
-    }
-    
-    if (sens_query.has_info2) {
-        if (sens_query.is_clear)
-            sensor.sensor_type = rmi_sensor_touchscreen;
-        else
-            sensor.sensor_type = rmi_sensor_touchpad;
-    }
-    
-    sensor.report_abs = sens_query.has_abs;
-    
-    sensor.axis_align =
-        sensor_pdata.axis_align;
-    
-    sensor.topbuttonpad = sensor_pdata.topbuttonpad;
-    sensor.kernel_tracking = sensor_pdata.kernel_tracking;
-    sensor.dmax = sensor_pdata.dmax;
-    sensor.dribble = static_cast<rmi_reg_state>(sensor_pdata.dribble);
-    sensor.palm_detect = static_cast<rmi_reg_state>(sensor_pdata.palm_detect);
-    
     if (sens_query.has_physical_props) {
         sensor.x_mm = sens_query.x_sensor_size_mm;
         sensor.y_mm = sens_query.y_sensor_size_mm;
     } else {
         IOLogError("No size data from Device.\n");
         return -ENODEV;
-//        sensor->x_mm = f11->sensor_pdata.x_mm;
-//        sensor->y_mm = f11->sensor_pdata.y_mm;
     }
     
-    if (sensor.sensor_type == rmi_sensor_default)
-        sensor.sensor_type =
-            sensor_pdata.sensor_type;
-    
-    sensor.report_abs = sensor.report_abs
-        && !(sensor_pdata.disable_report_mask
-             & RMI_F11_DISABLE_ABS_REPORT);
-    
-    if (!sensor.report_abs)
-        /*
-         * If device doesn't have abs or if it has been disables
-         * fallback to reporting rel data.
-         */
-        sensor.report_rel = sens_query.has_rel;
+    if (!sens_query.has_abs) {
+        IOLogError("No absolute reporting support!");
+        return -ENODEV;
+    }
     
     rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_X_POS_OFFSET,
                            (u8 *)&max_x_pos, sizeof(max_x_pos));
@@ -890,51 +775,21 @@ int F11::rmi_f11_initialize()
     if (has_acm)
         sensor.attn_size += sensor.nbr_fingers * 2;
     
-    ctrl = &dev_controls;
-    if (sensor.axis_align.delta_x_threshold)
-        ctrl->ctrl0_11[RMI_F11_DELTA_X_THRESHOLD] =
-        sensor.axis_align.delta_x_threshold;
-    
-    if (sensor.axis_align.delta_y_threshold)
-        ctrl->ctrl0_11[RMI_F11_DELTA_Y_THRESHOLD] =
-        sensor.axis_align.delta_y_threshold;
-    
-    /*
-     * If distance threshold values are set, switch to reduced reporting
-     * mode so they actually get used by the controller.
-     */
-    if (sensor.axis_align.delta_x_threshold ||
-        sensor.axis_align.delta_y_threshold) {
-        ctrl->ctrl0_11[0] &= ~RMI_F11_REPORT_MODE_MASK;
-        ctrl->ctrl0_11[0] |= RMI_F11_REPORT_MODE_REDUCED;
+    rc = f11_read_control_regs(&dev_controls,
+                               control_base_addr);
+    if (rc < 0) {
+        IOLogError("Failed to read F11 control params.\n");
+        return rc;
     }
     
     if (sens_query.has_dribble) {
-        switch (sensor.dribble) {
-            case RMI_REG_STATE_OFF:
-                ctrl->ctrl0_11[0] &= ~BIT(6);
-                break;
-            case RMI_REG_STATE_ON:
-                ctrl->ctrl0_11[0] |= BIT(6);
-                break;
-            case RMI_REG_STATE_DEFAULT:
-            default:
-                break;
-        }
+        // RMI_REG_STATE_OFF
+        dev_controls.ctrl0_11[0] &= ~BIT(6);
     }
     
     if (sens_query.has_palm_det) {
-        switch (sensor.palm_detect) {
-            case RMI_REG_STATE_OFF:
-                ctrl->ctrl0_11[11] &= ~BIT(0);
-                break;
-            case RMI_REG_STATE_ON:
-                ctrl->ctrl0_11[11] |= BIT(0);
-                break;
-            case RMI_REG_STATE_DEFAULT:
-            default:
-                break;
-        }
+        // RMI_REG_STATE_OFF
+        dev_controls.ctrl0_11[11] &= ~BIT(0);
     }
     
     rc = f11_write_control_regs(&sens_query,

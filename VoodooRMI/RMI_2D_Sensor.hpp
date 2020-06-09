@@ -41,10 +41,7 @@ struct rmi_2d_sensor_abs_object {
  * @pkt_size - number of bytes in that buffer.
  * @attn_size - Size of the HID attention report (only contains abs data).
  * position when two fingers are on the device.  When this is true, we
- * assume we have one of those sensors and report events appropriately.
- * @sensor_type - indicates whether we're touchscreen or touchpad.
- * @input - input device for absolute pointing stream
- * @input_phys - buffer for the absolute phys name for this sensor.
+ * assume we have one of those sensors and report events appropriately..
  */
 struct rmi_2d_sensor {
     struct rmi_2d_axis_alignment axis_align;
@@ -62,16 +59,11 @@ struct rmi_2d_sensor {
     int pkt_size;
     int attn_size;
     bool topbuttonpad;
-    enum rmi_sensor_type sensor_type;
-    struct input_dev *input;
     RMIFunction *fn;
-    char input_phys[32];
     u8 report_abs;
     u8 report_rel;
     u8 x_mm;
     u8 y_mm;
-    enum rmi_reg_state dribble;
-    enum rmi_reg_state palm_detect;
 };
 
 int rmi_2d_sensor_of_probe(struct device *dev,

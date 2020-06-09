@@ -481,15 +481,15 @@ struct f11_2d_ctrl {
 struct f11_2d_data {
     u8    *f_state;
     u8    *abs_pos;
-    s8    *rel_pos;
-    u8    *gest_1;
-    u8    *gest_2;
-    s8    *pinch;
-    u8    *flick;
-    u8    *rotate;
-    u8    *shapes;
-    s8    *multi_scroll;
-    s8    *scroll_zones;
+//    s8    *rel_pos;
+//    u8    *gest_1;
+//    u8    *gest_2;
+//    s8    *pinch;
+//    u8    *flick;
+//    u8    *rotate;
+//    u8    *shapes;
+//    s8    *multi_scroll;
+//    s8    *scroll_zones;
 };
 
 enum f11_finger_state {

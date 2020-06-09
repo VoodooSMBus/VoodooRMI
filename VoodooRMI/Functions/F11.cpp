@@ -951,11 +951,9 @@ void F11::setThumbFingerType(int fingers)
     UInt32 minY = 0;
     for (int i = 0; i < fingers; i++) {
         auto &trans = inputEvent.transducers[i];
-        IOLog("%d %d\n", trans.currentCoordinates.y, trans.currentCoordinates.y > minY);
         
         if (trans.isValid && trans.currentCoordinates.y > minY) {
             minY = trans.currentCoordinates.y;
-            IOLog("-- %d", minY);
             lowestFingerIndex = i;
         }
     }

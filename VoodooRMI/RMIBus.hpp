@@ -28,7 +28,7 @@ class RMIFunction;
 
 #ifdef DEBUG
 #define IOLogDebug(arg...) IOLog("Debug: " arg)
-#elif
+#else
 #define IOLogDebug(arg...)
 #endif // DEBUG
 

@@ -24,6 +24,12 @@ bool RMIBus::init(OSDictionary *dictionary) {
 }
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
+#if DEBUG
+    IOLog("RMI Bus (DEBUG) Starting up!");
+#else
+    IOLog("RMI Bus (RELEASE) Starting up!");
+#endif // DEBUG
+    
     if (!super::probe(provider, score)) {
         IOLogError("IOService said no to probing\n");
         return NULL;

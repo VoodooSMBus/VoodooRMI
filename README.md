@@ -4,6 +4,18 @@ A port for macOS of Synaptic's RMI code from Linux. It is for touchscreens, touc
 
 This communicates over SMBus or I2C (not implemented).
 
+## Currently Working  
+* Force Touch emulation (press down clickpad and increase area finger uses)
+  * My device has a clickpad, so no clue how this code will behave for trackpads that don't have one
+* Up to four finger gestures
+* Power Management
+* SMBus Communication
+
+## WIP
+* Buttons (other than clickpad)
+* Trackstick
+* I2C Communication
+
 ## Requirements
 
 **SMBus**

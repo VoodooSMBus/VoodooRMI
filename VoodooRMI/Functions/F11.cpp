@@ -197,7 +197,7 @@ bool F11::getReport()
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
-            transducer.isPhysicalButtonDown = clickpadState; //&& z <= 80;
+            transducer.isPhysicalButtonDown = clickpadState && !pressureLock; //&& z <= 80;
             
             IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
                        i, pos_x, pos_y, z, wx, wy, transducer.fingerType,

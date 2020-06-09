@@ -27,10 +27,64 @@
 
 #define PSMOUSE_OOB_EXTRA_BTNS        0x01
 
-/*
- * Fairly simple class - PS/2 passthrough for trackpoint
- * 
- */
+// VoodooPS2
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// PS/2 Command Primitives
+//
+// o  kPS2C_ReadDataPort:
+//    o  Description: Reads the next available byte off the data port (60h).
+//    o  Out Field:   Holds byte that was read.
+//
+// o  kPS2C_ReadDataAndCompare:
+//    o  Description: Reads the next available byte off the data port (60h),
+//                    and compares it with the byte in the In Field.  If the
+//                    comparison fails, the request is aborted (refer to the
+//                    commandsCount field in the request structure).
+//    o  In Field:    Holds byte that comparison should be made to.
+//
+// o  kPS2C_WriteDataPort:
+//    o  Description: Writes the byte in the In Field to the data port (60h).
+//    o  In Field:    Holds byte that should be written.
+//
+// o  kPS2C_WriteCommandPort:
+//    o  Description: Writes the byte in the In Field to the command port (64h).
+//    o  In Field:    Holds byte that should be written.
+//
+
+enum PS2CommandEnum
+{
+  kPS2C_ReadDataPort,
+  kPS2C_ReadDataPortAndCompare,
+  kPS2C_WriteDataPort,
+  kPS2C_WriteCommandPort,
+  kPS2C_SendMouseCommandAndCompareAck,
+  kPS2C_ReadMouseDataPort,
+  kPS2C_ReadMouseDataPortAndCompare,
+  kPS2C_FlushDataPort,
+  kPS2C_SleepMS,
+  kPS2C_ModifyCommandByte,
+};
+typedef enum PS2CommandEnum PS2CommandEnum;
+
+struct PS2Command
+{
+  PS2CommandEnum command;
+  union
+  {
+      UInt8  inOrOut;
+      UInt32 inOrOut32;
+      struct
+      {
+          UInt8 setBits;
+          UInt8 clearBits;
+          UInt8 oldBits;
+      };
+  };
+};
+typedef struct PS2Command PS2Command;
+
+
+
 class F03 : public RMIFunction {
     OSDeclareDefaultStructors(F03)
     

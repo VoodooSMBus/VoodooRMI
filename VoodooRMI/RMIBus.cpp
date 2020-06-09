@@ -25,19 +25,19 @@ bool RMIBus::init(OSDictionary *dictionary) {
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
     if (!super::probe(provider, score)) {
-        IOLog("IOService said no to probing\n");
+        IOLogError("IOService said no to probing\n");
         return NULL;
     }
         
     transport = OSDynamicCast(RMITransport, provider);
     
     if (!transport) {
-        IOLog("%s Could not get transport instance\n", getName());
+        IOLogError("%s Could not get transport instance\n", getName());
         return NULL;
     }
 
     if (rmi_driver_probe(this)) {
-        IOLog("Could not probe");
+        IOLogError("Could not probe");
         return NULL;
     }
     
@@ -57,8 +57,9 @@ bool RMIBus::start(IOService *provider) {
     if (retval)
         goto err;
     
-//    provider->joinPMtree(this);
-//    registerPowerDriver(this, , unsigned long numberOfStates);
+    PMinit();
+    provider->joinPMtree(this);
+    registerPowerDriver(this, RMIPowerStates, 2);
     
     registerService();
     return true;
@@ -71,11 +72,11 @@ void RMIBus::handleHostNotify()
 {
     unsigned long mask, irqStatus, movingMask = 1;
     if (!data) {
-        IOLogError("NO DATA\n");
+        IOLogError("Interrupt - No data\n");
         return;
     }
     if (!data->f01_container) {
-        IOLogError("NO F01 CONTAINER\n");
+        IOLogError("Interrupt - No F01 Container\n");
         return;
     }
     
@@ -129,9 +130,56 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     }
 }
 
+void RMIBus::notify(UInt32 type, unsigned int argument)
+{
+    switch (type) {
+        case kHandleRMIClickpadSet:
+            OSIterator* iter = OSCollectionIterator::withCollection(functions);
+            while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+                if (OSDynamicCast(F11, func)) {
+                    IOLog("Sending clickpad event: %u", argument);
+                    messageClient(kHandleRMIClickpadSet, func, reinterpret_cast<void *>(argument));
+                    return;
+                }
+            }
+            break;
+    }
+}
+
+IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
+    if (whatDevice != this)
+        return kIOPMAckImplied;
+    
+    if (whichState == 0 && awake) {
+        IOLogDebug("Sleep");
+        IOReturn error = messageClients(kHandleRMISuspend);
+        rmi_driver_clear_irq_bits(this);
+        if (!error) awake = false;
+    } else if (!awake) {
+        IOSleep(1000);
+        IOLogDebug("Wakeup");
+        transport->reset();
+        // c++ lambdas are wack
+        // Sensor doesn't wake up if we don't scan property tables
+        rmi_scan_pdt(this, NULL, [](RMIBus *rmi_dev,
+                                 void *ctx, const struct pdt_entry *pdt) -> int
+        {
+            IOLogDebug("Function F%X found again", pdt->function_number);
+            return 0;
+        });
+        rmi_driver_set_irq_bits(this);
+        IOReturn error = messageClients(kHandleRMIResume);
+        if (!error) awake = true;
+    }
+
+    return kIOPMAckImplied;
+}
+
 void RMIBus::stop(IOService *provider) {
-    PMstop();
     OSIterator *iter = OSCollectionIterator::withCollection(functions);
+    
+    PMstop();
+    rmi_driver_clear_irq_bits(this);
     
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         func->detach(this);

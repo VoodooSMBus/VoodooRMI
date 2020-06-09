@@ -27,7 +27,6 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
         IOLog("Failed probe");
         return NULL;
     }
-//    return OSDynamicCast(RMISMBus, service);
     
     device_nub = OSDynamicCast(VoodooSMBusDeviceNub, provider);
     if (!device_nub) {
@@ -35,6 +34,7 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
+    device_nub->wakeupController();
     device_nub->setSlaveDeviceFlags(I2C_CLIENT_HOST_NOTIFY);
     
     int retval = rmi_smb_get_version();
@@ -43,9 +43,10 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
+    setProperty("SMBus Version", retval, 32);
     IOLog("SMBus version %u\n", retval);
     
-    return OSDynamicCast(RMISMBus, service);
+    return this;
 }
 
 bool RMISMBus::start(IOService *provider)

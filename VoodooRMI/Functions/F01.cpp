@@ -39,7 +39,7 @@ bool F01::attach(IOService *provider)
 
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLog("%s Could not get RMIBus instance\n", getName());
+        IOLogError("%s Could not get RMIBus instance\n", getName());
         return NULL;
     }
     
@@ -70,8 +70,6 @@ bool F01::attach(IOService *provider)
             device_control->ctrl0 |= RMI_F01_CTRL0_NOSLEEP_BIT;
             break;
     }
-    
-    IOLog("F01 control: F%X\n", device_control->ctrl0);
     
     /*
      * Sleep mode might be set as a hangover from a system crash or
@@ -196,7 +194,6 @@ void F01::stop(IOService *provider)
 
 void F01::free()
 {
-    IOLog("F01 Free");
     clearDesc();
 
     if (properties) IOFree(properties, sizeof(f01_basic_properties));
@@ -389,4 +386,91 @@ int F01::rmi_f01_read_properties()
     }
     
     return 0;
+}
+
+int F01::rmi_f01_suspend()
+{
+    int error;
+    
+    old_nosleep = device_control->ctrl0 & RMI_F01_CTRL0_NOSLEEP_BIT;
+    device_control->ctrl0 &= ~RMI_F01_CTRL0_NOSLEEP_BIT;
+    
+    device_control->ctrl0 *= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
+    if (false /* device may wakeup = false*/)
+        device_control->ctrl0 |= RMI_SLEEP_MODE_RESERVED1;
+    else
+        device_control->ctrl0 |= RMI_SLEEP_MODE_SENSOR_SLEEP;
+    
+    error = rmiBus->write(fn_descriptor->control_base_addr,
+                          &device_control->ctrl0);
+    
+    if (error) {
+        IOLogError("Failed to write sleep mode: %d.\n", error);
+        if (old_nosleep)
+            device_control->ctrl0 |= RMI_F01_CTRL0_NOSLEEP_BIT;
+        device_control->ctrl0 &= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
+        device_control->ctrl0 |= RMI_SLEEP_MODE_NORMAL;
+    }
+    
+    return error;
+}
+
+int F01::rmi_f01_resume()
+{
+    int error;
+    
+    if (old_nosleep)
+        device_control->ctrl0 |= RMI_F01_CTRL0_NOSLEEP_BIT;
+    
+    device_control->ctrl0 &= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
+    device_control->ctrl0 |= RMI_SLEEP_MODE_NORMAL;
+    
+    error = rmiBus->write(fn_descriptor->control_base_addr,
+                          &device_control->ctrl0);
+    
+    if (error)
+        IOLogError("Failed to restore normal operation: %d.\n", error);
+    
+    return error;
+}
+
+void F01::rmi_f01_attention()
+{
+    int error;
+    u8 device_status;
+    
+    error = rmiBus->read(fn_descriptor->data_base_addr, &device_status);
+    
+    if (error) {
+        IOLogError("F01: Failed to read device status: %d.\n", error);
+        return;
+    }
+    
+    if (RMI_F01_STATUS_BOOTLOADER(device_status))
+        IOLogError("Device in bootloader mode, please update firmware\n");
+    
+    if (RMI_F01_STATUS_UNCONFIGURED(device_status)) {
+        IOLogDebug("Device reset detected.\n");
+        // reset
+    }
+}
+
+IOReturn F01::message(UInt32 type, IOService *provider, void *argument)
+{
+    int error;
+    switch (type) {
+        case kHandleRMISuspend:
+            error = rmi_f01_suspend();
+            if (error) return kIOReturnError;
+            break;
+        case kHandleRMIResume:
+            error = rmi_f01_resume();
+            if (error) return kIOReturnError;
+            break;
+        case kHandleRMIInterrupt:
+            rmi_f01_attention();
+            break;
+    }
+    
+    return kIOReturnSuccess;
 }

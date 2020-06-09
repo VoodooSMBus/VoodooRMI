@@ -248,7 +248,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [! -f \"${PROJECT_DIR}/VoodooRMI.kext/Contexts/PlugIns\"]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [ ! -d \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\" ]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi\n";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -399,9 +399,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/$(CONFIGURATION)/VoodooInput.kext/Contents/Resources",
 					"$(PROJECT_DIR)/VoodooSMBus.kext/Contents/Resources/Headers",
@@ -411,6 +412,7 @@
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.VoodooRMI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Debug;
@@ -419,9 +421,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/$(CONFIGURATION)/VoodooInput.kext/Contents/Resources",
 					"$(PROJECT_DIR)/VoodooSMBus.kext/Contents/Resources/Headers",
@@ -431,6 +434,7 @@
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.VoodooRMI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Release;

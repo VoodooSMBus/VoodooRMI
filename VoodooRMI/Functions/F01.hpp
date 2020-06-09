@@ -129,6 +129,8 @@ public:
     void stop(IOService *provider) override;
     void free() override;
     
+    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    
     /**
      *  Duplicates properties to put in as flags
      */
@@ -152,6 +154,9 @@ private:
     void publishProps();
     int rmi_f01_read_properties();
     int rmi_f01_config();
+    int rmi_f01_suspend();
+    int rmi_f01_resume();
+    void rmi_f01_attention();
     
     OSDictionary *deviceDict, *propDict;
 };

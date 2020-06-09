@@ -9,6 +9,8 @@
 
 #include "F03.hpp"
 
+OSDefineMetaClassAndStructors(F03, RMIFunction)
+
 bool F03::attach(IOService *provider)
 {
     u8 bytes_per_device, query1;
@@ -57,11 +59,11 @@ bool F03::attach(IOService *provider)
     setProperty("Device Count", device_count, 8);
     setProperty("Bytes Per Device", bytes_per_device, 8);
     
-    return true;
+    return IOService::attach(provider);
 }
 
 IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
 {
-    IOLog("F03 attention\n");
+//    IOLog("F03 attention\n");
     return kIOReturnSuccess;
 }

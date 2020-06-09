@@ -59,7 +59,8 @@ void F30::free()
 
 IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
 {
-    IOLog("F30 interrupt");
+//    IOLog("F30 interrupt");
+    int button_count = min(gpioled_count, TRACKSTICK_RANGE_END);
     
     switch (type) {
         case kHandleRMIInterrupt:
@@ -71,9 +72,9 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
             }
             
             if (has_gpio) {
-                for (int i = 0; i < gpioled_count; i++)
+                for (int i = 0; i < button_count; i++)
                     if (gpioled_key_map[i] != KEY_RESERVED)
-                        IOLog("Button: %d", i);
+                        rmi_f30_report_button(i);
             }
             
             break;
@@ -207,6 +208,7 @@ int F30::rmi_f30_map_gpios()
         } else if(!button_mapped) {
             gpioled_key_map[i] = button;
             button++;
+            clickpad_index = i;
             button_mapped = true;
         }
     }
@@ -239,4 +241,21 @@ int F30::rmi_f30_read_control_parameters()
     }
     
     return 0;
+}
+
+void F30::rmi_f30_report_button(unsigned int button)
+{
+    unsigned int reg_num = button >>3;
+    unsigned int bit_num = button & 0x07;
+    u16 key_code = gpioled_key_map[button];
+    bool key_down = !(data_regs[reg_num] & BIT(bit_num));
+    
+    if (button >= TRACKSTICK_RANGE_START &&
+        button <= TRACKSTICK_RANGE_END) {
+        if (key_down) IOLog("F30 Trackstick Button");
+    } else {
+        if (button == clickpad_index) rmiBus->notify(kHandleRMIClickpadSet, key_down);
+        if (key_code == BTN_LEFT) {}
+        if (key_down) IOLog("Key: %u", key_code);
+    }
 }

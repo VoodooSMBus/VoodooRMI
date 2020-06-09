@@ -67,6 +67,9 @@ bool F11::start(IOService *provider)
     
     setProperty("VoodooInputSupported", kOSBooleanTrue);
     
+    memset(freeFingerType, true, kMT2FingerTypeCount);
+    freeFingerType[kMT2FingerTypeUndefined] = false;
+    
     registerService();
     return true;
 }
@@ -113,6 +116,10 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIInterrupt:
             result = getReport();
             break;
+        case kHandleRMIClickpadSet:
+            clickpadState = !!(argument);
+            result = true;
+            break;
         default:
             result = true;
     }
@@ -122,7 +129,7 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
 
 bool F11::getReport()
 {
-    int error, fingers, abs_size;
+    int error, fingers, abs_size, realFingerCount = 0;
     u8 finger_state;
     
     error = rmiBus->readBlock(fn_descriptor->data_base_addr,
@@ -142,12 +149,8 @@ bool F11::getReport()
     AbsoluteTime timestamp;
     clock_get_uptime(&timestamp);
     
-    if (lastFingers != fingers) {
-        lastFingers = fingers;
-        return true;
-    } else lastFingers = fingers;
-    
     int transducer_count = 0;
+    IOLogDebug("F11 Packet");
     for (int i = 0; i < fingers; i++) {
         finger_state = rmi_f11_parse_finger_state(i);
         if (finger_state == F11_RESERVED) {
@@ -162,6 +165,7 @@ bool F11::getReport()
         transducer.supportsPressure = true;
         
         if (finger_state == F11_PRESENT) {
+            realFingerCount++;
             u8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
             u16 pos_x, pos_y;
             u8 wx, wy, z;
@@ -172,8 +176,6 @@ bool F11::getReport()
             wx = pos_data[3] & 0x0f;
             wy = pos_data[3] >> 4;
             
-            IOLog("Finger num: %d [Z: %u WX: %u WY: %u", i, z, wx, wy);
-            
             transducer.previousCoordinates = transducer.currentCoordinates;
             
             // Rudimentry palm detection
@@ -183,11 +185,32 @@ bool F11::getReport()
             transducer.currentCoordinates.x = pos_x;
             transducer.currentCoordinates.y = sensor.max_y - pos_y;
             transducer.timestamp = timestamp;
+            transducer.isPhysicalButtonDown = clickpadState;
+            
+            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d]",
+                       i, pos_x, pos_y, z, wx, wy, transducer.fingerType);
         }
         
         transducer.isTransducerActive = 1;
-        transducer.id = i;
         transducer.secondaryId = i;
+    }
+    
+    // Thumb Detection
+    if (realFingerCount == 4 && freeFingerType[kMT2FingerTypeThumb]) {
+        setThumbFingerType(fingers);
+    }
+    
+    // Sencond loop to get type
+    for (int i = 0; i < fingers; i++) {
+        auto& trans = inputEvent.transducers[i];
+        if (trans.isValid) {
+            if (trans.fingerType == kMT2FingerTypeUndefined)
+                trans.fingerType = getFingerType(&trans);
+        } else {
+            if (trans.fingerType != kMT2FingerTypeUndefined)
+                freeFingerType[trans.fingerType] = true;
+            trans.fingerType = kMT2FingerTypeUndefined;
+        }
     }
     
     inputEvent.contact_count = transducer_count;
@@ -714,8 +737,6 @@ int F11::rmi_f11_initialize()
     u8 buf;
     int mask_size;
     
-    IOLogError("Initializing F11 values.\n");
-    
     mask_size = BITS_TO_LONGS(rmiBus->data->irq_count) * sizeof(unsigned long);
     
     /*
@@ -902,4 +923,43 @@ int F11::rmi_f11_initialize()
         IOLogError("F11: Failed to write control registers\n");
     
     return 0;
+}
+
+void F11::setThumbFingerType(int fingers)
+{
+    int lowestFingerIndex = -1;
+    UInt32 minY = 0;
+    for (int i = 0; i < fingers; i++) {
+        auto &trans = inputEvent.transducers[i];
+        IOLog("%d %d\n", trans.currentCoordinates.y, trans.currentCoordinates.y > minY);
+        
+        if (trans.isValid && trans.currentCoordinates.y > minY) {
+            minY = trans.currentCoordinates.y;
+            IOLog("-- %d", minY);
+            lowestFingerIndex = i;
+        }
+    }
+    
+    if (lowestFingerIndex == -1)
+        IOLogError("LowestFingerIndex = -1 When there are 4 fingers");
+    else {
+        auto &trans = inputEvent.transducers[lowestFingerIndex];
+        if (trans.fingerType != kMT2FingerTypeUndefined)
+            freeFingerType[trans.fingerType] = true;
+        
+        trans.fingerType = kMT2FingerTypeThumb;
+        freeFingerType[kMT2FingerTypeThumb] = false;
+    }
+}
+
+MT2FingerType F11::getFingerType(VoodooInputTransducer *transducer)
+{
+    for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1)) {
+        if (freeFingerType[i]) {
+            freeFingerType[i] = false;
+            return i;
+        }
+    }
+    
+    return kMT2FingerTypeUndefined;
 }

@@ -80,7 +80,7 @@ int rmi_driver_probe(RMIBus *dev)
 //err_disable_irq:
 //    rmi_disable_irq(dev, false);
 err:
-    IOLog("Could not probe");
+    IOLogError("Could not probe");
     return retval;
 }
 
@@ -189,14 +189,14 @@ int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt)
             error = dev->reset();
 //            error = dev->rmi_smb_get_version();
             if (error < 0) {
-                IOLog("Unable to reset");
+                IOLogError("Unable to reset");
                 return error;
             }
             return RMI_SCAN_DONE;
         }
         
         // Only send reset if there is no reset in transport (SMBus has one which just gets version)
-        IOLog("Sending Reset\n");
+        IOLogDebug("Sending Reset\n");
         error = dev->blockWrite(cmd_addr, &cmd_buf, 1);
         if (error) {
             IOLogError("Initial reset failed. Code = %d\n", error);
@@ -269,7 +269,7 @@ int rmi_probe_interrupts(rmi_driver_data *data)
      * function can trigger events that result in the IRQ related storage
      * being accessed.
      */
-    IOLog("%s: Counting IRQs.\n", __func__);
+    IOLogDebug("%s: Counting IRQs.\n", __func__);
     data->bootloader_mode = false;
     
     retval = rmi_scan_pdt(rmi_dev, &irq_count, rmi_count_irqs);
@@ -384,7 +384,6 @@ static unsigned long getMask(RMIBus *rmiBus)
     OSIterator* iter = rmiBus->getClientIterator();
     while ((func = OSDynamicCast(RMIFunction, iter->getNextObject()))) {
         unsigned long funcMask = func->getIRQ();
-        IOLog("Added mask: %lu\n", funcMask);
         mask |= funcMask;
     }
     
@@ -393,17 +392,51 @@ static unsigned long getMask(RMIBus *rmiBus)
     return mask;
 }
 
-static int rmi_driver_set_irq_bits(RMIBus *rmi_dev)
+int rmi_driver_clear_irq_bits(RMIBus *rmi_dev)
+{
+    rmi_driver_data *data = rmi_dev->data;
+    
+    unsigned long mask = getMask(rmi_dev);
+    
+    int error = 0;
+    IOLockLock(data->irq_mutex);
+    data->fn_irq_bits &= ~mask;
+    data->new_irq_mask = data->current_irq_mask & ~mask;
+    
+    error = rmi_dev->blockWrite(data->f01_container->fd.control_base_addr + 1,
+                                reinterpret_cast<u8*>(&data->new_irq_mask), data->num_of_irq_regs);
+    
+    if (error < 0) {
+        IOLogError("%s: Filaed to change enabled interrupts!", __func__);
+        goto error_unlock;
+    }
+    
+    data->current_irq_mask = data->new_irq_mask;
+    
+error_unlock:
+    IOLockUnlock(data->irq_mutex);
+    return error;
+}
+
+int rmi_driver_set_irq_bits(RMIBus *rmi_dev)
 {
     int error = 0;
     unsigned long mask = getMask(rmi_dev);
     rmi_driver_data *data = rmi_dev->data;
     
     IOLockLock(data->irq_mutex);
+    // Dummy read in order to clear irqs
+    error = rmi_dev->readBlock(data->f01_container->fd.data_base_addr + 1,
+                               (u8 *)&data->irq_status, data->num_of_irq_regs);
+    
+    if (error < 0) {
+        IOLogError("%s: Failed to read interrupt status!", __func__);
+    }
+    
     data->new_irq_mask = mask | data->current_irq_mask;
     
     error = rmi_dev->blockWrite(data->f01_container->fd.control_base_addr + 1,
-                                (u8*)&mask /*reinterpret_cast<u8*>(data->new_irq_mask)*/, data->num_of_irq_regs);
+                                reinterpret_cast<u8*>(&data->new_irq_mask), data->num_of_irq_regs);
     if (error < 0) {
         IOLogError("%s: Failed to change enabled intterupts!", __func__);
         goto error_unlock;
@@ -470,6 +503,10 @@ void rmi_free_function_list(RMIBus *rmi_dev)
     
     IOLogDebug("Freeing function list\n");
     
+    if (data->f01_container)
+        IOFree(data->f01_container, sizeof(rmi_function));
+    if (data->f34_container)
+        IOFree(data->f34_container, sizeof(rmi_function));
     data->f01_container = NULL;
     data->f34_container = NULL;
 }

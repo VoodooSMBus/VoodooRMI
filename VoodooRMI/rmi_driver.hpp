@@ -48,6 +48,8 @@ int rmi_probe_interrupts(rmi_driver_data *data);
 int rmi_init_functions(struct rmi_driver_data *data);
 void rmi_free_function_list(RMIBus *rmi_dev);
 int rmi_enable_sensor(RMIBus *rmi_dev);
+int rmi_driver_set_irq_bits(RMIBus *rmi_dev);
+int rmi_driver_clear_irq_bits(RMIBus *rmi_dev);
 
 static inline UInt64 OSBitwiseAtomic64(unsigned long and_mask, unsigned long or_mask, unsigned long xor_mask, unsigned long * value)
 {

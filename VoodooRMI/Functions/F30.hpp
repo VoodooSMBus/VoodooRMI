@@ -78,6 +78,7 @@ private:
     bool has_gpio_driver_control;
     bool has_mech_mouse_btns;
     uint8_t gpioled_count;
+    uint8_t clickpad_index {0};
     
     uint8_t register_count;
     
@@ -101,6 +102,7 @@ private:
     int rmi_f30_read_control_parameters();
     int rmi_f30_map_gpios();
     int rmi_f30_is_valid_button(int button);
+    void rmi_f30_report_button(unsigned int button);
 };
 
 #endif /* F30_hpp */

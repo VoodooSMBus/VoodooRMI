@@ -522,9 +522,16 @@ private:
     OSDictionary *jitterProps;
     OSDictionary *miscProps;
     OSDictionary *sizeProps;
+    
     int lastFingers;
     VoodooInputEvent inputEvent {};
     IOService *voodooInputInstance {nullptr};
+    
+    bool freeFingerType[kMT2FingerTypeCount];
+    MT2FingerType getFingerType(VoodooInputTransducer *transducer);
+    void setThumbFingerType(int fingers);
+    
+    bool clickpadState {false};
     
     /** Data pertaining to F11 in general.  For per-sensor data, see struct
     * f11_2d_sensor.

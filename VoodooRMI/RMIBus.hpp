@@ -25,10 +25,18 @@ class RMIFunction;
 #include <F34.hpp>
 
 #define IOLogError(arg...) IOLog("Error: " arg)
+
+#ifdef DEBUG
 #define IOLogDebug(arg...) IOLog("Debug: " arg)
+#elif
+#define IOLogDebug(arg...)
+#endif // DEBUG
 
 enum {
-    kHandleRMIInterrupt = iokit_vendor_specific_msg(1100)
+    kHandleRMIInterrupt = iokit_vendor_specific_msg(2046),
+    kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
+    kHandleRMISuspend = iokit_vendor_specific_msg(2048),
+    kHandleRMIResume = iokit_vendor_specific_msg(2049),
 };
 
 class RMIBus : public IOService {
@@ -40,9 +48,13 @@ public:
     virtual bool start(IOService *provider) override;
     virtual void stop(IOService *provider) override;
     virtual void free() override;
+    IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
+    
+    inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
     rmi_driver_data *data;
     RMITransport *transport;
+    bool awake {true};
     
     // rmi_read
     inline int read(u16 addr, u8 *buf) {
@@ -63,10 +75,11 @@ public:
     
     OSSet *functions;
     
-    inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    void notify(UInt32 type, unsigned int argument = 0);
     int rmi_register_function(rmi_function* fn);
     int reset();
 private:
+    
     void handleHostNotify();
 };
     

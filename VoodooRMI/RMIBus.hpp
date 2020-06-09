@@ -32,8 +32,17 @@ class RMIFunction;
 #define IOLogDebug(arg...)
 #endif // DEBUG
 
+// Message types defined by ApplePS2Keyboard
 enum {
-    kHandleRMIInterrupt = iokit_vendor_specific_msg(2046),
+    // from keyboard to mouse/touchpad
+    kKeyboardSetTouchStatus = iokit_vendor_specific_msg(100),   // set disable/enable touchpad (data is bool*)
+    kKeyboardGetTouchStatus = iokit_vendor_specific_msg(101),   // get disable/enable touchpad (data is bool*)
+    kKeyboardKeyPressTime = iokit_vendor_specific_msg(110)      // notify of timestamp a non-modifier key was pressed (data is uint64_t*)
+};
+
+// RMI message types
+enum {
+    kHandleRMIAttention = iokit_vendor_specific_msg(2046),
     kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
     kHandleRMISuspend = iokit_vendor_specific_msg(2048),
     kHandleRMIResume = iokit_vendor_specific_msg(2049),

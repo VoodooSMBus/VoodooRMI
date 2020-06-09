@@ -533,6 +533,8 @@ private:
     
     bool clickpadState {false};
     bool pressureLock {false};
+    bool touchpadEnable {true};
+    uint64_t disableWhileTypingTimeout, lastKeyboardTS;
     
     /** Data pertaining to F11 in general.  For per-sensor data, see struct
     * f11_2d_sensor.

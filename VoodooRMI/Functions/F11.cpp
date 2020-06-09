@@ -23,6 +23,8 @@ bool F11::init(OSDictionary *dictionary)
         return false;
     
     dev_controls_mutex = IOLockAlloc();
+    // Hard coded, config value later
+    disableWhileTypingTimeout = 500 * 1000000;
     return dev_controls_mutex;
 }
 
@@ -66,6 +68,8 @@ bool F11::start(IOService *provider)
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
     setProperty("VoodooInputSupported", kOSBooleanTrue);
+    // VoodooPS2 keyboard notifs
+    setProperty("RM,deliverNotifications", kOSBooleanTrue);
     
     memset(freeFingerType, true, kMT2FingerTypeCount);
     freeFingerType[kMT2FingerTypeUndefined] = false;
@@ -109,19 +113,27 @@ void F11::handleClose(IOService *forClient, IOOptionBits options)
 
 IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
 {
-    bool result;
-    
     switch (type)
     {
-        case kHandleRMIInterrupt:
-            result = getReport();
+        case kHandleRMIAttention:
+            getReport();
             break;
         case kHandleRMIClickpadSet:
             clickpadState = !!(argument);
-            result = true;
             break;
-        default:
-            result = true;
+        
+        // VoodooPS2 Messages
+        case kKeyboardKeyPressTime:
+            lastKeyboardTS = *((uint64_t*) argument);
+            break;
+        case kKeyboardGetTouchStatus: {
+            bool *result = (bool *) argument;
+            *result = touchpadEnable;
+            break;
+        }
+        case kKeyboardSetTouchStatus:
+            touchpadEnable = *((bool *) argument);
+            break;
     }
     
     return kIOReturnSuccess;
@@ -131,6 +143,8 @@ bool F11::getReport()
 {
     int error, fingers, abs_size, realFingerCount = 0;
     u8 finger_state;
+    AbsoluteTime timestamp;
+    uint64_t timestampNS;
     
     error = rmiBus->readBlock(fn_descriptor->data_base_addr,
                               sensor.data_pkt, sensor.pkt_size);
@@ -141,13 +155,16 @@ bool F11::getReport()
         return false;
     }
     
+    clock_get_uptime(&timestamp);
+    absolutetime_to_nanoseconds(timestamp, &timestampNS);
+    
+    if (!touchpadEnable || timestampNS - lastKeyboardTS < disableWhileTypingTimeout)
+        return 0;
+    
     abs_size = sensor.nbr_fingers & RMI_F11_ABS_BYTES;
     if (abs_size > sensor.pkt_size)
         fingers = sensor.pkt_size / RMI_F11_ABS_BYTES;
     else fingers = sensor.nbr_fingers;
-    
-    AbsoluteTime timestamp;
-    clock_get_uptime(&timestamp);
     
     int transducer_count = 0;
     IOLogDebug("F11 Packet");
@@ -193,11 +210,11 @@ bool F11::getReport()
                 
             transducer.timestamp = timestamp;
             
-            if (clickpadState && z > 80)
+            if (clickpadState && z > 90)
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
-            transducer.isPhysicalButtonDown = clickpadState && !pressureLock; //&& z <= 80;
+            transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
             IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
                        i, pos_x, pos_y, z, wx, wy, transducer.fingerType,

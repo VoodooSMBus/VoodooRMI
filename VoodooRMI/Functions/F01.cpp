@@ -467,7 +467,7 @@ IOReturn F01::message(UInt32 type, IOService *provider, void *argument)
             error = rmi_f01_resume();
             if (error) return kIOReturnError;
             break;
-        case kHandleRMIInterrupt:
+        case kHandleRMIAttention:
             rmi_f01_attention();
             break;
     }

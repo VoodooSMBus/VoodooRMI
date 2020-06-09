@@ -71,7 +71,7 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
     int button_count = min(gpioled_count, TRACKSTICK_RANGE_END);
     
     switch (type) {
-        case kHandleRMIInterrupt:
+        case kHandleRMIAttention:
             int error = rmiBus->readBlock(fn_descriptor->data_base_addr,
                                           data_regs, register_count);
             

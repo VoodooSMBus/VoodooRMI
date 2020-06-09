@@ -111,7 +111,7 @@ void RMIBus::handleHostNotify()
         
         while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
             if (func->getIRQ() & movingMask) {
-                messageClient(kHandleRMIInterrupt, func);
+                messageClient(kHandleRMIAttention, func);
                 
                 mask &= ~movingMask;
                 break;

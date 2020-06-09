@@ -532,6 +532,7 @@ private:
     void setThumbFingerType(int fingers);
     
     bool clickpadState {false};
+    bool pressureLock {false};
     
     /** Data pertaining to F11 in general.  For per-sensor data, see struct
     * f11_2d_sensor.

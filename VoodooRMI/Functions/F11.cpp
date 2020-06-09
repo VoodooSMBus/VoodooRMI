@@ -182,13 +182,27 @@ bool F11::getReport()
             transducer.isValid = z < 120 && abs(wx - wy) < 3;
             
             transducer.currentCoordinates.width = z / 1.5;
-            transducer.currentCoordinates.x = pos_x;
-            transducer.currentCoordinates.y = sensor.max_y - pos_y;
-            transducer.timestamp = timestamp;
-            transducer.isPhysicalButtonDown = clickpadState;
             
-            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d]",
-                       i, pos_x, pos_y, z, wx, wy, transducer.fingerType);
+            if (!pressureLock) {
+                transducer.currentCoordinates.x = pos_x;
+                transducer.currentCoordinates.y = sensor.max_y - pos_y;
+            } else {
+                // Lock position for force touch
+                transducer.currentCoordinates = transducer.previousCoordinates;
+            }
+                
+            transducer.timestamp = timestamp;
+            
+            if (clickpadState && z > 80)
+                pressureLock = true;
+            
+            transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
+            transducer.isPhysicalButtonDown = clickpadState; //&& z <= 80;
+            
+            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
+                       i, pos_x, pos_y, z, wx, wy, transducer.fingerType,
+                       transducer.currentCoordinates.pressure,
+                       transducer.isPhysicalButtonDown);
         }
         
         transducer.isTransducerActive = 1;
@@ -216,7 +230,13 @@ bool F11::getReport()
     inputEvent.contact_count = transducer_count;
     inputEvent.timestamp = timestamp;
     
+    if (!realFingerCount) {
+        pressureLock = false;
+    }
+    
     messageClient(kIOMessageVoodooInputMessage, voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
+    
+    
     return true;
 }
 

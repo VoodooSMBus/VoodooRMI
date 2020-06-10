@@ -121,6 +121,12 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIClickpadSet:
             clickpadState = !!(argument);
             break;
+        case kHandleRMITrackpoint:
+            // Re-use keyboard var as it's the same thin
+            uint64_t timestamp;
+            clock_get_uptime(&timestamp);
+            absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
+            break;
         
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:

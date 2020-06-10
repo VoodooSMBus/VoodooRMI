@@ -10,6 +10,13 @@
 #include "F03.hpp"
 
 OSDefineMetaClassAndStructors(F03, RMIFunction)
+#define super IOService
+
+/*
+ * FIXME: PS2 packets still don't give the right responses.
+ * Enabling works, but currently it says it didn't work.
+ * So this currently just errors through everything and still works
+ */
 
 bool F03::attach(IOService *provider)
 {
@@ -62,8 +69,338 @@ bool F03::attach(IOService *provider)
     return IOService::attach(provider);
 }
 
+bool F03::start(IOService *provider)
+{
+    const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+    u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
+    
+    work_loop = reinterpret_cast<IOWorkLoop*>(getWorkLoop());
+    if (!work_loop) {
+        IOLogError("F03 - Could not get work loop\n");
+        return false;
+    }
+    
+    command_gate = IOCommandGate::commandGate(this);
+    if (!command_gate || (work_loop->addEventSource(command_gate) != kIOReturnSuccess)) {
+        IOLog("%s Could not open command gate\n", getName());
+        if (command_gate) command_gate->release();
+        OSSafeReleaseNULL(work_loop);
+        return false;
+    }
+    command_gate->enable();
+    
+    /*
+     * Consume any pending data. Some devices like to spam with
+     * 0xaa 0x00 announcement which may confuse us as we try to
+     * probe the device
+     */
+    int error = rmiBus->readBlock(fn_descriptor->data_base_addr + RMI_F03_OB_OFFSET,
+                                  obs, ob_len);
+    if (!error)
+        IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest\n",
+                   ob_len, obs, ob_len);
+    
+    registerService();
+    
+    u8 param[2] = {0};
+
+    // Sending these are important to make the trackpoint work.
+    // But the responses don't work at all and it's voodoo how it actually works
+    error = ps2Command(param, MAKE_PS2_CMD( 0, 2, TP_READ_ID));
+
+    u8 param1[2] = { TP_POR };
+
+    error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
+//    if (param1[0] != 0xAA || param1[1] != 0x00)
+//        IOLogError("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
+
+    error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
+    
+    index = 0;
+    
+    if(!publishButtons()) {
+        return false;
+    }
+    
+    IOLog("Start finished");
+    return super::start(provider);
+}
+
+void F03::stop(IOService *provider)
+{
+    if (command_gate) {
+        work_loop->removeEventSource(command_gate);
+        command_gate->release();
+        command_gate = NULL;
+    }
+    OSSafeReleaseNULL(work_loop);
+    unpublishButtons();
+    super::stop(provider);
+}
+
+int F03::rmi_f03_pt_write(unsigned char val)
+{
+    
+    int error = rmiBus->write(fn_descriptor->data_base_addr, &val);
+    if (error) {
+        IOLogError("F03 - Failed to write to F03 TX register (%d).\n", error);
+    }
+    
+    return error;
+}
+
+void F03::handlePacketGated(u8 packet)
+{
+    UInt32 buttons = databuf[0] & 0x7;
+    SInt32 dx = ((databuf[0] & 0x10) ? 0xffffff00 : 0) | databuf[1];
+    SInt32 dy = -(((databuf[0] & 0x20) ? 0xffffff00 : 0) | databuf[2]);
+    index = 0;
+    
+    if(buttons & 0x04 && (dx || dy)) {
+        buttonDevice->updateScrollwheel(-dy, -dx, 0);
+    } else {
+        buttonDevice->updateRelativePointer(dx * trackstickMult, dy * trackstickMult, buttons);
+    }
+    
+    rmiBus->notify(kHandleRMITrackpoint);
+    IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
+}
+
 IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
 {
-//    IOLog("F03 attention\n");
+    
+    switch (type) {
+        case kHandleRMIAttention: {
+            const u16 data_addr = fn_descriptor->data_base_addr + RMI_F03_OB_OFFSET;
+            const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+            u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
+            
+            int error = rmiBus->readBlock(data_addr, obs, ob_len);
+            if (error) {
+                IOLogError("F03 - Failed to read output buffers: %d\n", error);
+                return kIOReturnError;
+            }
+            
+            for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
+                u8 ob_status = obs[i];
+                u8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
+                
+                if (!(ob_status & RMI_F03_RX_DATA_OFB))
+                    continue;
+                
+                if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
+                    IOLogDebug("F03 Timeout Flag");
+                    return kIOReturnSuccess;
+                }
+                if (ob_status & RMI_F03_OB_FLAG_PARITY) {
+                    IOLogDebug("F03 Parity Flag");
+                    return kIOReturnSuccess;
+                }
+                
+                IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
+                if (!cmdcnt && !flags) {
+                    // Wait for start of packets
+                    if (index == 0 && ((ob_data == PS2_RET_ACK) || !(ob_data & 0x08)))
+                        continue;
+                    
+                    databuf[index++] = ob_data;
+                    
+                    if (index == 3)
+                        handlePacketGated(ob_data);
+                }
+                
+                // ps2_handle_response
+                if (cmdcnt)
+                    cmdbuf[--cmdcnt] = ob_data;
+                
+                if (flags & PS2_FLAG_CMD1) {
+                    flags &= ~PS2_FLAG_CMD1;
+                    if (cmdcnt)
+                        command_gate->commandWakeup(&status);
+                }
+                
+                if (flags & PS2_FLAG_ACK) {
+                    flags &= ~PS2_FLAG_ACK;
+                    command_gate->commandWakeup(&status);
+                }
+                
+                if (!cmdcnt) {
+                    flags &= ~PS2_FLAG_CMD;
+                    command_gate->commandWakeup(&status);
+                }
+            }
+            break;
+        }
+        case kHandleRMIResume: {
+            u8 param[2] = {0};
+            u8 param1[2] = { TP_POR };
+            
+            int error = ps2Command(param, MAKE_PS2_CMD( 0, 2, TP_READ_ID));
+            error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
+            if (param1[0] != 0xAA || param1[1] != 0x00)
+                IOLogError("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
+
+            error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
+                
+            break;
+        }
+    }
+
     return kIOReturnSuccess;
+}
+
+IOWorkLoop* F03::getWorkLoop()
+{
+    // Do we have a work loop already?, if so return it NOW.
+    if ((vm_address_t) work_loop >> 1)
+        return work_loop;
+    
+    if (OSCompareAndSwap(0, 1, reinterpret_cast<IOWorkLoop*>(&work_loop))) {
+        // Construct the workloop and set the cntrlSync variable
+        // to whatever the result is and return
+        work_loop = IOWorkLoop::workLoop();
+    } else {
+        while (reinterpret_cast<IOWorkLoop*>(work_loop) == reinterpret_cast<IOWorkLoop*>(1)) {
+            // Spin around the cntrlSync variable until the
+            // initialization finishes.
+            thread_block(0);
+        }
+    }
+    
+    return work_loop;
+}
+
+int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
+{
+    AbsoluteTime time;
+    
+    flags |= PS2_FLAG_ACK;
+    
+    int error = rmi_f03_pt_write(byte);
+    if (error) {
+        IOLogDebug("Failed to write to F03 device: %d\n", error);
+    }
+    nanoseconds_to_absolutetime(timeout, &time);
+    IOReturn result = command_gate->commandSleep(&status, time, THREAD_ABORTSAFE);
+    status = 0;
+    
+    if (result) {
+        int error = rmi_f03_pt_write(byte);
+        if (error) {
+            IOLogDebug("Failed to write to F03 device: %d\n", error);
+        }
+        result = command_gate->commandSleep(&status, time, THREAD_ABORTSAFE);
+        status = 0;
+    }
+    
+    if (result == THREAD_TIMED_OUT)
+        error = THREAD_TIMED_OUT;
+    
+    flags &= ~PS2_FLAG_ACK;
+    
+    return error;
+}
+
+int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
+{
+    unsigned int command = *cmd;
+    uint64_t timeout = 500 * 1000000;
+    unsigned int send = (command >> 12) & 0xf;
+    unsigned int receive = (command >> 8) & 0xf;
+    AbsoluteTime time;
+    int rc, i;
+    IOReturn res;
+    u8 send_param[16];
+    
+    memcpy(send_param, param, send);
+    flags = command == PS2_CMD_GETID ? PS2_FLAG_WAITID : 0;
+    cmdcnt = receive;
+    
+    if (receive && param)
+        for (i = 0; i < receive;i++)
+            cmdbuf[(receive - 1) - i] = param[i];
+    
+    /* Signal that we are sending the command byte */
+    flags |= PS2_FLAG_ACK_CMD;
+    
+    rc = ps2DoSendbyteGated(command & 0xff, timeout);
+    if (rc) {
+        goto out_reset_flags;
+    }
+        
+    /* Now we are sending command parameters, if any */
+    flags &= ~PS2_FLAG_ACK_CMD;
+    
+    for (i = 0; i < send; i++) {
+        rc = ps2DoSendbyteGated(param[i], timeout);
+        if (rc) {
+            goto out_reset_flags;
+        }
+    }
+    
+    timeout = command == PS2_CMD_RESET_BAT ? 4000 : 500;
+    
+    flags |= PS2_FLAG_CMD1 | PS2_FLAG_CMD;
+    nanoseconds_to_absolutetime(timeout * 1000000, &time);
+    res = command_gate->commandSleep(&status, time, THREAD_ABORTSAFE);
+    status = 0;
+    if (cmdcnt && !(flags & PS2_FLAG_CMD1)) {
+        res = command_gate->commandSleep(&status, time, THREAD_ABORTSAFE);
+        status = 0;
+    }
+    
+    if (param)
+        for (i = 0; i < receive; i++)
+            param[i] = cmdbuf[(receive - 1) - i];
+    
+    if (cmdcnt &&
+        (command != PS2_CMD_RESET_BAT || cmdcnt != 1)) {
+        // Multibyte commands
+        //        rc = -EPROTO;
+        goto out_reset_flags;
+    }
+    
+    rc = 0;
+    
+out_reset_flags:
+    flags = 0;
+    return rc;
+}
+
+int F03::ps2Command(u8 *param, unsigned int command)
+{
+    return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &F03::ps2CommandGated),
+                                       param, &command);
+}
+
+bool F03::publishButtons() {
+    buttonDevice = OSTypeAlloc(ButtonDevice);
+    if (!buttonDevice) {
+        IOLogError("No memory to allocate TrackpointDevice instance\n");
+        goto trackpoint_exit;
+    }
+    if (!buttonDevice->init(NULL)) {
+        IOLogError("Failed to init TrackpointDevice\n");
+        goto trackpoint_exit;
+    }
+    if (!buttonDevice->attach(this)) {
+        IOLogError("Failed to attach TrackpointDevice\n");
+        goto trackpoint_exit;
+    }
+    if (!buttonDevice->start(this)) {
+        IOLogError("Failed to start TrackpointDevice \n");
+        goto trackpoint_exit;
+    }
+    
+    return true;
+trackpoint_exit:
+    unpublishButtons();
+    return false;
+}
+
+void F03::unpublishButtons() {
+    if (buttonDevice) {
+        buttonDevice->stop(this);
+        OSSafeReleaseNULL(buttonDevice);
+    }
 }

@@ -11,6 +11,23 @@
 #define F03_hpp
 
 #include "../RMIBus.hpp"
+#include "../PS2.hpp"
+#include "../ButtonDevice.hpp"
+#include <IOKit/IOWorkLoop.h>
+#include <IOKit/IOCommandGate.h>
+
+#define PSMOUSE_CMD_ENABLE 0x00f4
+
+/*
+ * These constants are from the TrackPoint System
+ * Engineering documentation Version 4 from IBM Watson
+ * research:
+ *    http://wwwcssrv.almaden.ibm.com/trackpoint/download.html
+ */
+
+#define TP_COMMAND        0xE2    /* Commands start with this */
+
+#define TP_READ_ID        0xE1    /* Sent for device identification */
 
 #define RMI_F03_RX_DATA_OFB        0x01
 #define RMI_F03_OB_SIZE            2
@@ -25,64 +42,36 @@
 #define RMI_F03_BYTES_PER_DEVICE_SHIFT    4
 #define RMI_F03_QUEUE_LENGTH        0x0F
 
-#define PSMOUSE_OOB_EXTRA_BTNS        0x01
+// trackpoint.h
+/*
+ * Commands
+ */
+#define TP_RECALIB        0x51    /* Recalibrate */
+#define TP_POWER_DOWN        0x44    /* Can only be undone through HW reset */
+#define TP_EXT_DEV        0x21    /* Determines if external device is connected (RO) */
+#define TP_EXT_BTN        0x4B    /* Read extended button status */
+#define TP_POR            0x7F    /* Execute Power on Reset */
+#define TP_POR_RESULTS        0x25    /* Read Power on Self test results */
+#define TP_DISABLE_EXT        0x40    /* Disable external pointing device */
+#define TP_ENABLE_EXT        0x41    /* Enable external pointing device */
 
-// VoodooPS2
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// PS/2 Command Primitives
-//
-// o  kPS2C_ReadDataPort:
-//    o  Description: Reads the next available byte off the data port (60h).
-//    o  Out Field:   Holds byte that was read.
-//
-// o  kPS2C_ReadDataAndCompare:
-//    o  Description: Reads the next available byte off the data port (60h),
-//                    and compares it with the byte in the In Field.  If the
-//                    comparison fails, the request is aborted (refer to the
-//                    commandsCount field in the request structure).
-//    o  In Field:    Holds byte that comparison should be made to.
-//
-// o  kPS2C_WriteDataPort:
-//    o  Description: Writes the byte in the In Field to the data port (60h).
-//    o  In Field:    Holds byte that should be written.
-//
-// o  kPS2C_WriteCommandPort:
-//    o  Description: Writes the byte in the In Field to the command port (64h).
-//    o  In Field:    Holds byte that should be written.
-//
+/*
+ * Mode manipulation
+ */
+#define TP_SET_SOFT_TRANS    0x4E    /* Set mode */
+#define TP_CANCEL_SOFT_TRANS    0xB9    /* Cancel mode */
+#define TP_SET_HARD_TRANS    0x45    /* Mode can only be set */
 
-enum PS2CommandEnum
-{
-  kPS2C_ReadDataPort,
-  kPS2C_ReadDataPortAndCompare,
-  kPS2C_WriteDataPort,
-  kPS2C_WriteCommandPort,
-  kPS2C_SendMouseCommandAndCompareAck,
-  kPS2C_ReadMouseDataPort,
-  kPS2C_ReadMouseDataPortAndCompare,
-  kPS2C_FlushDataPort,
-  kPS2C_SleepMS,
-  kPS2C_ModifyCommandByte,
-};
-typedef enum PS2CommandEnum PS2CommandEnum;
 
-struct PS2Command
-{
-  PS2CommandEnum command;
-  union
-  {
-      UInt8  inOrOut;
-      UInt32 inOrOut32;
-      struct
-      {
-          UInt8 setBits;
-          UInt8 clearBits;
-          UInt8 oldBits;
-      };
-  };
-};
-typedef struct PS2Command PS2Command;
+/*
+ * Register oriented commands/properties
+ */
+#define TP_WRITE_MEM        0x81
 
+/* Power on Self Test Results */
+#define TP_POR_SUCCESS        0x3B
+
+#define MAKE_PS2_CMD(params, results, cmd) ((params<<12) | (results<<8) | (cmd))
 
 
 class F03 : public RMIFunction {
@@ -91,12 +80,27 @@ class F03 : public RMIFunction {
 public:
 //    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
-//    void stop(IOService *provider) override;
+    bool start(IOService *provider) override;
+    void stop(IOService *provider) override;
 //    void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
     RMIBus *rmiBus;
+    ButtonDevice *buttonDevice;
+    IOWorkLoop *work_loop;
+    IOCommandGate *command_gate;
+    
+    int trackstickMult {2};
+    
+    // ps2
+    unsigned int flags, cmdcnt;
+    u8 cmdbuf[8];
+    u8 status {0};
+    
+    // Packet storage
+    u8 databuf[3];
+    u8 index;
     
     // F03 Data
     unsigned int overwrite_buttons;
@@ -104,7 +108,17 @@ private:
     u8 device_count;
     u8 rx_queue_length;
 
-
+    IOWorkLoop* getWorkLoop();
+    
+    bool publishButtons();
+    void unpublishButtons();
+    
+    int rmi_f03_pt_write (unsigned char val);
+    int ps2DoSendbyteGated(u8 byte, uint64_t timeout);
+    int ps2CommandGated(u8 *param, unsigned int *command);
+    int ps2Command(u8 *param, unsigned int command);
+    
+    void handlePacketGated(u8 packet);
 };
 
 #endif /* F03_hpp */

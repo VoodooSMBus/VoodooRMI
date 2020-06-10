@@ -47,8 +47,8 @@ bool F30::start(IOService *provider)
     }
     
     registerService();
-//    if (numButtons != 1)
-    publishButtons();
+    if (numButtons != 1)
+        publishButtons();
     
     return true;
 }
@@ -67,8 +67,7 @@ void F30::free()
 
 IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
 {
-//    IOLog("F30 interrupt");
-    int button_count = min(gpioled_count, TRACKSTICK_RANGE_END);
+    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
     
     switch (type) {
         case kHandleRMIAttention:
@@ -79,17 +78,17 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
                 IOLogError("Could not read F30 data: 0x%x\n", error);
             }
             
-            if (has_gpio) {
-                int btns = 0;
-                for (int i = 0; i < button_count; i++) {
-                    if (gpioled_key_map[i] != KEY_RESERVED)
-                        btns |= rmi_f30_report_button(i);
-                    
-                    buttonDevice->updateButtons(btns);
-                }
-                
-            }
+            if (!has_gpio)
+                return kIOReturnSuccess;
             
+            int btns = 0;
+            for (int i = 0; i < buttonArrLen; i++) {
+                if (gpioled_key_map[i] != KEY_RESERVED)
+                    btns |= rmi_f30_report_button(i);
+                
+                if (numButtons > 1)
+                    buttonDevice->updateButtons(btns);
+            }
             break;
     }
     
@@ -205,13 +204,13 @@ int F30::rmi_f30_map_gpios()
 {
     unsigned int button = BTN_LEFT;
     unsigned int trackstick_button = BTN_LEFT;
-    int button_count = min(gpioled_count, TRACKSTICK_RANGE_END);
-    setProperty("Button Count", button_count, 32);
+    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
+    setProperty("Button Count", buttonArrLen, 32);
     
-    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(button_count * sizeof(gpioled_key_map[0])));
-    memset(gpioled_key_map, 0, button_count * sizeof(gpioled_key_map[0]));
+    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(gpioled_key_map[0])));
+    memset(gpioled_key_map, 0, buttonArrLen * sizeof(gpioled_key_map[0]));
     
-    for (int i = 0; i < button_count; i++) {
+    for (int i = 0; i < buttonArrLen; i++) {
         if (!rmi_f30_is_valid_button(i))
             continue;
         

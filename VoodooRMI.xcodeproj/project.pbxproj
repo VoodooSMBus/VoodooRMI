@@ -36,6 +36,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
 		A4435AEE248F8AD80083404C /* ButtonDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonDevice.cpp; sourceTree = "<group>"; };
 		A4435AEF248F8AD80083404C /* ButtonDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ButtonDevice.hpp; sourceTree = "<group>"; };
 		A4560EC7247F29EC0009CBE0 /* VoodooRMI.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoodooRMI.kext; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -110,6 +111,7 @@
 				A4560ECE247F29EC0009CBE0 /* Info.plist */,
 				A4435AEF248F8AD80083404C /* ButtonDevice.hpp */,
 				A4435AEE248F8AD80083404C /* ButtonDevice.cpp */,
+				2850FFBC24904435000FA6BC /* PS2.hpp */,
 			);
 			path = VoodooRMI;
 			sourceTree = "<group>";

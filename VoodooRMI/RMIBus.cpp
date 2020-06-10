@@ -138,17 +138,18 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
 
 void RMIBus::notify(UInt32 type, unsigned int argument)
 {
-    switch (type) {
-        case kHandleRMIClickpadSet:
-            OSIterator* iter = OSCollectionIterator::withCollection(functions);
-            while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+    OSIterator* iter = OSCollectionIterator::withCollection(functions);
+    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+        switch (type) {
+            case kHandleRMIClickpadSet:
+            case kHandleRMITrackpoint:
                 if (OSDynamicCast(F11, func)) {
-                    IOLog("Sending clickpad event: %u", argument);
-                    messageClient(kHandleRMIClickpadSet, func, reinterpret_cast<void *>(argument));
+                    IOLogDebug("Sending event %u to F11: %u", type, argument);
+                    messageClient(type, func, reinterpret_cast<void *>(argument));
                     return;
                 }
-            }
-            break;
+                break;
+        }
     }
 }
 

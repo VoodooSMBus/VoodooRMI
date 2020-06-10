@@ -24,6 +24,8 @@ public:
     virtual UInt32 interfaceID() override;
     
     void updateButtons(int buttons);
+    void updateRelativePointer(int dx, int dy, int buttons);
+    void updateScrollwheel(short deltaAxis1, short deltaAxis2, short deltaAxis3);
 };
 
 #endif /* ButtonDevice_hpp */

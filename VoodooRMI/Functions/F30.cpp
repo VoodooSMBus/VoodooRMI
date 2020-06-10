@@ -12,6 +12,11 @@
 OSDefineMetaClassAndStructors(F30, RMIFunction)
 #define super IOService
 
+bool F30::init(OSDictionary *dict)
+{
+    return super::init();
+}
+
 bool F30::attach(IOService *provider)
 {
     rmiBus = OSDynamicCast(RMIBus, provider);

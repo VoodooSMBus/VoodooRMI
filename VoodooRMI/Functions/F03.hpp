@@ -78,7 +78,7 @@ class F03 : public RMIFunction {
     OSDeclareDefaultStructors(F03)
     
 public:
-//    bool init(OSDictionary *dictionary) override;
+    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
@@ -91,7 +91,7 @@ private:
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
     
-    int trackstickMult {2};
+    int trackstickMult;
     
     // ps2
     unsigned int flags, cmdcnt;

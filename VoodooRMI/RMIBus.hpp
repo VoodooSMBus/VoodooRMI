@@ -89,7 +89,7 @@ public:
     int rmi_register_function(rmi_function* fn);
     int reset();
 private:
-    
+    OSDictionary *config;
     void handleHostNotify();
 };
     

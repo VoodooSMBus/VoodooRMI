@@ -14,7 +14,7 @@ OSDefineMetaClassAndStructors(F01, RMIFunction);
 
 bool F01::init(OSDictionary *dictionary)
 {
-    if (!super::init(dictionary))
+    if (!super::init())
         return false;
     
     properties = reinterpret_cast<f01_basic_properties*>(IOMalloc(sizeof(f01_basic_properties)));
@@ -57,10 +57,9 @@ bool F01::attach(IOService *provider)
         return false;
     }
     
-    // Possible force this to be off to always allow sleep?
-    // Default for now
+    // Always allow dozing for reduced power draw
     // switch (pdata->power_management.nosleep)
-    switch (RMI_REG_STATE_DEFAULT) {
+    switch (RMI_REG_STATE_OFF) {
         case RMI_REG_STATE_DEFAULT:
             break;
         case RMI_REG_STATE_OFF:

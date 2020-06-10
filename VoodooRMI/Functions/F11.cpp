@@ -19,7 +19,7 @@ OSDefineMetaClassAndStructors(F11, RMIFunction)
 
 bool F11::init(OSDictionary *dictionary)
 {
-    if (!super::init(dictionary))
+    if (!super::init())
         return false;
     
     dev_controls_mutex = IOLockAlloc();

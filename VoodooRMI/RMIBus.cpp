@@ -20,7 +20,11 @@ bool RMIBus::init(OSDictionary *dictionary) {
     
     data->irq_mutex = IOLockAlloc();
     data->enabled_mutex = IOLockAlloc();
-    return super::init(dictionary);
+    
+    bool result = super::init(dictionary);
+    
+    config = OSDynamicCast(OSDictionary, getProperty("Configuration"));
+    return result;
 }
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
@@ -240,7 +244,7 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             return 0;
     }
     
-    if (!function || !function->init()) {
+    if (!function || !function->init(config)) {
 
         IOLogError("Could not initialize function: %02X\n", fn->fd.function_number);
         OSSafeReleaseNULL(function);

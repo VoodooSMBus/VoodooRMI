@@ -18,6 +18,19 @@ OSDefineMetaClassAndStructors(F03, RMIFunction)
  * So this currently just errors through everything and still works
  */
 
+bool F03::init(OSDictionary *dictionary)
+{
+    if (dictionary) {
+        OSNumber *mult = OSDynamicCast(OSNumber, dictionary->getObject("Trackstick-Multiplier"));
+        if (!mult)
+            trackstickMult = 1;
+        else
+            trackstickMult = mult->unsigned8BitValue();
+    }
+    
+    return super::init();
+}
+
 bool F03::attach(IOService *provider)
 {
     u8 bytes_per_device, query1;
@@ -162,7 +175,9 @@ void F03::handlePacketGated(u8 packet)
         buttonDevice->updateRelativePointer(dx * trackstickMult, dy * trackstickMult, buttons);
     }
     
-    rmiBus->notify(kHandleRMITrackpoint);
+    if (dx || dy)
+        rmiBus->notify(kHandleRMITrackpoint);
+    
     IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
 }
 

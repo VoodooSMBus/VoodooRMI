@@ -22,6 +22,7 @@ bool RMISMBus::init(OSDictionary *dictionary)
 
 RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 {
+    int retval = 0, attempts = 0;
     IOService *service = super::probe(provider, score);
     if(!service) {
         IOLog("Failed probe");
@@ -37,7 +38,11 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
     device_nub->wakeupController();
     device_nub->setSlaveDeviceFlags(I2C_CLIENT_HOST_NOTIFY);
     
-    int retval = rmi_smb_get_version();
+    do {
+        retval = rmi_smb_get_version();
+        IOSleep(500);
+    } while (retval < 0 && attempts++ < 5);
+    
     if (retval < 0) {
         IOLog("Error: Failed to read SMBus version. Code: 0x%02X", retval);
         return NULL;

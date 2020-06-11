@@ -11,8 +11,9 @@
 #define F03_hpp
 
 #include "../RMIBus.hpp"
-#include "../PS2.hpp"
-#include "../ButtonDevice.hpp"
+#include "../Utility/PS2.hpp"
+#include "../Utility/ButtonDevice.hpp"
+#include "../Utility/Configuration.hpp"
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 
@@ -92,6 +93,8 @@ private:
     IOCommandGate *command_gate;
     
     int trackstickMult;
+    int trackstickScrollXMult;
+    int trackstickScrollYMult;
     
     // ps2
     unsigned int flags, cmdcnt;

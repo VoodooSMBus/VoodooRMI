@@ -12,6 +12,8 @@
 OSDefineMetaClassAndStructors(F30, RMIFunction)
 #define super IOService
 
+// Make sure Configuration values don't show up in IOReg
+// Doesn't change any sort of functionality otherwise
 bool F30::init(OSDictionary *dict)
 {
     return super::init();

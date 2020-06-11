@@ -20,14 +20,10 @@ OSDefineMetaClassAndStructors(F03, RMIFunction)
 
 bool F03::init(OSDictionary *dictionary)
 {
-    if (dictionary) {
-        OSNumber *mult = OSDynamicCast(OSNumber, dictionary->getObject("Trackstick-Multiplier"));
-        if (!mult)
-            trackstickMult = 1;
-        else
-            trackstickMult = mult->unsigned8BitValue();
-    }
-    
+    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", 1);
+    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", 1);
+    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", 1);
+
     return super::init();
 }
 
@@ -170,7 +166,9 @@ void F03::handlePacketGated(u8 packet)
     index = 0;
     
     if(buttons & 0x04 && (dx || dy)) {
-        buttonDevice->updateScrollwheel(-dy, -dx, 0);
+        buttonDevice->updateScrollwheel(-dy * trackstickScrollYMult,
+                                        -dx * trackstickScrollXMult,
+                                        0);
     } else {
         buttonDevice->updateRelativePointer(dx * trackstickMult, dy * trackstickMult, buttons);
     }

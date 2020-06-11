@@ -11,7 +11,7 @@
 #define F30_hpp
 
 #include <RMIBus.hpp>
-#include "../ButtonDevice.hpp"
+#include "../Utility/ButtonDevice.hpp"
 
 #define RMI_F30_QUERY_SIZE            2
 

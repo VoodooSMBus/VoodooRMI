@@ -13,6 +13,7 @@ OSDefineMetaClassAndStructors(F11, RMIFunction)
 #define super IOService
 
 #define REZERO_WAIT_MS 100
+#define MilliToNano 1000000
 
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? (-x) : (x))
@@ -23,8 +24,9 @@ bool F11::init(OSDictionary *dictionary)
         return false;
     
     dev_controls_mutex = IOLockAlloc();
-    // Hard coded, config value later
-    disableWhileTypingTimeout = 500 * 1000000;
+    disableWhileTypingTimeout =
+        Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", 500) * MilliToNano;
+    
     return dev_controls_mutex;
 }
 

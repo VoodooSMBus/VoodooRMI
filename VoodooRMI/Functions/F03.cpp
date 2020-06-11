@@ -20,11 +20,13 @@ OSDefineMetaClassAndStructors(F03, RMIFunction)
 
 bool F03::init(OSDictionary *dictionary)
 {
+    if (!super::init())
+        return false;
     trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", 1);
     trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", 1);
     trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", 1);
 
-    return super::init();
+    return true;
 }
 
 bool F03::attach(IOService *provider)

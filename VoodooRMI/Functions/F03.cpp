@@ -22,9 +22,9 @@ bool F03::init(OSDictionary *dictionary)
 {
     if (!super::init())
         return false;
-    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", 1);
-    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", 1);
-    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", 1);
+    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", 5);
+    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", 5);
+    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", 5);
 
     return true;
 }
@@ -167,12 +167,15 @@ void F03::handlePacketGated(u8 packet)
     SInt32 dy = -(((databuf[0] & 0x20) ? 0xffffff00 : 0) | databuf[2]);
     index = 0;
     
+    // Must multiply first then divide so we don't multiply by zero
     if(buttons & 0x04 && (dx || dy)) {
-        buttonDevice->updateScrollwheel(-dy * trackstickScrollYMult,
-                                        -dx * trackstickScrollXMult,
+        buttonDevice->updateScrollwheel((-dy * trackstickScrollYMult) / DEFAULT_MULT,
+                                        (-dx * trackstickScrollXMult) / DEFAULT_MULT,
                                         0);
     } else {
-        buttonDevice->updateRelativePointer(dx * trackstickMult, dy * trackstickMult, buttons);
+        buttonDevice->updateRelativePointer((dx * trackstickMult) / DEFAULT_MULT,
+                                            (dy * trackstickMult) / DEFAULT_MULT,
+                                            buttons);
     }
     
     if (dx || dy)

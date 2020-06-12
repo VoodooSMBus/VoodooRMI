@@ -27,11 +27,11 @@
 				<key>DisableWhileTypingTimeout</key>
 				<integer>500</integer>
 				<key>TrackstickMultiplier</key>
-				<integer>1</integer>
+				<integer>5</integer>
 				<key>TrackstickScrollMultiplierX</key>
-				<integer>1</integer>
+				<integer>5</integer>
 				<key>TrackstickScrollMultiplierY</key>
-				<integer>1</integer>
+				<integer>5</integer>
 			</dict>
 			<key>IOProbeScore</key>
 			<integer>2910</integer>

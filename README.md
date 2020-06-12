@@ -44,6 +44,8 @@ Linux:
 2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, the VoodooInput from within the PS2 kext.
 3) For OpenCore users, make sure to add VoodooInput as well to your Config.plist, it's under `VoodooRMI.kext/Contents/PlugIns/VoodooInput.kext`
 
+Note: If you change any configuration values in the Info.plist, they must be integers/whole numbers
+
 ## Building
 1) Build VoodooSMBus
 2) Drop VoodooSMBus kext into the root of the RMI project

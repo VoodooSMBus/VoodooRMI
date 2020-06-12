@@ -48,6 +48,11 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
+    if (retval != 2 && retval != 3) {
+        IOLog("Unrecognized SMB Version %d\n", retval);
+        return NULL;
+    }
+    
     setProperty("SMBus Version", retval, 32);
     IOLog("SMBus version %u\n", retval);
     

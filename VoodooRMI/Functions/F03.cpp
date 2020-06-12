@@ -22,9 +22,9 @@ bool F03::init(OSDictionary *dictionary)
 {
     if (!super::init())
         return false;
-    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", 5);
-    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", 5);
-    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", 5);
+    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", DEFAULT_MULT);
+    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", DEFAULT_MULT);
+    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", DEFAULT_MULT);
 
     return true;
 }

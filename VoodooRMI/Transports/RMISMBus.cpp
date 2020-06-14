@@ -80,7 +80,6 @@ int RMISMBus::rmi_smb_get_version()
     /* Check if for SMBus new version device by reading version byte. */
     retval = device_nub->readByteData(SMB_PROTOCOL_VERSION_ADDRESS);
     if (retval < 0) {
-        IOLog("Failed to get SMBus version number!\n");
         return retval;
     }
     

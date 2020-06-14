@@ -277,7 +277,7 @@ int F30::rmi_f30_report_button(unsigned int button)
             rmiBus->notify(kHandleRMIClickpadSet, key_down);
             return 0;
         } else {
-            IOLog("Key %u is %s", key_code, key_down ? "Down": "Up");
+            IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
             // Key code is one above the shift value as key code 0 is "Reserved" or "not present"
             return ((int) key_down) << (key_code - 1);
         }

@@ -169,7 +169,9 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
     } else if (!awake) {
         IOSleep(1000);
         IOLogDebug("Wakeup");
-        transport->reset();
+        IOReturn ret = transport->reset();
+        if (ret < 0)
+            IOLogError("Could not get SMBus Version on wakeup\n");
         // c++ lambdas are wack
         // Sensor doesn't wake up if we don't scan property tables
         rmi_scan_pdt(this, NULL, [](RMIBus *rmi_dev,

@@ -159,7 +159,7 @@ bool F11::getReport()
     
     if (error < 0)
     {
-        IOLogError("Could not read F11 attention data: %02X", error);
+        IOLogError("Could not read F11 attention data: %d", error);
         return false;
     }
     

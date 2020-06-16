@@ -394,7 +394,7 @@ int F01::rmi_f01_suspend()
     old_nosleep = device_control->ctrl0 & RMI_F01_CTRL0_NOSLEEP_BIT;
     device_control->ctrl0 &= ~RMI_F01_CTRL0_NOSLEEP_BIT;
     
-    device_control->ctrl0 *= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
+    device_control->ctrl0 &= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
     if ((false) /* device may wakeup = false*/)
         device_control->ctrl0 |= RMI_SLEEP_MODE_RESERVED1;
     else

@@ -163,9 +163,9 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
     
     if (whichState == 0 && awake) {
         IOLogDebug("Sleep");
-        IOReturn error = messageClients(kHandleRMISuspend);
+        messageClients(kHandleRMISuspend);
         rmi_driver_clear_irq_bits(this);
-        if (!error) awake = false;
+        awake = false;
     } else if (!awake) {
         IOSleep(1000);
         IOLogDebug("Wakeup");
@@ -181,8 +181,8 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
             return 0;
         });
         rmi_driver_set_irq_bits(this);
-        IOReturn error = messageClients(kHandleRMIResume);
-        if (!error) awake = true;
+        messageClients(kHandleRMIResume);
+        awake = true;
     }
 
     return kIOPMAckImplied;

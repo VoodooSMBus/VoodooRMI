@@ -26,6 +26,9 @@ bool F11::init(OSDictionary *dictionary)
     dev_controls_mutex = IOLockAlloc();
     disableWhileTypingTimeout =
         Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", 500) * MilliToNano;
+    forceTouchMinPressure =
+        Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
+    forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
     
     return dev_controls_mutex;
 }
@@ -218,7 +221,7 @@ bool F11::getReport()
                 
             transducer.timestamp = timestamp;
             
-            if (clickpadState && z > 90)
+            if (clickpadState && forceTouchEmulation && z > forceTouchMinPressure)
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;

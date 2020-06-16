@@ -24,6 +24,10 @@
 		<dict>
 			<key>Configuration</key>
 			<dict>
+				<key>ForceTouchEmulation</key>
+				<true/>
+				<key>ForceTouchMinPressure</key>
+				<integer>80</integer>
 				<key>DisableWhileTypingTimeout</key>
 				<integer>500</integer>
 				<key>TrackstickMultiplier</key>

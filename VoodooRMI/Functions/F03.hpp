@@ -94,9 +94,10 @@ private:
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
     
-    int trackstickMult;
-    int trackstickScrollXMult;
-    int trackstickScrollYMult;
+    unsigned int trackstickMult;
+    unsigned int trackstickScrollXMult;
+    unsigned int trackstickScrollYMult;
+    unsigned int trackstickDeadzone;
     
     // ps2
     unsigned int flags, cmdcnt;
@@ -122,6 +123,8 @@ private:
     int ps2DoSendbyteGated(u8 byte, uint64_t timeout);
     int ps2CommandGated(u8 *param, unsigned int *command);
     int ps2Command(u8 *param, unsigned int command);
+    // TODO: Move to math file as long as with abs in rmi_driver.h
+    int signum (unsigned int value);
     
     void handlePacketGated(u8 packet);
 };

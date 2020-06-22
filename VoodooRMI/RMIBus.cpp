@@ -142,6 +142,8 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
 
 void RMIBus::notify(UInt32 type, unsigned int argument)
 {
+    // TODO: Maybe make notify not check the type of message, and just send to all?
+    // Would save having to write cases for every message that goes through here.
     OSIterator* iter = OSCollectionIterator::withCollection(functions);
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         switch (type) {
@@ -151,6 +153,12 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
                     IOLogDebug("Sending event %u to F11: %u", type, argument);
                     messageClient(type, func, reinterpret_cast<void *>(argument));
                     return;
+                }
+                break;
+            case kHandleRMITrackpointButton:
+                if (OSDynamicCast(F03, func)) {
+                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
+                    messageClient(type, func, reinterpret_cast<void *>(argument));
                 }
                 break;
         }

@@ -25,7 +25,8 @@ bool F03::init(OSDictionary *dictionary)
     trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", DEFAULT_MULT);
     trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", DEFAULT_MULT);
     trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", DEFAULT_MULT);
-
+    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 2);
+    
     return true;
 }
 
@@ -162,10 +163,15 @@ int F03::rmi_f03_pt_write(unsigned char val)
 
 void F03::handlePacketGated(u8 packet)
 {
-    UInt32 buttons = databuf[0] & 0x7;
+    UInt32 buttons = (databuf[0] & 0x7) | overwrite_buttons;
     SInt32 dx = ((databuf[0] & 0x10) ? 0xffffff00 : 0) | databuf[1];
     SInt32 dy = -(((databuf[0] & 0x20) ? 0xffffff00 : 0) | databuf[2]);
     index = 0;
+    
+    // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
+    // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
+    dx = abs(dx) > trackstickDeadzone ? (abs(dx) - trackstickDeadzone) * signum(dx) : 0;
+    dx = abs(dy) > trackstickDeadzone ? (abs(dy) - trackstickDeadzone) * signum(dy) : 0;
     
     // Must multiply first then divide so we don't multiply by zero
     if(buttons & 0x04 && (dx || dy)) {
@@ -256,10 +262,18 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             int error = ps2Command(param, MAKE_PS2_CMD( 0, 2, TP_READ_ID));
             error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
             if (param1[0] != 0xAA || param1[1] != 0x00)
-                IOLogError("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
+                IOLogDebug("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
 
             error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
                 
+            break;
+        }
+        case kHandleRMITrackpointButton: {
+            // We do not lose any info casting to unsigned int.
+            // This message originates in RMIBus::Notify, which sends an unsigned int
+            overwrite_buttons = (unsigned int)((intptr_t) argument);
+            buttonDevice->updateButtons(overwrite_buttons);
+            
             break;
         }
     }
@@ -391,7 +405,8 @@ int F03::ps2Command(u8 *param, unsigned int command)
                                        param, &command);
 }
 
-bool F03::publishButtons() {
+bool F03::publishButtons()
+{
     buttonDevice = OSTypeAlloc(ButtonDevice);
     if (!buttonDevice) {
         IOLogError("No memory to allocate TrackpointDevice instance\n");
@@ -416,9 +431,17 @@ trackpoint_exit:
     return false;
 }
 
-void F03::unpublishButtons() {
+void F03::unpublishButtons()
+{
     if (buttonDevice) {
         buttonDevice->stop(this);
         OSSafeReleaseNULL(buttonDevice);
     }
+}
+
+int F03::signum(unsigned int value)
+{
+    if (value > 0) return 1;
+    if (value < 0) return -1;
+    return 0;
 }

@@ -15,9 +15,6 @@ OSDefineMetaClassAndStructors(F11, RMIFunction)
 #define REZERO_WAIT_MS 100
 #define MilliToNano 1000000
 
-// macOS kernel/math has absolute value in it. It's only for doubles though
-#define abs(x) ((x < 0) ? (-x) : (x))
-
 bool F11::init(OSDictionary *dictionary)
 {
     if (!super::init())

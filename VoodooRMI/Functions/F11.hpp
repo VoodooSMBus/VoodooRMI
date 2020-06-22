@@ -534,7 +534,7 @@ private:
     bool clickpadState {false};
     bool pressureLock {false};
     bool touchpadEnable {true};
-    bool forceTouchEmulation {true}:
+    bool forceTouchEmulation {true};
     u8 forceTouchMinPressure {80};
     
     uint64_t disableWhileTypingTimeout, lastKeyboardTS;

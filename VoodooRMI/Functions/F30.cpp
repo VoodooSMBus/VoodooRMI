@@ -74,8 +74,6 @@ void F30::free()
 
 IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
 {
-    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
-    
     switch (type) {
         case kHandleRMIAttention:
             int error = rmiBus->readBlock(fn_descriptor->data_base_addr,
@@ -88,14 +86,7 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
             if (!has_gpio)
                 return kIOReturnSuccess;
             
-            int btns = 0;
-            for (int i = 0; i < buttonArrLen; i++) {
-                if (gpioled_key_map[i] != KEY_RESERVED)
-                    btns |= rmi_f30_report_button(i);
-                
-                if (numButtons > 1)
-                    buttonDevice->updateButtons(btns);
-            }
+            rmi_f30_report_button();
             break;
     }
     
@@ -222,15 +213,20 @@ int F30::rmi_f30_map_gpios()
             continue;
         
         if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
+            IOLogDebug("F30: Found Trackstick button %d\n", button);
             gpioled_key_map[i] = trackstick_button++;
         } else {
-            IOLog("Found Button %d\n", button);
+            IOLogDebug("F30: Found Button %d\n", button);
             gpioled_key_map[i] = button++;
             numButtons++;
             clickpad_index = i;
         }
     }
     
+    // Trackstick buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
+    // Generally I've found it more common for them to come through PS2
+    hasTrackstickButtons = trackstick_button != BTN_LEFT;
+    setProperty("Trackstick Buttons through F30", OSBoolean::withBoolean(hasTrackstickButtons));
     setProperty("Clickpad", numButtons == 1 ? kOSBooleanTrue : kOSBooleanFalse);
     
     return 0;
@@ -261,27 +257,45 @@ int F30::rmi_f30_read_control_parameters()
     return 0;
 }
 
-int F30::rmi_f30_report_button(unsigned int button)
+void F30::rmi_f30_report_button()
 {
-    unsigned int reg_num = button >>3;
-    unsigned int bit_num = button & 0x07;
-    u16 key_code = gpioled_key_map[button];
-    bool key_down = !(data_regs[reg_num] & BIT(bit_num));
+    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
+    unsigned int mask, trackstickBtns = 0, btns = 0;
+    unsigned int reg_num, bit_num;
+    u16 key_code;
+    bool key_down;
     
-    if (button >= TRACKSTICK_RANGE_START &&
-        button <= TRACKSTICK_RANGE_END) {
-        if (key_down) IOLog("F30 Trackstick Button");
-        return 0;
-    } else {
-        if (numButtons == 1 && button == clickpad_index) {
+    for (int i = 0; i < buttonArrLen; i++) {
+        if (gpioled_key_map[i] == KEY_RESERVED)
+            continue;
+        
+        reg_num = i >> 3;
+        bit_num = i & 0x07;
+        key_code = gpioled_key_map[i];
+        key_down = !(data_regs[reg_num] & BIT(bit_num));
+        // Key code is one above the value we need to bitwise shift left, as key code 0 is "Reserved" or "not present"
+        mask = key_down << (key_code - 1);
+        
+        if (numButtons == 1 && i == clickpad_index) {
             rmiBus->notify(kHandleRMIClickpadSet, key_down);
-            return 0;
+            continue;
+        }
+        
+        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+        
+        if (i >= TRACKSTICK_RANGE_START &&
+            i <= TRACKSTICK_RANGE_END) {
+            trackstickBtns |= mask;
         } else {
-            IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
-            // Key code is one above the shift value as key code 0 is "Reserved" or "not present"
-            return ((int) key_down) << (key_code - 1);
+            btns |= mask;
         }
     }
+    
+    if (numButtons > 1)
+        buttonDevice->updateButtons(btns);
+    
+    if (hasTrackstickButtons)
+        rmiBus->notify(kHandleRMITrackpointButton, trackstickBtns);
 }
 
 bool F30::publishButtons() {

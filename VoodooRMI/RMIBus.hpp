@@ -46,7 +46,8 @@ enum {
     kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
     kHandleRMISuspend = iokit_vendor_specific_msg(2048),
     kHandleRMIResume = iokit_vendor_specific_msg(2049),
-    kHandleRMITrackpoint = iokit_vendor_specific_msg(2050)
+    kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
+    kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051)
 };
 
 class RMIBus : public IOService {

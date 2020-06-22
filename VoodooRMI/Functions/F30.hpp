@@ -97,9 +97,7 @@ private:
     
     struct input_dev *input;
     
-    // TODO: F03 for trackstick/trackstick buttons
-    // struct rmi_function *f03;
-    bool trackstick_buttons;
+    bool hasTrackstickButtons;
     
     int rmi_f30_initialize();
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
@@ -107,7 +105,7 @@ private:
     int rmi_f30_read_control_parameters();
     int rmi_f30_map_gpios();
     int rmi_f30_is_valid_button(int button);
-    int rmi_f30_report_button(unsigned int button);
+    void rmi_f30_report_button();
     
     bool publishButtons();
     void unpublishButtons();

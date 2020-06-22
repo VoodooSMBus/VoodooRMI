@@ -7,6 +7,7 @@
 //
 
 #include "ButtonDevice.hpp"
+#include "RMIBus.hpp"
 
 OSDefineMetaClassAndStructors(ButtonDevice, IOHIPointing);
 #define super IOHIPointing
@@ -44,11 +45,12 @@ void ButtonDevice::stop(IOService* provider) {
 void ButtonDevice::updateButtons(int buttons) {
     uint64_t now_abs;
     clock_get_uptime(&now_abs);
-    dispatchRelativePointerEvent(0, 0, buttons, now_abs);
+    //dispatchRelativePointerEvent(0, 0, buttons, now_abs);
 };
 
 void ButtonDevice::updateRelativePointer(int dx, int dy, int buttons) {
     uint64_t now_abs;
+    IOLogDebug("Update relative pointer x: %d, y: %d, buttons: %d", dx, dy, buttons);
     clock_get_uptime(&now_abs);
     dispatchRelativePointerEvent(dx, dy, buttons, now_abs);
 };

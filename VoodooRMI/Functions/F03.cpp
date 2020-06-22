@@ -170,18 +170,23 @@ void F03::handlePacketGated(u8 packet)
     
     // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
-    dx = abs(dx) > trackstickDeadzone ? (abs(dx) - trackstickDeadzone) * signum(dx) : 0;
-    dx = abs(dy) > trackstickDeadzone ? (abs(dy) - trackstickDeadzone) * signum(dy) : 0;
     
-    // Must multiply first then divide so we don't multiply by zero
-    if(buttons & 0x04 && (dx || dy)) {
-        buttonDevice->updateScrollwheel((-dy * trackstickScrollYMult) / DEFAULT_MULT,
-                                        (-dx * trackstickScrollXMult) / DEFAULT_MULT,
-                                        0);
-    } else {
-        buttonDevice->updateRelativePointer((dx * trackstickMult) / DEFAULT_MULT,
-                                            (dy * trackstickMult) / DEFAULT_MULT,
-                                            buttons);
+    if (abs(dx) < trackstickDeadzone && abs(dy) < trackstickDeadzone) {
+        dx = 0;
+        dy = 0;
+    }
+    
+    if (dx && dy) {
+        // Must multiply first then divide so we don't multiply by zero
+        if(buttons & 0x04) {
+            buttonDevice->updateScrollwheel(-dy / DEFAULT_MULT * trackstickScrollYMult,
+                                            -dx  / DEFAULT_MULT * trackstickScrollXMult,
+                                            0);
+        } else {
+            buttonDevice->updateRelativePointer(dx / DEFAULT_MULT * trackstickMult,
+                                                dy / DEFAULT_MULT * trackstickMult,
+                                                buttons);
+        }
     }
     
     if (dx || dy)

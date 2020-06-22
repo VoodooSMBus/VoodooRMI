@@ -171,10 +171,8 @@ void F03::handlePacketGated(u8 packet)
     // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
     
-    if (abs(dx) < trackstickDeadzone && abs(dy) < trackstickDeadzone) {
-        dx = 0;
-        dy = 0;
-    }
+    dx -= signum(dx) * min(abs(dx), trackstickDeadzone);
+    dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
     
     if (dx && dy) {
         // Must multiply first then divide so we don't multiply by zero

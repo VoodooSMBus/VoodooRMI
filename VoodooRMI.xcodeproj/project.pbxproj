@@ -35,6 +35,7 @@
 		A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		A4560F102480757F0009CBE0 /* F03.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0E2480757F0009CBE0 /* F03.cpp */; };
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
+		C6297DC524A0DB2500888BBF /* VoodooSMBus.kext in Resources */ = {isa = PBXBuildFile; fileRef = C6297DC424A0DB2400888BBF /* VoodooSMBus.kext */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +70,7 @@
 		A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMISMBus.cpp; sourceTree = "<group>"; };
 		A4560F0E2480757F0009CBE0 /* F03.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F03.cpp; sourceTree = "<group>"; };
 		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
+		C6297DC424A0DB2400888BBF /* VoodooSMBus.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = VoodooSMBus.kext; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +100,7 @@
 		A4560EBD247F29EC0009CBE0 = {
 			isa = PBXGroup;
 			children = (
+				C6297DC424A0DB2400888BBF /* VoodooSMBus.kext */,
 				A4560F02247F381B0009CBE0 /* Headers */,
 				A4560EC9247F29EC0009CBE0 /* VoodooRMI */,
 				A4560EC8247F29EC0009CBE0 /* Products */,
@@ -254,6 +257,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C6297DC524A0DB2500888BBF /* VoodooSMBus.kext in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

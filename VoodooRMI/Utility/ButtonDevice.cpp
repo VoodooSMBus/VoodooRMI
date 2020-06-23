@@ -7,6 +7,7 @@
 //
 
 #include "ButtonDevice.hpp"
+#include "RMIBus.hpp"
 
 OSDefineMetaClassAndStructors(ButtonDevice, IOHIPointing);
 #define super IOHIPointing

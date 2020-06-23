@@ -25,7 +25,7 @@ bool F03::init(OSDictionary *dictionary)
     trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", DEFAULT_MULT);
     trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", DEFAULT_MULT);
     trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", DEFAULT_MULT);
-    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 2);
+    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 1);
     
     return true;
 }
@@ -170,23 +170,25 @@ void F03::handlePacketGated(u8 packet)
     
     // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
-    dx = abs(dx) > trackstickDeadzone ? (abs(dx) - trackstickDeadzone) * signum(dx) : 0;
-    dx = abs(dy) > trackstickDeadzone ? (abs(dy) - trackstickDeadzone) * signum(dy) : 0;
     
-    // Must multiply first then divide so we don't multiply by zero
-    if(buttons & 0x04 && (dx || dy)) {
-        buttonDevice->updateScrollwheel((-dy * trackstickScrollYMult) / DEFAULT_MULT,
-                                        (-dx * trackstickScrollXMult) / DEFAULT_MULT,
-                                        0);
-    } else {
-        buttonDevice->updateRelativePointer((dx * trackstickMult) / DEFAULT_MULT,
-                                            (dy * trackstickMult) / DEFAULT_MULT,
-                                            buttons);
-    }
+    dx -= signum(dx) * min(abs(dx), trackstickDeadzone);
+    dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
     
-    if (dx || dy)
+    if (dx || dy) {
+        // Must multiply first then divide so we don't multiply by zero
+        if(buttons & 0x04) {
+            buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
+                                            (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
+                                            0);
+        } else {
+            buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
+                                                (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
+                                                buttons);
+        }
+
         rmiBus->notify(kHandleRMITrackpoint);
-    
+    }
+
     IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
 }
 

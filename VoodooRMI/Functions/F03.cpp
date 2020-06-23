@@ -185,11 +185,10 @@ void F03::handlePacketGated(u8 packet)
                                                 (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
                                                 buttons);
         }
-    }
-    
-    if (dx || dy)
+
         rmiBus->notify(kHandleRMITrackpoint);
-    
+    }
+        
     IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
 }
 

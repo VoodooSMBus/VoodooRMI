@@ -25,7 +25,7 @@ bool F03::init(OSDictionary *dictionary)
     trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", DEFAULT_MULT);
     trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", DEFAULT_MULT);
     trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", DEFAULT_MULT);
-    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 2);
+    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 1);
     
     return true;
 }
@@ -188,7 +188,7 @@ void F03::handlePacketGated(u8 packet)
 
         rmiBus->notify(kHandleRMITrackpoint);
     }
-        
+
     IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
 }
 

@@ -37,7 +37,7 @@
 				<key>TrackstickScrollMultiplierY</key>
 				<integer>5</integer>
 				<key>TrackstickDeadzone</key>
-				<integer>2</integer>
+				<integer>1</integer>
 			</dict>
 			<key>IOProbeScore</key>
 			<integer>2910</integer>

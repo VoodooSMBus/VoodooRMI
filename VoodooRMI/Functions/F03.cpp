@@ -174,7 +174,7 @@ void F03::handlePacketGated(u8 packet)
     dx -= signum(dx) * min(abs(dx), trackstickDeadzone);
     dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
     
-    if (dx && dy) {
+    if (dx || dy) {
         // Must multiply first then divide so we don't multiply by zero
         if(buttons & 0x04) {
             buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),

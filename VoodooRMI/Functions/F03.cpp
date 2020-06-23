@@ -177,12 +177,12 @@ void F03::handlePacketGated(u8 packet)
     if (dx && dy) {
         // Must multiply first then divide so we don't multiply by zero
         if(buttons & 0x04) {
-            buttonDevice->updateScrollwheel(-dy / DEFAULT_MULT * trackstickScrollYMult,
-                                            -dx  / DEFAULT_MULT * trackstickScrollXMult,
+            buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
+                                            (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
                                             0);
         } else {
-            buttonDevice->updateRelativePointer(dx / DEFAULT_MULT * trackstickMult,
-                                                dy / DEFAULT_MULT * trackstickMult,
+            buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
+                                                (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
                                                 buttons);
         }
     }

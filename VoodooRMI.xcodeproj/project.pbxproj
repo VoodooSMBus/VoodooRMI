@@ -21,10 +21,10 @@
 		A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDD247F2A660009CBE0 /* LinuxCompat.h */; };
 		A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
 		A4560EF9247F32760009CBE0 /* F01.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EF1247F32760009CBE0 /* F01.cpp */; };
-		A4560EFA247F32760009CBE0 /* F34.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EF2247F32760009CBE0 /* F34.hpp */; };
+		A4560EFA247F32760009CBE0 /* F12.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EF2247F32760009CBE0 /* F12.hpp */; };
 		A4560EFB247F32760009CBE0 /* F30.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EF3247F32760009CBE0 /* F30.hpp */; };
 		A4560EFC247F32760009CBE0 /* F11.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EF4247F32760009CBE0 /* F11.cpp */; };
-		A4560EFD247F32760009CBE0 /* F34.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EF5247F32760009CBE0 /* F34.cpp */; };
+		A4560EFD247F32760009CBE0 /* F12.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EF5247F32760009CBE0 /* F12.cpp */; };
 		A4560EFE247F32760009CBE0 /* F01.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EF6247F32760009CBE0 /* F01.hpp */; };
 		A4560EFF247F32760009CBE0 /* F11.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EF7247F32760009CBE0 /* F11.hpp */; };
 		A4560F00247F32760009CBE0 /* F30.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EF8247F32760009CBE0 /* F30.cpp */; };
@@ -56,10 +56,10 @@
 		A4560EDD247F2A660009CBE0 /* LinuxCompat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LinuxCompat.h; sourceTree = "<group>"; };
 		A4560EEB247F32600009CBE0 /* RMITransport.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMITransport.hpp; sourceTree = "<group>"; };
 		A4560EF1247F32760009CBE0 /* F01.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = F01.cpp; sourceTree = "<group>"; };
-		A4560EF2247F32760009CBE0 /* F34.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = F34.hpp; sourceTree = "<group>"; };
+		A4560EF2247F32760009CBE0 /* F12.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = F12.hpp; sourceTree = "<group>"; };
 		A4560EF3247F32760009CBE0 /* F30.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = F30.hpp; sourceTree = "<group>"; };
 		A4560EF4247F32760009CBE0 /* F11.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = F11.cpp; sourceTree = "<group>"; };
-		A4560EF5247F32760009CBE0 /* F34.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = F34.cpp; sourceTree = "<group>"; };
+		A4560EF5247F32760009CBE0 /* F12.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = F12.cpp; sourceTree = "<group>"; };
 		A4560EF6247F32760009CBE0 /* F01.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = F01.hpp; sourceTree = "<group>"; };
 		A4560EF7247F32760009CBE0 /* F11.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = F11.hpp; sourceTree = "<group>"; };
 		A4560EF8247F32760009CBE0 /* F30.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = F30.cpp; sourceTree = "<group>"; };
@@ -151,10 +151,10 @@
 				A4560F0E2480757F0009CBE0 /* F03.cpp */,
 				A4560EF7247F32760009CBE0 /* F11.hpp */,
 				A4560EF4247F32760009CBE0 /* F11.cpp */,
+				A4560EF2247F32760009CBE0 /* F12.hpp */,
+				A4560EF5247F32760009CBE0 /* F12.cpp */,
 				A4560EF3247F32760009CBE0 /* F30.hpp */,
 				A4560EF8247F32760009CBE0 /* F30.cpp */,
-				A4560EF2247F32760009CBE0 /* F34.hpp */,
-				A4560EF5247F32760009CBE0 /* F34.cpp */,
 			);
 			path = Functions;
 			sourceTree = "<group>";
@@ -183,7 +183,7 @@
 				A4435AF1248F8AD80083404C /* ButtonDevice.hpp in Headers */,
 				A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */,
 				A4560F112480757F0009CBE0 /* F03.hpp in Headers */,
-				A4560EFA247F32760009CBE0 /* F34.hpp in Headers */,
+				A4560EFA247F32760009CBE0 /* F12.hpp in Headers */,
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
 				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
@@ -304,7 +304,7 @@
 				A4560EFC247F32760009CBE0 /* F11.cpp in Sources */,
 				A4560F00247F32760009CBE0 /* F30.cpp in Sources */,
 				A4435AF0248F8AD80083404C /* ButtonDevice.cpp in Sources */,
-				A4560EFD247F32760009CBE0 /* F34.cpp in Sources */,
+				A4560EFD247F32760009CBE0 /* F12.cpp in Sources */,
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
 				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,

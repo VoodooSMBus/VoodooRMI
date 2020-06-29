@@ -123,7 +123,7 @@ private:
     int ps2CommandGated(u8 *param, unsigned int *command);
     int ps2Command(u8 *param, unsigned int command);
     // TODO: Move to math file as long as with abs in rmi_driver.h
-    int signum (unsigned int value);
+    int signum (int value);
     
     void handlePacketGated(u8 packet);
 };

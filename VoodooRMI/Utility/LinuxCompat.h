@@ -32,6 +32,7 @@ typedef s32 __s32;
 typedef s64 __s64;
 
 // https://github.com/torvalds/linux/blob/master/include/uapi/asm-generic/errno-base.h
+#define EIO     5
 #define ENOMEM  12
 #define ENODEV  19
 #define EINVAL  22
@@ -70,5 +71,78 @@ static inline u64 get_unaligned_le64(const void *p)
 // input.h
 #define KEY_RESERVED        0
 #define BTN_LEFT            1
+
+// bitmap.h
+#define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
+
+// lib/bitmap.c
+static void bitmap_set (unsigned long *bitmap, unsigned int start, unsigned int nbits)
+{
+    int bitmapIndex = start / BITS_PER_LONG;
+    start %= BITS_PER_LONG;
+    
+    while (nbits > 0) {
+        unsigned long mask = 1UL << start;
+        bitmap[bitmapIndex] |= mask;
+        
+        start++;
+        nbits--;
+        
+        if (start >= BITS_PER_LONG) {
+            start = 0;
+            bitmapIndex++;
+        }
+    }
+}
+
+static int find_first_bit (const unsigned long *bitmap, int bits)
+{
+    int lim = bits/BITS_PER_LONG, res = 0;
+    
+    for (int i = 0; i < lim; i++) {
+        res = ffsll(bitmap[i]);
+        if (res)
+            return (i * BITS_PER_LONG) + res - 1;
+    }
+    
+    return res;
+}
+
+static int find_next_bit (const unsigned long *bitmap, int bits, int offset)
+{
+    int lim = bits/BITS_PER_LONG, start = offset/BITS_PER_LONG;
+    
+    offset %= BITS_PER_LONG;
+    
+    for (int i = start; i < lim; i++) {
+        for (int bit = offset; bit < BITS_PER_LONG; bit++) {
+            if (offset > 0) offset--;
+            if (bitmap[i] & 1UL << bit)
+                return bit + (i * BITS_PER_LONG);
+        }
+    }
+    
+    return bits;
+}
+
+static int hweight_long(unsigned long value)
+{
+    int weight = 0;
+    for (int i = 0; i < BITS_PER_LONG; i++)
+        if (value & (1UL << i))
+            weight++;
+    
+    return weight;
+}
+
+static int bitmap_weight(const unsigned long *bitmap, int bits)
+{
+    int k, w = 0, lim = bits/BITS_PER_LONG;
+    
+    for (k = 0; k < lim; k++)
+        w += hweight_long(bitmap[k]);
+    
+    return w;
+}
 
 #endif /* linux_compat_h */

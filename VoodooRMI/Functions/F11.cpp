@@ -89,8 +89,8 @@ void F11::free()
 {
     clearDesc();
     IOLockFree(dev_controls_mutex);
-//    if (sensor.data_pkt)
-//        IOFree(sensor.data_pkt, sizeof(sensor.pkt_size));
+    if (sensor.data_pkt)
+        IOFree(sensor.data_pkt, sizeof(sensor.pkt_size));
     
     super::free();
 }

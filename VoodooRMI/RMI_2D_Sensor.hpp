@@ -60,8 +60,8 @@ struct rmi_2d_sensor {
     int attn_size;
     bool topbuttonpad;
     RMIFunction *fn;
-    u8 report_abs;
-    u8 report_rel;
+    u8 report_abs {0};
+    u8 report_rel {0};
     u8 x_mm;
     u8 y_mm;
 };

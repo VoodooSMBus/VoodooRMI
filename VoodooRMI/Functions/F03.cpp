@@ -441,7 +441,7 @@ void F03::unpublishButtons()
     }
 }
 
-int F03::signum(unsigned int value)
+int F03::signum(int value)
 {
     if (value > 0) return 1;
     if (value < 0) return -1;

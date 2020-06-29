@@ -76,7 +76,7 @@ static inline u64 get_unaligned_le64(const void *p)
 #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
 
 // lib/bitmap.c
-static void bitmap_set (unsigned long *bitmap, unsigned int start, unsigned int nbits)
+static inline void bitmap_set (unsigned long *bitmap, unsigned int start, unsigned int nbits)
 {
     int bitmapIndex = start / BITS_PER_LONG;
     start %= BITS_PER_LONG;
@@ -95,7 +95,7 @@ static void bitmap_set (unsigned long *bitmap, unsigned int start, unsigned int 
     }
 }
 
-static int find_first_bit (const unsigned long *bitmap, int bits)
+static inline int find_first_bit (const unsigned long *bitmap, int bits)
 {
     int lim = bits/BITS_PER_LONG, res = 0;
     
@@ -108,7 +108,7 @@ static int find_first_bit (const unsigned long *bitmap, int bits)
     return res;
 }
 
-static int find_next_bit (const unsigned long *bitmap, int bits, int offset)
+static inline int find_next_bit (const unsigned long *bitmap, int bits, int offset)
 {
     int lim = bits/BITS_PER_LONG, start = offset/BITS_PER_LONG;
     
@@ -135,7 +135,7 @@ static int hweight_long(unsigned long value)
     return weight;
 }
 
-static int bitmap_weight(const unsigned long *bitmap, int bits)
+static inline int bitmap_weight(const unsigned long *bitmap, int bits)
 {
     int k, w = 0, lim = bits/BITS_PER_LONG;
     

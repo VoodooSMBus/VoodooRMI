@@ -13,7 +13,6 @@ OSDefineMetaClassAndStructors(F11, RMIFunction)
 #define super IOService
 
 #define REZERO_WAIT_MS 100
-#define MilliToNano 1000000
 
 bool F11::init(OSDictionary *dictionary)
 {
@@ -21,11 +20,13 @@ bool F11::init(OSDictionary *dictionary)
         return false;
     
     dev_controls_mutex = IOLockAlloc();
-    disableWhileTypingTimeout =
-        Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", 500) * MilliToNano;
-    forceTouchMinPressure =
-        Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
-    forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
+    
+    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
+    if (!sensor)
+        return false;
+    
+    if (!sensor->init(dictionary))
+        return false;
     
     return dev_controls_mutex;
 }
@@ -56,32 +57,27 @@ bool F11::start(IOService *provider)
     
     int rc;
     
-    rc = f11_write_control_regs(&sens_query,
-                                &dev_controls, fn_descriptor->query_base_addr);
+    rc = f11_write_control_regs(&sens_query, &dev_controls,
+                                fn_descriptor->query_base_addr);
     
     if (rc < 0)
         return !rc;
     
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, sensor.max_x, 16);
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, sensor.max_y, 16);
-    // Need to be in 0.01mm units
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, sens_query.x_sensor_size_mm * 100, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, sens_query.y_sensor_size_mm * 100, 16);
-    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
-    
-    setProperty("VoodooInputSupported", kOSBooleanTrue);
-    // VoodooPS2 keyboard notifs
-    setProperty("RM,deliverNotifications", kOSBooleanTrue);
-    
-    memset(freeFingerType, true, kMT2FingerTypeCount);
-    freeFingerType[kMT2FingerTypeUndefined] = false;
-    
     registerService();
+    
+    if(!sensor->attach(this))
+        return false;
+    
+    if(!sensor->start(this))
+        return false;
+    
     return true;
 }
 
 void F11::stop(IOService *provider)
 {
+    sensor->detach(this);
+    sensor->stop(this);
     super::stop(provider);
 }
 
@@ -89,28 +85,8 @@ void F11::free()
 {
     clearDesc();
     IOLockFree(dev_controls_mutex);
-    if (sensor.data_pkt)
-        IOFree(sensor.data_pkt, sizeof(sensor.pkt_size));
-    
+    OSSafeReleaseNULL(sensor);
     super::free();
-}
-
-bool F11::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
-{
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
-        voodooInputInstance = forClient;
-        voodooInputInstance->retain();
-        
-        return true;
-    }
-    
-    return super::handleOpen(forClient, options, arg);
-}
-
-void F11::handleClose(IOService *forClient, IOOptionBits options)
-{
-    OSSafeReleaseNULL(voodooInputInstance);
-    super::handleClose(forClient, options);
 }
 
 IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
@@ -121,27 +97,8 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
             getReport();
             break;
         case kHandleRMIClickpadSet:
-            clickpadState = !!(argument);
-            break;
         case kHandleRMITrackpoint:
-            // Re-use keyboard var as it's the same thin
-            uint64_t timestamp;
-            clock_get_uptime(&timestamp);
-            absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
-            break;
-        
-        // VoodooPS2 Messages
-        case kKeyboardKeyPressTime:
-            lastKeyboardTS = *((uint64_t*) argument);
-            break;
-        case kKeyboardGetTouchStatus: {
-            bool *result = (bool *) argument;
-            *result = touchpadEnable;
-            break;
-        }
-        case kKeyboardSetTouchStatus:
-            touchpadEnable = *((bool *) argument);
-            break;
+            return messageClient(type, sensor, argument);
     }
     
     return kIOReturnSuccess;
@@ -149,117 +106,55 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
 
 bool F11::getReport()
 {
-    int error, fingers, abs_size, realFingerCount = 0;
+    int error, fingers, abs_size;
     u8 finger_state;
     AbsoluteTime timestamp;
     uint64_t timestampNS;
     
-    error = rmiBus->readBlock(fn_descriptor->data_base_addr,
-                              sensor.data_pkt, sensor.pkt_size);
+    clock_get_uptime(&timestamp);
+    absolutetime_to_nanoseconds(timestamp, &timestampNS);
     
-    if (error < 0)
-    {
+    if (sensor->shouldDiscardReport(timestamp))
+        return true;
+    
+    error = rmiBus->readBlock(fn_descriptor->data_base_addr,
+                              sensor->data_pkt, sensor->pkt_size);
+    
+    if (error < 0) {
         IOLogError("Could not read F11 attention data: %d", error);
         return false;
     }
     
-    clock_get_uptime(&timestamp);
-    absolutetime_to_nanoseconds(timestamp, &timestampNS);
-    
-    if (!touchpadEnable || timestampNS - lastKeyboardTS < disableWhileTypingTimeout)
-        return 0;
-    
-    abs_size = sensor.nbr_fingers & RMI_F11_ABS_BYTES;
-    if (abs_size > sensor.pkt_size)
-        fingers = sensor.pkt_size / RMI_F11_ABS_BYTES;
-    else fingers = sensor.nbr_fingers;
-    
-    int transducer_count = 0;
     IOLogDebug("F11 Packet");
+    
+    abs_size = sensor->nbr_fingers & RMI_F11_ABS_BYTES;
+    
+    if (abs_size > sensor->pkt_size)
+        fingers = sensor->pkt_size / RMI_F11_ABS_BYTES;
+    else fingers = sensor->nbr_fingers;
+    
     for (int i = 0; i < fingers; i++) {
         finger_state = rmi_f11_parse_finger_state(i);
+        u8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
+        
         if (finger_state == F11_RESERVED) {
-            IOLogError("Invalid finger state[%d]: 0x%02x", i,
-                       finger_state);
+            IOLogError("Invalid finger state[%d]: 0x%02x",
+                       i, finger_state);
             continue;
         }
         
-        auto& transducer = inputEvent.transducers[transducer_count++];
-        transducer.type = FINGER;
-        transducer.isValid = finger_state == F11_PRESENT;
-        transducer.supportsPressure = true;
-        
-        if (finger_state == F11_PRESENT) {
-            realFingerCount++;
-            u8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
-            u16 pos_x, pos_y;
-            u8 wx, wy, z;
-            
-            pos_x = (pos_data[0] << 4) | (pos_data[2] & 0x0F);
-            pos_y = (pos_data[1] << 4) | (pos_data[2] >> 4);
-            z = pos_data[4];
-            wx = pos_data[3] & 0x0f;
-            wy = pos_data[3] >> 4;
-            
-            transducer.previousCoordinates = transducer.currentCoordinates;
-            
-            // Rudimentry palm detection
-            transducer.isValid = z < 120 && abs(wx - wy) < 3;
-            
-            transducer.currentCoordinates.width = z / 1.5;
-            
-            if (!pressureLock) {
-                transducer.currentCoordinates.x = pos_x;
-                transducer.currentCoordinates.y = sensor.max_y - pos_y;
-            } else {
-                // Lock position for force touch
-                transducer.currentCoordinates = transducer.previousCoordinates;
-            }
-                
-            transducer.timestamp = timestamp;
-            
-            if (clickpadState && forceTouchEmulation && z > forceTouchMinPressure)
-                pressureLock = true;
-            
-            transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
-            transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
-            
-            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
-                       i, pos_x, pos_y, z, wx, wy, transducer.fingerType,
-                       transducer.currentCoordinates.pressure,
-                       transducer.isPhysicalButtonDown);
-        }
-        
-        transducer.isTransducerActive = 1;
-        transducer.secondaryId = i;
+        report.objs[i].x = (pos_data[0] << 4) | (pos_data[2] & 0x0F);
+        report.objs[i].y = (pos_data[1] << 4) | (pos_data[2] >> 4);
+        report.objs[i].z = pos_data[4];
+        report.objs[i].wx = pos_data[3] & 0x0f;
+        report.objs[i].wy = pos_data[3] >> 4;
+        report.objs[i].type = finger_state == F11_PRESENT ? RMI_2D_OBJECT_FINGER : RMI_2D_OBJECT_NONE;
     }
     
-    if (realFingerCount == 4 && freeFingerType[kMT2FingerTypeThumb]) {
-        setThumbFingerType(fingers);
-    }
+    report.timestamp = timestamp;
+    report.fingers = fingers;
     
-    // Sencond loop to get type
-    for (int i = 0; i < fingers; i++) {
-        auto& trans = inputEvent.transducers[i];
-        if (trans.isValid) {
-            if (trans.fingerType == kMT2FingerTypeUndefined)
-                trans.fingerType = getFingerType(&trans);
-        } else {
-            if (trans.fingerType != kMT2FingerTypeUndefined)
-                freeFingerType[trans.fingerType] = true;
-            trans.fingerType = kMT2FingerTypeUndefined;
-        }
-    }
-    
-    inputEvent.contact_count = transducer_count;
-    inputEvent.timestamp = timestamp;
-    
-    if (!realFingerCount) {
-        pressureLock = false;
-    }
-    
-    messageClient(kIOMessageVoodooInputMessage, voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
-    
+    messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
     
     return true;
 }
@@ -299,49 +194,49 @@ int F11::f11_2d_construct_data()
     f11_2d_data *data = &data_2d;
     int i;
     
-    sensor.nbr_fingers = (query->nr_fingers == 5 ? 10 :
+    sensor->nbr_fingers = (query->nr_fingers == 5 ? 10 :
                            query->nr_fingers + 1);
     
-    sensor.pkt_size = DIV_ROUND_UP(sensor.nbr_fingers, 4);
+    sensor->pkt_size = DIV_ROUND_UP(sensor->nbr_fingers, 4);
     
     if (query->has_abs) {
-        sensor.pkt_size += (sensor.nbr_fingers * 5);
-        sensor.attn_size = sensor.pkt_size;
+        sensor->pkt_size += (sensor->nbr_fingers * 5);
+        sensor->attn_size = sensor->pkt_size;
     }
     
     if (query->has_rel)
-        sensor.pkt_size +=  (sensor.nbr_fingers * 2);
+        sensor->pkt_size +=  (sensor->nbr_fingers * 2);
     
     /* Check if F11_2D_Query7 is non-zero */
     if (query->query7_nonzero)
-        sensor.pkt_size += sizeof(u8);
+        sensor->pkt_size += sizeof(u8);
     
     /* Check if F11_2D_Query7 or F11_2D_Query8 is non-zero */
     if (query->query7_nonzero || query->query8_nonzero)
-        sensor.pkt_size += sizeof(u8);
+        sensor->pkt_size += sizeof(u8);
     
     if (query->has_pinch || query->has_flick || query->has_rotate) {
-        sensor.pkt_size += 3;
+        sensor->pkt_size += 3;
         if (!query->has_flick)
-            sensor.pkt_size--;
+            sensor->pkt_size--;
         if (!query->has_rotate)
-            sensor.pkt_size--;
+            sensor->pkt_size--;
     }
     
     if (query->has_touch_shapes)
-        sensor.pkt_size +=
+        sensor->pkt_size +=
             DIV_ROUND_UP(query->nr_touch_shapes + 1, 8);
     
-    sensor.data_pkt = reinterpret_cast<u8*>(IOMalloc(sensor.pkt_size));
+    sensor->data_pkt = reinterpret_cast<u8*>(IOMalloc(sensor->pkt_size));
     
-    if (!sensor.data_pkt)
+    if (!sensor->data_pkt)
         return -ENOMEM;
     
-    data->f_state = sensor.data_pkt;
-    i = DIV_ROUND_UP(sensor.nbr_fingers, 4);
+    data->f_state = sensor->data_pkt;
+    i = DIV_ROUND_UP(sensor->nbr_fingers, 4);
     
     if (query->has_abs) {
-        data->abs_pos = &sensor.data_pkt[i];
+        data->abs_pos = &sensor->data_pkt[i];
     }
     
     return 0;
@@ -762,8 +657,8 @@ int F11::rmi_f11_initialize()
     query_offset += rc;
     
     if (sens_query.has_physical_props) {
-        sensor.x_mm = sens_query.x_sensor_size_mm;
-        sensor.y_mm = sens_query.y_sensor_size_mm;
+        sensor->x_mm = sens_query.x_sensor_size_mm;
+        sensor->y_mm = sens_query.y_sensor_size_mm;
     } else {
         IOLogError("No size data from Device.\n");
         return -ENODEV;
@@ -788,8 +683,8 @@ int F11::rmi_f11_initialize()
         return rc;
     }
         
-    sensor.max_x = max_x_pos;
-    sensor.max_y = max_y_pos;
+    sensor->max_x = max_x_pos;
+    sensor->max_y = max_y_pos;
     
     rc = f11_2d_construct_data();
     if (rc < 0) {
@@ -798,7 +693,7 @@ int F11::rmi_f11_initialize()
     }
     
     if (has_acm)
-        sensor.attn_size += sensor.nbr_fingers * 2;
+        sensor->attn_size += sensor->nbr_fingers * 2;
     
     rc = f11_read_control_regs(&dev_controls,
                                control_base_addr);
@@ -823,41 +718,4 @@ int F11::rmi_f11_initialize()
         IOLogError("F11: Failed to write control registers\n");
     
     return 0;
-}
-
-void F11::setThumbFingerType(int fingers)
-{
-    int lowestFingerIndex = -1;
-    UInt32 minY = 0;
-    for (int i = 0; i < fingers; i++) {
-        auto &trans = inputEvent.transducers[i];
-        
-        if (trans.isValid && trans.currentCoordinates.y > minY) {
-            minY = trans.currentCoordinates.y;
-            lowestFingerIndex = i;
-        }
-    }
-    
-    if (lowestFingerIndex == -1)
-        IOLogError("LowestFingerIndex = -1 When there are 4 fingers");
-    else {
-        auto &trans = inputEvent.transducers[lowestFingerIndex];
-        if (trans.fingerType != kMT2FingerTypeUndefined)
-            freeFingerType[trans.fingerType] = true;
-        
-        trans.fingerType = kMT2FingerTypeThumb;
-        freeFingerType[kMT2FingerTypeThumb] = false;
-    }
-}
-
-MT2FingerType F11::getFingerType(VoodooInputTransducer *transducer)
-{
-    for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1)) {
-        if (freeFingerType[i]) {
-            freeFingerType[i] = false;
-            return i;
-        }
-    }
-    
-    return kMT2FingerTypeUndefined;
 }

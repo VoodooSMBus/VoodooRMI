@@ -44,12 +44,12 @@ bool F12::attach(IOService *provider)
     }
     query_addr += 3;
     
-    sensor.pkt_size = (int) rmi_register_desc_calc_size(&data_reg_desc);
-    IOLogDebug("F12 - Data packet size: %d\n", sensor.pkt_size);
+    sensor->pkt_size = (int) rmi_register_desc_calc_size(&data_reg_desc);
+    IOLogDebug("F12 - Data packet size: %d\n", sensor->pkt_size);
     
-    sensor.data_pkt = reinterpret_cast<u8 *>(IOMalloc(sensor.pkt_size));
+    sensor->data_pkt = reinterpret_cast<u8 *>(IOMalloc(sensor->pkt_size));
     
-    if (!sensor.data_pkt)
+    if (!sensor->data_pkt)
         return -ENOMEM;
     
     ret = rmi_f12_read_sensor_tuning();
@@ -74,9 +74,9 @@ bool F12::attach(IOService *provider)
         data1 = item;
         data1_offset = data_offset;
         data_offset += item->reg_size;
-        sensor.nbr_fingers = item->num_subpackets;
-        sensor.report_abs = 1;
-        sensor.attn_size += item->reg_size;
+        sensor->nbr_fingers = item->num_subpackets;
+        sensor->report_abs = 1;
+        sensor->attn_size += item->reg_size;
     }
     
     item = rmi_get_register_desc_item(&data_reg_desc, 2);
@@ -96,15 +96,12 @@ bool F12::attach(IOService *provider)
         data5 = item;
         data5_offset = data_offset;
         data_offset += item->reg_size;
-        sensor.attn_size += item->reg_size;
+        sensor->attn_size += item->reg_size;
     }
     
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
-    setProperty("Number of fingers", sensor.nbr_fingers);
-    setProperty("VoodooInputSupported", kOSBooleanTrue);
-    // VoodooPS2 keyboard notifs
-    setProperty("RM,deliverNotifications", kOSBooleanTrue);
+    setProperty("Number of fingers", sensor->nbr_fingers);
     
     return super::attach(provider);
 }
@@ -162,9 +159,7 @@ bool F12::start(IOService *provider)
 
 void F12::free()
 {
-    if (sensor.data_pkt)
-        IOFree(sensor.data_pkt, sensor.pkt_size);
-    
+    clearDesc();
     super::free();
 }
 
@@ -201,24 +196,6 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
     return kIOReturnSuccess;
 }
 
-bool F12::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
-{
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
-        voodooInputInstance = forClient;
-        voodooInputInstance->retain();
-        
-        return true;
-    }
-    
-    return super::handleOpen(forClient, options, arg);
-}
-
-void F12::handleClose(IOService *forClient, IOOptionBits options)
-{
-    OSSafeReleaseNULL(voodooInputInstance);
-    super::handleClose(forClient, options);
-}
-
 int F12::rmi_f12_read_sensor_tuning()
 {
     const rmi_register_desc_item *item;
@@ -251,8 +228,8 @@ int F12::rmi_f12_read_sensor_tuning()
     
     offset = 0;
     if (rmi_register_desc_has_subpacket(item, 0)) {
-        sensor.max_x = (buf[offset + 1] << 8) | buf[offset];
-        sensor.max_y = (buf[offset + 3] << 8) | buf[offset + 2];
+        sensor->max_x = (buf[offset + 1] << 8) | buf[offset];
+        sensor->max_y = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
         IOLogError("F12 - No size register");
@@ -291,17 +268,49 @@ int F12::rmi_f12_read_sensor_tuning()
     if (rmi_register_desc_has_subpacket(item, 4))
         offset += 1;
     
-    sensor.x_mm = (pitch_x * rx_receivers) >> 12;
-    sensor.y_mm = (pitch_y * tx_receivers) >> 12;
+    sensor->x_mm = (pitch_x * rx_receivers) >> 12;
+    sensor->y_mm = (pitch_y * tx_receivers) >> 12;
     
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, sensor.max_x, 16);
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, sensor.max_y, 16);
-    // Need to be in 0.01mm units
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, sensor.x_mm * 100, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, sensor.y_mm * 100, 16);
-    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+//    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, sensor.max_x, 16);
+//    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, sensor.max_y, 16);
+//    // Need to be in 0.01mm units
+//    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, sensor.x_mm * 100, 16);
+//    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, sensor.y_mm * 100, 16);
+//    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
     return 0;
+}
+
+void F12::getReport()
+{
+    int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, sensor->data_pkt,
+                                   sensor->pkt_size);
+    
+    if (retval < 0) {
+        IOLogError("F12 - Failed to read object data. Code: %d\n", retval);
+        return;
+    }
+    
+    if (!data1) return;
+    
+    int objects = data1->num_subpackets;
+    
+    if ((data1->num_subpackets * F12_DATA1_BYTES_PER_OBJ) > sensor->pkt_size)
+        objects = sensor->pkt_size / F12_DATA1_BYTES_PER_OBJ;
+
+    u8 *data = &sensor->data_pkt[data1_offset];
+    
+    for (int i = 0; i < objects; i++) {
+        switch (data[0]) {
+            case RMI_F12_OBJECT_FINGER:
+            case RMI_F12_OBJECT_STYLUS:
+                return;
+            default:
+                continue;
+        }
+        
+//        data += F12_DATA1_BYTES_PER_OBJ;
+    }
 }
 
 int F12::rmi_read_register_desc(u16 addr,

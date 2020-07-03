@@ -1,10 +1,7 @@
-//
-//  PS2.h
-//  VoodooRMI
-//
-//  Created by Sheika Slate on 6/9/20.
-//  Copyright © 2020 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * PS2 constants
+ * https://github.com/torvalds/linux/tree/master/include/linux/libps2.h
+ */
 
 #ifndef PS2_h
 #define PS2_h

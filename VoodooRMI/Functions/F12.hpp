@@ -58,8 +58,6 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     
@@ -82,7 +80,7 @@ private:
                                                 u8 subpacket);
     
     /* F12 Data */
-    rmi_2d_sensor sensor;
+    RMI2DSensor *sensor;
     struct rmi_2d_sensor_platform_data sensor_pdata;
     bool has_dribble;
     

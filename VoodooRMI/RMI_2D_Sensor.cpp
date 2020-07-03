@@ -22,7 +22,7 @@ bool RMI2DSensor::init(OSDictionary *dictionary)
         Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
     forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
     
-    return true;
+    return super::init(dictionary);
 }
 
 bool RMI2DSensor::start(IOService *provider)
@@ -50,6 +50,8 @@ void RMI2DSensor::free()
 {
     if (data_pkt)
         IOFree(data_pkt, pkt_size);
+    
+    return super::free();
 }
 
 bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *arg)

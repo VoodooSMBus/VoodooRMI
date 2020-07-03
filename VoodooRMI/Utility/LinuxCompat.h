@@ -100,7 +100,7 @@ static inline int find_first_bit (const unsigned long *bitmap, int bits)
     int lim = bits/BITS_PER_LONG, res = 0;
     
     for (int i = 0; i < lim; i++) {
-        res = ffsll(bitmap[i]);
+//        res = ffsll(bitmap[i]);
         if (res)
             return (i * BITS_PER_LONG) + res - 1;
     }

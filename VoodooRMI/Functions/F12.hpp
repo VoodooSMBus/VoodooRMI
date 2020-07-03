@@ -54,10 +54,10 @@ class F12 : public RMIFunction {
     OSDeclareDefaultStructors(F12)
     
 public:
-    bool init(OSDictionary *dictionary) override;
+//    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
-    void stop(IOService *provider) override;
+//    void stop(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     

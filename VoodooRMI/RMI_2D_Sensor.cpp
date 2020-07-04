@@ -120,7 +120,6 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
         bool isValid =  obj.type == RMI_2D_OBJECT_FINGER ||
-                        obj.type == RMI_2D_OBJECT_PALM   ||
                         obj.type == RMI_2D_OBJECT_STYLUS;
         
         auto& transducer = inputEvent.transducers[transducer_count++];

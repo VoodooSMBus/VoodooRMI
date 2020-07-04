@@ -12,6 +12,21 @@
 OSDefineMetaClassAndStructors(F12, RMIFunction)
 #define super IOService
 
+bool F12::init(OSDictionary *dictionary)
+{
+    if (!super::init())
+        return false;
+    
+    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
+    if (!sensor)
+        return false;
+    
+    if (!sensor->init(dictionary))
+        return false;
+    
+    return true;
+}
+
 bool F12::attach(IOService *provider)
 {
     int ret;
@@ -154,12 +169,27 @@ bool F12::start(IOService *provider)
     }
     
     registerService();
+    
+    if (!sensor->attach(this))
+        return false;
+    
+    if (!sensor->start(this))
+        return false;
+    
     return super::start(provider);
+}
+
+void F12::stop(IOService *provider)
+{
+    sensor->detach(this);
+    sensor->stop(this);
+    super::stop(provider);
 }
 
 void F12::free()
 {
     clearDesc();
+    OSSafeReleaseNULL(sensor);
     super::free();
 }
 
@@ -271,18 +301,17 @@ int F12::rmi_f12_read_sensor_tuning()
     sensor->x_mm = (pitch_x * rx_receivers) >> 12;
     sensor->y_mm = (pitch_y * tx_receivers) >> 12;
     
-//    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, sensor.max_x, 16);
-//    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, sensor.max_y, 16);
-//    // Need to be in 0.01mm units
-//    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, sensor.x_mm * 100, 16);
-//    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, sensor.y_mm * 100, 16);
-//    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
-    
     return 0;
 }
 
 void F12::getReport()
 {
+    AbsoluteTime timestamp;
+    uint64_t timestampNS;
+    
+    clock_get_uptime(&timestamp);
+    absolutetime_to_nanoseconds(timestamp, &timestampNS);
+    
     int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, sensor->data_pkt,
                                    sensor->pkt_size);
     
@@ -294,23 +323,40 @@ void F12::getReport()
     if (!data1) return;
     
     int objects = data1->num_subpackets;
+    u8 *data = &sensor->data_pkt[data1_offset];
     
     if ((data1->num_subpackets * F12_DATA1_BYTES_PER_OBJ) > sensor->pkt_size)
         objects = sensor->pkt_size / F12_DATA1_BYTES_PER_OBJ;
 
-    u8 *data = &sensor->data_pkt[data1_offset];
+    IOLogDebug("F12 Packet");
     
     for (int i = 0; i < objects; i++) {
+        rmi_2d_sensor_abs_object obj = report.objs[i];
+        
         switch (data[0]) {
             case RMI_F12_OBJECT_FINGER:
+                obj.type = RMI_2D_OBJECT_FINGER;
+                break;
             case RMI_F12_OBJECT_STYLUS:
-                return;
+                obj.type = RMI_2D_OBJECT_STYLUS;
+                break;
             default:
-                continue;
+                obj.type = RMI_2D_OBJECT_NONE;
         }
         
-//        data += F12_DATA1_BYTES_PER_OBJ;
+        obj.x = (data[2] << 8) | data[1];
+        obj.y = (data[4] << 8) | data[3];
+        obj.z = data[5];
+        obj.wx = data[6];
+        obj.wy = data[7];
+        
+        data += F12_DATA1_BYTES_PER_OBJ;
     }
+    
+    report.timestamp = timestamp;
+    report.fingers = objects;
+    
+    messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
 }
 
 int F12::rmi_read_register_desc(u16 addr,

@@ -240,8 +240,6 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
             break;
         case 0x12:
-            IOLog("F12 not implemented (Issue VoodooRMI/#6)\n");
-            return 0;
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
             break;
         case 0x30:

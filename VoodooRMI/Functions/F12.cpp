@@ -35,6 +35,12 @@ bool F12::attach(IOService *provider)
     const rmi_register_desc_item *item;
     u16 data_offset = 0;
     
+    rmiBus = OSDynamicCast(RMIBus, provider);
+    if (!rmiBus) {
+        IOLogError("F11: Provider is not RMIBus\n");
+        return false;
+    }
+    
     ret = rmiBus->read(query_addr, &buf);
     if (ret < 0) {
         IOLogError("F12 - Failed to read general info register: %d\n", ret);

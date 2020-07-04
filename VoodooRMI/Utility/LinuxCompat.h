@@ -6,8 +6,6 @@
 #ifndef linux_compat_h
 #define linux_compat_h
 
-#include <IOKit/IOLib.h>
-
 typedef UInt8  u8;
 typedef UInt16 u16;
 typedef UInt32 u32;
@@ -95,12 +93,23 @@ static inline void bitmap_set (unsigned long *bitmap, unsigned int start, unsign
     }
 }
 
+static inline int ffsll (const unsigned long bitmap)
+{
+    int i = 0;
+    while (i++ < sizeof(unsigned long) * BITS_PER_LONG) {
+        if (bitmap & 1 << i)
+            break;
+    }
+    
+    return i + 1;
+}
+
 static inline int find_first_bit (const unsigned long *bitmap, int bits)
 {
     int lim = bits/BITS_PER_LONG, res = 0;
     
     for (int i = 0; i < lim; i++) {
-//        res = ffsll(bitmap[i]);
+        res = ffsll(bitmap[i]);
         if (res)
             return (i * BITS_PER_LONG) + res - 1;
     }

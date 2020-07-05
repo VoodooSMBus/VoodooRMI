@@ -55,12 +55,25 @@ bool F12::attach(IOService *provider)
     
     has_dribble = !!(buf & BIT(3));
     
-    // Skip over the first couple reads
-    query_addr += 6;
     ret = rmi_read_register_desc(query_addr, &query_reg_desc);
-    
     if (ret) {
         IOLogError ("F12 - Failed to read the Data Register Descriptor: %d\n", ret);
+        return ret;
+    }
+    query_addr += 3;
+    
+    ret = rmi_read_register_desc(query_addr, &control_reg_desc);
+    if (ret) {
+        IOLogError("F12 - Failed to read the Control Register Descriptor: %d\n",
+                   ret);
+        return ret;
+    }
+    query_addr += 3;
+    
+    ret = rmi_read_register_desc(query_addr, &data_reg_desc);
+    if (ret) {
+        IOLogError("Failed to read the Data Register Descriptor: %d\n",
+                   ret);
         return ret;
     }
     query_addr += 3;

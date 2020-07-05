@@ -57,7 +57,7 @@ bool F12::attach(IOService *provider)
     
     ret = rmi_read_register_desc(query_addr, &query_reg_desc);
     if (ret) {
-        IOLogError ("F12 - Failed to read the Data Register Descriptor: %d\n", ret);
+        IOLogError ("F12 - Failed to read the Query Register Descriptor: %d\n", ret);
         return ret;
     }
     query_addr += 3;
@@ -350,24 +350,24 @@ void F12::getReport()
     IOLogDebug("F12 Packet");
     
     for (int i = 0; i < objects; i++) {
-        rmi_2d_sensor_abs_object obj = report.objs[i];
+        rmi_2d_sensor_abs_object *obj = &report.objs[i];
         
         switch (data[0]) {
             case RMI_F12_OBJECT_FINGER:
-                obj.type = RMI_2D_OBJECT_FINGER;
+                obj->type = RMI_2D_OBJECT_FINGER;
                 break;
             case RMI_F12_OBJECT_STYLUS:
-                obj.type = RMI_2D_OBJECT_STYLUS;
+                obj->type = RMI_2D_OBJECT_STYLUS;
                 break;
             default:
-                obj.type = RMI_2D_OBJECT_NONE;
+                obj->type = RMI_2D_OBJECT_NONE;
         }
         
-        obj.x = (data[2] << 8) | data[1];
-        obj.y = (data[4] << 8) | data[3];
-        obj.z = data[5];
-        obj.wx = data[6];
-        obj.wy = data[7];
+        obj->x = (data[2] << 8) | data[1];
+        obj->y = (data[4] << 8) | data[3];
+        obj->z = data[5];
+        obj->wx = data[6];
+        obj->wy = data[7];
         
         data += F12_DATA1_BYTES_PER_OBJ;
     }

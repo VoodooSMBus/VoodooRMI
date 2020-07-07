@@ -328,9 +328,6 @@ void F12::getReport()
     AbsoluteTime timestamp;
     uint64_t timestampNS;
     
-    clock_get_uptime(&timestamp);
-    absolutetime_to_nanoseconds(timestamp, &timestampNS);
-    
     int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, sensor->data_pkt,
                                    sensor->pkt_size);
     
@@ -347,6 +344,12 @@ void F12::getReport()
     if ((data1->num_subpackets * F12_DATA1_BYTES_PER_OBJ) > sensor->pkt_size)
         objects = sensor->pkt_size / F12_DATA1_BYTES_PER_OBJ;
 
+    clock_get_uptime(&timestamp);
+    absolutetime_to_nanoseconds(timestamp, &timestampNS);
+    
+    if (sensor->shouldDiscardReport(timestamp))
+        return;
+    
     IOLogDebug("F12 Packet");
     
     for (int i = 0; i < objects; i++) {

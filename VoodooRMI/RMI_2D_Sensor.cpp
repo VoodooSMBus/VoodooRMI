@@ -21,6 +21,7 @@ bool RMI2DSensor::init(OSDictionary *dictionary)
     forceTouchMinPressure =
         Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
     forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
+    minYDiffGesture = Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", 200);
     
     return super::init(dictionary);
 }
@@ -114,7 +115,7 @@ bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
-    int transducer_count = 0, realFingerCount = 0;
+    int realFingerCount = 0;
     
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
@@ -122,7 +123,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         bool isValid =  obj.type == RMI_2D_OBJECT_FINGER ||
                         obj.type == RMI_2D_OBJECT_STYLUS;
         
-        auto& transducer = inputEvent.transducers[transducer_count++];
+        auto& transducer = inputEvent.transducers[i];
         transducer.type = FINGER;
         transducer.isValid = isValid;
         transducer.supportsPressure = true;
@@ -132,8 +133,6 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         if (isValid) {
             realFingerCount++;
             
-            // Rudimentry palm detection
-            transducer.isValid = obj.z < 120 && abs(obj.wx - obj.wy) < 3;
             transducer.previousCoordinates = transducer.currentCoordinates;
             transducer.currentCoordinates.width = obj.z / 1.5;
             transducer.timestamp = report->timestamp;
@@ -164,14 +163,18 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     }
     
     if (realFingerCount == 4 && freeFingerTypes[kMT2FingerTypeThumb]) {
-        setThumbFingerType(report->fingers);
+        setThumbFingerType(report->fingers, report);
     }
     
     // Sencond loop to get type
     for (int i = 0; i < report->fingers; i++) {
         auto& trans = inputEvent.transducers[i];
+        rmi_2d_sensor_abs_object obj = report->objs[i];
         
         if (trans.isValid) {
+            // Rudimentry palm detection
+            trans.isValid = obj.z < 120 && (abs(obj.wx - obj.wy) < 3 || trans.fingerType == kMT2FingerTypeThumb);
+            
             if (trans.fingerType == kMT2FingerTypeUndefined) {
                 trans.fingerType = getFingerType();
             }
@@ -183,10 +186,10 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         }
     }
     
-    inputEvent.contact_count = transducer_count;
+    inputEvent.contact_count = report->fingers;
     inputEvent.timestamp = report->timestamp;
     
-    if (!realFingerCount) {
+    if (!realFingerCount || !clickpadState) {
         pressureLock = false;
     }
     
@@ -194,17 +197,43 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     memset(report, 0, sizeof(RMI2DSensorReport));
 }
 
-void RMI2DSensor::setThumbFingerType(int fingers)
+void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
 {
     int lowestFingerIndex = -1;
-    UInt32 minY = 0;
+    int greatestFingerIndex = -1;
+    UInt32 minY = 0, secondLowest = 0;
+    UInt32 maxDiff = 0;
+    UInt32 maxArea = 0;
+    
     for (int i = 0; i < fingers; i++) {
         auto &trans = inputEvent.transducers[i];
+        rmi_2d_sensor_abs_object *obj = &report->objs[i];
         
-        if (trans.isValid && trans.currentCoordinates.y > minY) {
-            minY = trans.currentCoordinates.y;
+        if (!trans.isValid)
+            continue;
+        
+        // Take the most obvious lowest finger - otherwise take finger with greatest area
+        if (trans.currentCoordinates.y > minY) {
             lowestFingerIndex = i;
+            secondLowest = minY;
+            minY = trans.currentCoordinates.y;
         }
+        
+        if (trans.currentCoordinates.y > secondLowest && trans.currentCoordinates.y < minY) {
+            secondLowest = trans.currentCoordinates.y;
+        }
+        
+        if (/*(obj->wy - obj->wx) > maxDiff ||*/ obj->z > maxArea) {
+            maxDiff = (obj->wy - obj->wx);
+            maxArea = obj->z;
+            greatestFingerIndex = i;
+        }
+    }
+    
+    if (minY - secondLowest < minYDiffGesture || greatestFingerIndex == -1) {
+//        IOLogDebug("Second Lowest: %u Lowest: %u\n", secondLowest, minY);
+        
+        lowestFingerIndex = greatestFingerIndex;
     }
     
     if (lowestFingerIndex == -1) {

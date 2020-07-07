@@ -173,19 +173,19 @@ void F03::handlePacketGated(u8 packet)
     
     dx -= signum(dx) * min(abs(dx), trackstickDeadzone);
     dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
-    
-    if (dx || dy) {
-        // Must multiply first then divide so we don't multiply by zero
-        if(buttons & 0x04) {
-            buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
-                                            (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
-                                            0);
-        } else {
-            buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
-                                                (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
-                                                buttons);
-        }
+        
+    // Must multiply first then divide so we don't multiply by zero
+    if(buttons & 0x04) {
+        buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
+                                        (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
+                                        0);
+    } else {
+        buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
+                                            (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
+                                            buttons);
+    }
 
+    if (dx || dy) {
         rmiBus->notify(kHandleRMITrackpoint);
     }
 
@@ -437,6 +437,7 @@ void F03::unpublishButtons()
 {
     if (buttonDevice) {
         buttonDevice->stop(this);
+        buttonDevice->detach(this);
         OSSafeReleaseNULL(buttonDevice);
     }
 }

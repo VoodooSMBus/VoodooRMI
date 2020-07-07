@@ -96,11 +96,12 @@ private:
     bool touchpadEnable {true};
     bool forceTouchEmulation {true};
     u8 forceTouchMinPressure {80};
+    uint32_t minYDiffGesture {200};
     
     uint64_t disableWhileTypingTimeout, lastKeyboardTS;
 
     MT2FingerType getFingerType();
-    void setThumbFingerType(int fingers);
+    void setThumbFingerType(int fingers, RMI2DSensorReport *report);
     void handleReport(RMI2DSensorReport *report);
 };
 

@@ -111,12 +111,6 @@ bool F11::getReport()
     AbsoluteTime timestamp;
     uint64_t timestampNS;
     
-    clock_get_uptime(&timestamp);
-    absolutetime_to_nanoseconds(timestamp, &timestampNS);
-    
-    if (sensor->shouldDiscardReport(timestamp))
-        return true;
-    
     error = rmiBus->readBlock(fn_descriptor->data_base_addr,
                               sensor->data_pkt, sensor->pkt_size);
     
@@ -124,6 +118,12 @@ bool F11::getReport()
         IOLogError("Could not read F11 attention data: %d", error);
         return false;
     }
+    
+    clock_get_uptime(&timestamp);
+    absolutetime_to_nanoseconds(timestamp, &timestampNS);
+    
+    if (sensor->shouldDiscardReport(timestamp))
+        return true;
     
     IOLogDebug("F11 Packet");
     

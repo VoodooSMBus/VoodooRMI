@@ -98,6 +98,9 @@ private:
     unsigned int trackstickScrollYMult;
     unsigned int trackstickDeadzone;
     
+    bool isScrolling;
+    bool middlePressed;
+    
     // ps2
     unsigned int flags, cmdcnt;
     u8 cmdbuf[8];

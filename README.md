@@ -49,7 +49,8 @@ Note: If you change any configuration values in the Info.plist, they must be int
 
 ## Configuration
 
-The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling
+The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling  
+Note that using non-integer values causes undefined behaviour which may prevent the kext from loading
 
 | Value | Default | Description |
 | ----- | ------- | ----------- |

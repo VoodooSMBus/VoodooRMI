@@ -93,24 +93,26 @@ static inline void bitmap_set (unsigned long *bitmap, unsigned int start, unsign
     }
 }
 
-static inline int ffsll (const unsigned long bitmap)
-{
+static int ffsll(const unsigned long bitmap) {
     int i = 0;
-    while (i++ < sizeof(unsigned long) * BITS_PER_LONG) {
-        if (bitmap & 1 << i)
+    
+    while (i < sizeof(unsigned long) * BITS_PER_BYTE) {
+        if (bitmap & 1 << i) {
             break;
+        }
+        i++;
     }
     
     return i;
 }
 
-static inline int find_first_bit (const unsigned long *bitmap, int bits)
+static int find_first_bit (const unsigned long *bitmap, int bits)
 {
     int lim = bits/BITS_PER_LONG, res = 0;
     
     for (int i = 0; i < lim; i++) {
         res = ffsll(bitmap[i]);
-        if (res)
+        if (res != sizeof(unsigned long) * BITS_PER_LONG)
             return (i * BITS_PER_LONG) + res;
     }
     
@@ -125,6 +127,7 @@ static int find_next_bit (const unsigned long *bitmap, int bits, int offset)
     
     for (int i = startLong; i < lim; i++) {
         for (int bit = startBit; bit < BITS_PER_LONG; bit++) {
+            startBit = 0;
             if (bitmap[i] & 1UL << bit)
                 return bit + (i * BITS_PER_LONG);
         }

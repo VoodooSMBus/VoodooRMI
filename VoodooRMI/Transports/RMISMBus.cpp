@@ -180,10 +180,6 @@ exit:
     return retval;
 }
 
-int RMISMBus::read(u16 rmiaddr, u8 *databuff) {
-    return readBlock(rmiaddr, databuff, 1);
-}
-
 int RMISMBus::blockWrite(u16 rmiaddr, u8 *buf, size_t len)
 {
     int retval = 0;
@@ -217,9 +213,5 @@ int RMISMBus::blockWrite(u16 rmiaddr, u8 *buf, size_t len)
 exit:
     IOLockUnlock(page_mutex);
     return retval;
-}
-
-int RMISMBus::write(u16 rmiaddr, u8 *buf) {
-    return blockWrite(rmiaddr, buf, 1);
 }
 

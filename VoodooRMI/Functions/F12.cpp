@@ -135,7 +135,7 @@ bool F12::attach(IOService *provider)
     
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
-    setProperty("Number of fingers", sensor->nbr_fingers);
+    setProperty("Number of fingers", sensor->nbr_fingers, 8);
     
     return super::attach(provider);
 }
@@ -352,7 +352,7 @@ void F12::getReport()
     
     IOLogDebug("F12 Packet");
     
-    for (int i = 0; i < objects; i++) {
+    for (int i = 0; i < sensor->nbr_fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];
         
         switch (data[0]) {
@@ -376,7 +376,7 @@ void F12::getReport()
     }
     
     report.timestamp = timestamp;
-    report.fingers = objects;
+    report.fingers = sensor->nbr_fingers;
     
     messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
 }
@@ -468,15 +468,15 @@ int F12::rmi_read_register_desc(u16 addr,
         ++offset;
         if (reg_size == 0) {
             reg_size = struct_buf[offset] |
-            (struct_buf[offset + 1] << 8);
+                       (struct_buf[offset + 1] << 8);
             offset += 2;
         }
         
         if (reg_size == 0) {
             reg_size = struct_buf[offset] |
-            (struct_buf[offset + 1] << 8) |
-            (struct_buf[offset + 2] << 16) |
-            (struct_buf[offset + 3] << 24);
+                       (struct_buf[offset + 1] << 8) |
+                       (struct_buf[offset + 2] << 16) |
+                       (struct_buf[offset + 3] << 24);
             offset += 4;
         }
         

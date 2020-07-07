@@ -84,6 +84,8 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
 //    void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     

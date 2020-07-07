@@ -106,7 +106,7 @@ static int ffsll(const unsigned long bitmap) {
     return i;
 }
 
-static int find_first_bit (const unsigned long *bitmap, int bits)
+static inline int find_first_bit (const unsigned long *bitmap, int bits)
 {
     int lim = bits/BITS_PER_LONG, res = 0;
     
@@ -119,7 +119,7 @@ static int find_first_bit (const unsigned long *bitmap, int bits)
     return res;
 }
 
-static int find_next_bit (const unsigned long *bitmap, int bits, int offset)
+static inline int find_next_bit (const unsigned long *bitmap, int bits, int offset)
 {
     int lim = bits/BITS_PER_LONG;
     int startLong = offset / BITS_PER_LONG;

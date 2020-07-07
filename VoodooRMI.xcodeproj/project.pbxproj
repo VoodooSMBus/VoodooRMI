@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
+		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
+		A43A3A5824B4F74000B9A714 /* VoodooTrackpointMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5724B4F74000B9A714 /* VoodooTrackpointMessages.h */; };
 		A4435AF0248F8AD80083404C /* ButtonDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4435AEE248F8AD80083404C /* ButtonDevice.cpp */; };
 		A4435AF1248F8AD80083404C /* ButtonDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4435AEF248F8AD80083404C /* ButtonDevice.hpp */; };
 		A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */; };
@@ -35,13 +37,14 @@
 		A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		A4560F102480757F0009CBE0 /* F03.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0E2480757F0009CBE0 /* F03.cpp */; };
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
-		C6297DC524A0DB2500888BBF /* VoodooSMBus.kext in Resources */ = {isa = PBXBuildFile; fileRef = C6297DC424A0DB2400888BBF /* VoodooSMBus.kext */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
 		A41323E62492077C00907B0D /* Configuration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
 		A41323E72492077C00907B0D /* Configuration.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Configuration.hpp; sourceTree = "<group>"; };
+		A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooSMBusDeviceNub.hpp; path = Dependencies/VoodooSMBus/VoodooSMBus/VoodooSMBusDeviceNub.hpp; sourceTree = "<group>"; };
+		A43A3A5724B4F74000B9A714 /* VoodooTrackpointMessages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooTrackpointMessages.h; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint/VoodooTrackpointMessages.h; sourceTree = "<group>"; };
 		A4435AEE248F8AD80083404C /* ButtonDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonDevice.cpp; sourceTree = "<group>"; };
 		A4435AEF248F8AD80083404C /* ButtonDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ButtonDevice.hpp; sourceTree = "<group>"; };
 		A4560EC7247F29EC0009CBE0 /* VoodooRMI.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoodooRMI.kext; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,7 +73,6 @@
 		A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMISMBus.cpp; sourceTree = "<group>"; };
 		A4560F0E2480757F0009CBE0 /* F03.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F03.cpp; sourceTree = "<group>"; };
 		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
-		C6297DC424A0DB2400888BBF /* VoodooSMBus.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = VoodooSMBus.kext; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,7 +102,6 @@
 		A4560EBD247F29EC0009CBE0 = {
 			isa = PBXGroup;
 			children = (
-				C6297DC424A0DB2400888BBF /* VoodooSMBus.kext */,
 				A4560F02247F381B0009CBE0 /* Headers */,
 				A4560EC9247F29EC0009CBE0 /* VoodooRMI */,
 				A4560EC8247F29EC0009CBE0 /* Products */,
@@ -162,6 +163,8 @@
 		A4560F02247F381B0009CBE0 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				A43A3A5724B4F74000B9A714 /* VoodooTrackpointMessages.h */,
+				A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */,
 				A4560F03247F38660009CBE0 /* MultitouchHelpers.h */,
 				A4560F06247F38670009CBE0 /* VoodooInputEvent.h */,
 				A4560F04247F38670009CBE0 /* VoodooInputMessages.h */,
@@ -184,10 +187,12 @@
 				A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */,
 				A4560F112480757F0009CBE0 /* F03.hpp in Headers */,
 				A4560EFA247F32760009CBE0 /* F12.hpp in Headers */,
+				A43A3A5824B4F74000B9A714 /* VoodooTrackpointMessages.h in Headers */,
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
 				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
 				A4560F07247F38670009CBE0 /* MultitouchHelpers.h in Headers */,
+				A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */,
 				A4560EE4247F2A660009CBE0 /* RMI_2D_Sensor.hpp in Headers */,
 				A4560EFB247F32760009CBE0 /* F30.hpp in Headers */,
 				A4560EE2247F2A660009CBE0 /* rmi.h in Headers */,
@@ -257,7 +262,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C6297DC524A0DB2500888BBF /* VoodooSMBus.kext in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -437,7 +441,7 @@
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
-					"$(PROJECT_DIR)/VoodooSMBus.kext/Contents/Resources/Headers",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
 				);
 				INFOPLIST_FILE = VoodooRMI/Info.plist;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
@@ -459,7 +463,7 @@
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
-					"$(PROJECT_DIR)/VoodooSMBus.kext/Contents/Resources/Headers",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
 				);
 				INFOPLIST_FILE = VoodooRMI/Info.plist;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;

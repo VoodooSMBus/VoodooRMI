@@ -130,9 +130,10 @@ bool F03::start(IOService *provider)
     
     index = 0;
     
-    if(!publishButtons()) {
-        return false;
-    }
+    setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+//    if(!publishButtons()) {
+//        return false;
+//    }
     
     IOLog("Start finished");
     return super::start(provider);
@@ -146,7 +147,7 @@ void F03::stop(IOService *provider)
         command_gate = NULL;
     }
     OSSafeReleaseNULL(work_loop);
-    unpublishButtons();
+//    unpublishButtons();
     super::stop(provider);
 }
 
@@ -190,7 +191,7 @@ void F03::handlePacketGated(u8 packet)
     if (!(buttons & 0x04)) {
         if (middlePressed) {
             middlePressed = false;
-            buttonDevice->updateRelativePointer(0, 0, 0x04);
+//            buttonDevice->updateRelativePointer(0, 0, 0x04);
         } else {
             isScrolling = false;
         }
@@ -200,13 +201,13 @@ void F03::handlePacketGated(u8 packet)
     
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {
-        buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
-                                        (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
-                                        0);
+//        buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
+//                                        (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
+//                                        0);
     } else {
-        buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
-                                            (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
-                                            buttons);
+//        buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
+//                                            (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
+//                                            buttons);
     }
 
     if (dx || dy) {
@@ -429,6 +430,25 @@ int F03::ps2Command(u8 *param, unsigned int command)
 {
     return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &F03::ps2CommandGated),
                                        param, &command);
+}
+
+bool F03::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
+{
+    IOLog("HandleOpen called");
+//    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
+//        voodooInputInstance = forClient;
+//        voodooInputInstance->retain();
+//
+//        return true;
+//    }
+    
+    return super::handleOpen(forClient, options, arg);
+}
+
+void F03::handleClose(IOService *forClient, IOOptionBits options)
+{
+//    OSSafeReleaseNULL(voodooInputInstance);
+    super::handleClose(forClient, options);
 }
 
 bool F03::publishButtons()

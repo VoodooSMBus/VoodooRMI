@@ -54,15 +54,17 @@ bool F30::start(IOService *provider)
     }
     
     registerService();
-    if (numButtons != 1)
-        publishButtons();
+    if (numButtons != 1) {
+        setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+    }
+//        publishButtons();
     
     return true;
 }
 
 void F30::stop(IOService *provider)
 {
-    unpublishButtons();
+//    unpublishButtons();
     super::stop(provider);
 }
 

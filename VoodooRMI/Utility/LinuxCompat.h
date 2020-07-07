@@ -117,15 +117,14 @@ static inline int find_first_bit (const unsigned long *bitmap, int bits)
     return res;
 }
 
-static inline int find_next_bit (const unsigned long *bitmap, int bits, int offset)
+static int find_next_bit (const unsigned long *bitmap, int bits, int offset)
 {
-    int lim = bits/BITS_PER_LONG, start = offset/BITS_PER_LONG;
+    int lim = bits/BITS_PER_LONG;
+    int startLong = offset / BITS_PER_LONG;
+    int startBit = offset % BITS_PER_LONG;
     
-    offset %= BITS_PER_LONG;
-    
-    for (int i = start; i < lim; i++) {
-        for (int bit = offset; bit < BITS_PER_LONG; bit++) {
-            if (offset > 0) offset--;
+    for (int i = startLong; i < lim; i++) {
+        for (int bit = startBit; bit < BITS_PER_LONG; bit++) {
             if (bitmap[i] & 1UL << bit)
                 return bit + (i * BITS_PER_LONG);
         }

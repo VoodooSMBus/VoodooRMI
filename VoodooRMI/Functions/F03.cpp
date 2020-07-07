@@ -175,10 +175,10 @@ void F03::handlePacketGated(u8 packet)
     dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
         
     // Must multiply first then divide so we don't multiply by zero
-    if(buttons & 0x04) {
+    if(buttons & 0x04 && (dx || dy)) {
         buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
                                         (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
-                                        0);
+                                        buttons);
     } else {
         buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
                                             (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),

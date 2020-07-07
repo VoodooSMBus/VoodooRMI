@@ -101,7 +101,7 @@ static inline int ffsll (const unsigned long bitmap)
             break;
     }
     
-    return i + 1;
+    return i;
 }
 
 static inline int find_first_bit (const unsigned long *bitmap, int bits)

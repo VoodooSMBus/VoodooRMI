@@ -73,8 +73,10 @@ void RMISMBus::stop(IOService *provider)
 
 void RMISMBus::free()
 {
-    IOLockFree(page_mutex);
-    IOLockFree(mapping_table_mutex);
+    if (page_mutex)
+        IOLockFree(page_mutex);
+    if (mapping_table_mutex)
+        IOLockFree(mapping_table_mutex);
     super::free();
 }
 

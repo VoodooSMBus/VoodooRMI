@@ -52,6 +52,11 @@
 		</dict>
 		<key>RMISMBus</key>
 		<dict>
+			<key>IOPropertyMatch</key>
+			<dict>
+				<key>VoodooSMBUS Slave Device Address</key>
+				<integer>44</integer>
+			</dict>
 			<key>IOProbeScore</key>
 			<integer>500</integer>
 			<key>IOProviderClass</key>

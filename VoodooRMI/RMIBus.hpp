@@ -44,7 +44,7 @@ public:
     
     // rmi_read
     inline int read(u16 addr, u8 *buf) {
-        return transport->read(addr, buf);
+        return transport->readBlock(addr, buf, 1);
     }
     // rmi_read_block
     inline int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
@@ -52,7 +52,7 @@ public:
     }
     // rmi_write
     inline int write(u16 rmiaddr, u8 *buf) {
-        return transport->write(rmiaddr, buf);
+        return transport->blockWrite(rmiaddr, buf, 1);
     }
     // rmi_block_write
     inline int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {

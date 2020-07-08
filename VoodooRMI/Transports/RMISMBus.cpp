@@ -23,8 +23,7 @@ bool RMISMBus::init(OSDictionary *dictionary)
 RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 {
     int retval = 0, attempts = 0;
-    IOService *service = super::probe(provider, score);
-    if(!service) {
+    if (!super::probe(provider, score)) {
         IOLog("Failed probe");
         return NULL;
     }
@@ -64,6 +63,12 @@ bool RMISMBus::start(IOService *provider)
     bool res = super::start(provider);
     registerService();
     return res;
+}
+
+void RMISMBus::stop(IOService *provider)
+{
+    IOLog("STOPPFDSLKJFDSLKJFDS");
+    super::stop(provider);
 }
 
 void RMISMBus::free()

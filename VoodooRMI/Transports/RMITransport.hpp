@@ -73,6 +73,7 @@ public:
     bool init(OSDictionary *dictionary) override;
     RMISMBus *probe(IOService *provider, SInt32 *score) override;
     bool start(IOService *provider) override;
+    void stop(IOService *provider) override;
     void free() override;
     
     int read(u16 addr, u8 *buf) override;

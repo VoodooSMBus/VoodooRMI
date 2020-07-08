@@ -40,7 +40,6 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
     }
         
     transport = OSDynamicCast(RMITransport, provider);
-    
     if (!transport) {
         IOLogError("%s Could not get transport instance\n", getName());
         return NULL;
@@ -51,6 +50,7 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
         return NULL;
     }
     
+    transport->retain();
     return this;
 }
 
@@ -203,21 +203,28 @@ void RMIBus::stop(IOService *provider) {
     rmi_driver_clear_irq_bits(this);
     
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-        func->detach(this);
         func->stop(this);
+        func->detach(this);
+        func->release();
     }
     
     functions->flushCollection();
     OSSafeReleaseNULL(iter);
+    
+    if (transport)
+        OSSafeReleaseNULL(transport);
     super::stop(provider);
 }
 
 void RMIBus::free() {
-    rmi_free_function_list(this);
+    if (data) {
+        rmi_free_function_list(this);
+        IOLockFree(data->enabled_mutex);
+        IOLockFree(data->irq_mutex);
+    }
     
-    IOLockFree(data->enabled_mutex);
-    IOLockFree(data->irq_mutex);
-    OSSafeReleaseNULL(functions);
+    if (functions)
+        OSSafeReleaseNULL(functions);
     super::free();
 }
 
@@ -285,11 +292,5 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     }
     
     functions->setObject(function);
-    
-    // For some reason we need to free here otherwise unloading doesn't work.
-    // It still is retained by the dictionary and kernel.
-    // so it's *probably* fine? Freeing in ::stop causes a page fault
-    // TODO: Sanity Check (please ;-;)
-    OSSafeReleaseNULL(function);
     return 0;
 }

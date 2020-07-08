@@ -131,9 +131,6 @@ bool F03::start(IOService *provider)
     index = 0;
     
     setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
-//    if(!publishButtons()) {
-//        return false;
-//    }
     
     IOLog("Start finished");
     return super::start(provider);
@@ -147,7 +144,6 @@ void F03::stop(IOService *provider)
         command_gate = NULL;
     }
     OSSafeReleaseNULL(work_loop);
-//    unpublishButtons();
     super::stop(provider);
 }
 
@@ -168,6 +164,12 @@ void F03::handlePacketGated(u8 packet)
     SInt32 dx = ((databuf[0] & 0x10) ? 0xffffff00 : 0) | databuf[1];
     SInt32 dy = -(((databuf[0] & 0x20) ? 0xffffff00 : 0) | databuf[2]);
     index = 0;
+    
+    AbsoluteTime timestamp;
+    clock_get_uptime(&timestamp);
+    
+    if (!voodooTrackpointInstance)
+        return;
     
     // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
@@ -191,7 +193,12 @@ void F03::handlePacketGated(u8 packet)
     if (!(buttons & 0x04)) {
         if (middlePressed) {
             middlePressed = false;
-//            buttonDevice->updateRelativePointer(0, 0, 0x04);
+            
+            relativeEvent.buttons = 0x04;
+            relativeEvent.dx = 0;
+            relativeEvent.dy = 0;
+            relativeEvent.timestamp = timestamp;
+            messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
         } else {
             isScrolling = false;
         }
@@ -201,13 +208,19 @@ void F03::handlePacketGated(u8 packet)
     
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {
-//        buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
-//                                        (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
-//                                        0);
+        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT);
+        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT);
+        scrollEvent.deltaAxis3 = 0;
+        scrollEvent.timestamp = timestamp;
+        
+        messageClient(kIOMessageVoodooTrackpointScrollWheel, voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
     } else {
-//        buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
-//                                            (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
-//                                            buttons);
+        relativeEvent.buttons = buttons;
+        relativeEvent.dx = (SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT);
+        relativeEvent.dy = (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT);
+        relativeEvent.timestamp = timestamp;
+        
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
     }
 
     if (dx || dy) {
@@ -299,8 +312,14 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             // We do not lose any info casting to unsigned int.
             // This message originates in RMIBus::Notify, which sends an unsigned int
             overwrite_buttons = (unsigned int)((intptr_t) argument);
-            buttonDevice->updateButtons(overwrite_buttons);
+
+            AbsoluteTime timestamp;
+            clock_get_uptime(&timestamp);
+            relativeEvent.buttons = overwrite_buttons;
+            relativeEvent.dx = relativeEvent.dy = 0;
+            relativeEvent.timestamp = timestamp;
             
+            messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
             break;
         }
     }
@@ -434,56 +453,20 @@ int F03::ps2Command(u8 *param, unsigned int command)
 
 bool F03::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    IOLog("HandleOpen called");
-//    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
-//        voodooInputInstance = forClient;
-//        voodooInputInstance->retain();
-//
-//        return true;
-//    }
+    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
+        voodooTrackpointInstance = forClient;
+        voodooTrackpointInstance->retain();
+
+        return true;
+    }
     
     return super::handleOpen(forClient, options, arg);
 }
 
 void F03::handleClose(IOService *forClient, IOOptionBits options)
 {
-//    OSSafeReleaseNULL(voodooInputInstance);
+    OSSafeReleaseNULL(voodooTrackpointInstance);
     super::handleClose(forClient, options);
-}
-
-bool F03::publishButtons()
-{
-    buttonDevice = OSTypeAlloc(ButtonDevice);
-    if (!buttonDevice) {
-        IOLogError("No memory to allocate TrackpointDevice instance\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->init(NULL)) {
-        IOLogError("Failed to init TrackpointDevice\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->attach(this)) {
-        IOLogError("Failed to attach TrackpointDevice\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->start(this)) {
-        IOLogError("Failed to start TrackpointDevice \n");
-        goto trackpoint_exit;
-    }
-    
-    return true;
-trackpoint_exit:
-    unpublishButtons();
-    return false;
-}
-
-void F03::unpublishButtons()
-{
-    if (buttonDevice) {
-        buttonDevice->stop(this);
-        buttonDevice->detach(this);
-        OSSafeReleaseNULL(buttonDevice);
-    }
 }
 
 int F03::signum(int value)

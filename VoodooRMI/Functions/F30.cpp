@@ -293,42 +293,35 @@ void F30::rmi_f30_report_button()
         }
     }
     
-    if (numButtons > 1)
-        buttonDevice->updateButtons(btns);
+    if (numButtons > 1) {
+        AbsoluteTime timestamp;
+        clock_get_uptime(&timestamp);
+        
+        relativeEvent.dx = relativeEvent.dy = 0;
+        relativeEvent.buttons = btns;
+        relativeEvent.timestamp = timestamp;
+        
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+    }
     
     if (hasTrackstickButtons)
         rmiBus->notify(kHandleRMITrackpointButton, trackstickBtns);
 }
 
-bool F30::publishButtons() {
-    buttonDevice = OSTypeAlloc(ButtonDevice);
-    if (!buttonDevice) {
-        IOLogError("No memory to allocate TrackpointDevice instance\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->init(NULL)) {
-        IOLogError("Failed to init TrackpointDevice\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->attach(this)) {
-        IOLogError("Failed to attach TrackpointDevice\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->start(this)) {
-        IOLogError("Failed to start TrackpointDevice \n");
-        goto trackpoint_exit;
+bool F30::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
+{
+    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
+        voodooTrackpointInstance = forClient;
+        voodooTrackpointInstance->retain();
+
+        return true;
     }
     
-    return true;
-trackpoint_exit:
-    unpublishButtons();
-    return false;
+    return super::handleOpen(forClient, options, arg);
 }
 
-void F30::unpublishButtons() {
-    if (buttonDevice) {
-        buttonDevice->stop(this);
-        buttonDevice->detach(this);
-        OSSafeReleaseNULL(buttonDevice);
-    }
+void F30::handleClose(IOService *forClient, IOOptionBits options)
+{
+    OSSafeReleaseNULL(voodooTrackpointInstance);
+    super::handleClose(forClient, options);
 }

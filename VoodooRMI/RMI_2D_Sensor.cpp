@@ -117,6 +117,9 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
     int realFingerCount = 0;
     
+    if (!voodooInputInstance)
+        return;
+    
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
         

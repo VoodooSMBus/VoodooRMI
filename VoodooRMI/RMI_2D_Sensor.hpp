@@ -91,6 +91,7 @@ private:
     IOService *voodooInputInstance {nullptr};
     
     bool freeFingerTypes[kMT2FingerTypeCount];
+    bool invalidFinger[10];
     bool clickpadState {false};
     bool pressureLock {false};
     bool touchpadEnable {true};

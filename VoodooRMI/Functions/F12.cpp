@@ -220,26 +220,8 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
             getReport();
             break;
         case kHandleRMIClickpadSet:
-            clickpadState = !!(argument);
-            break;
         case kHandleRMITrackpoint:
-            uint64_t timestamp;
-            clock_get_uptime(&timestamp);
-            absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
-            break;
-            
-            // VoodooPS2 Messages
-        case kKeyboardKeyPressTime:
-            lastKeyboardTS = *((uint64_t*) argument);
-            break;
-        case kKeyboardGetTouchStatus: {
-            bool *result = (bool *) argument;
-            *result = touchpadEnable;
-            break;
-        }
-        case kKeyboardSetTouchStatus:
-            touchpadEnable = *((bool *) argument);
-            break;
+            return messageClient(type, sensor, argument);
     }
     
     return kIOReturnSuccess;

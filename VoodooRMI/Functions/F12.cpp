@@ -104,14 +104,17 @@ bool F12::attach(IOService *provider)
         data_offset += item->reg_size;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 1);
-    if (item) {
-        data1 = item;
-        data1_offset = data_offset;
-        data_offset += item->reg_size;
-        sensor->nbr_fingers = item->num_subpackets;
-        sensor->report_abs = 1;
-        sensor->attn_size += item->reg_size;
+    if (!item) {
+        return false;
+        IOLogError("F12 - No Data1 Reg!");
     }
+    
+    data1 = item;
+    data1_offset = data_offset;
+    data_offset += item->reg_size;
+    sensor->nbr_fingers = item->num_subpackets;
+    sensor->report_abs = 1;
+    sensor->attn_size += item->reg_size;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 2);
     if (item)

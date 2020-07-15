@@ -50,6 +50,36 @@
 			<key>CFBundleIdentifier</key>
 			<string>com.1Revenger1.VoodooRMI</string>
 		</dict>
+		<key>RMII2CDevice</key>
+		<dict>
+			<key>Configuration</key>
+			<dict>
+				<key>MinYDiffThumbDetection</key>
+				<integer>200</integer>
+				<key>ForceTouchEmulation</key>
+				<true/>
+				<key>ForceTouchMinPressure</key>
+				<integer>90</integer>
+				<key>DisableWhileTypingTimeout</key>
+				<integer>100</integer>
+				<key>TrackstickMultiplier</key>
+				<integer>20</integer>
+				<key>TrackstickScrollMultiplierX</key>
+				<integer>20</integer>
+				<key>TrackstickScrollMultiplierY</key>
+				<integer>20</integer>
+				<key>TrackstickDeadzone</key>
+				<integer>1</integer>
+			</dict>
+			<key>IOProbeScore</key>
+			<integer>2910</integer>
+			<key>IOProviderClass</key>
+			<string>RMII2C</string>
+			<key>IOClass</key>
+			<string>RMIBus</string>
+			<key>CFBundleIdentifier</key>
+			<string>com.1Revenger1.VoodooRMI</string>
+		</dict>
 		<key>RMISMBus</key>
 		<dict>
 			<key>IOProbeScore</key>
@@ -61,6 +91,22 @@
 			<key>CFBundleIdentifier</key>
 			<string>com.1Revenger1.VoodooRMI</string>
 		</dict>
+		<key>RMII2C</key>
+		<dict>
+			<key>IOProbeScore</key>
+			<integer>500</integer>
+			<key>IOProviderClass</key>
+			<string>VoodooI2CDeviceNub</string>
+			<key>IOClass</key>
+			<string>RMII2C</string>
+			<key>IOPropertyMatch</key>
+			<dict>
+				<key>name</key>
+				<string>SYNA2B31</string>
+			</dict>
+			<key>CFBundleIdentifier</key>
+			<string>com.1Revenger1.VoodooRMI</string>
+		</dict>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2020 1Revenger1. All rights reserved.</string>
@@ -68,6 +114,8 @@
 	<dict>
 		<key>de.leo-labs.VoodooSMBus</key>
 		<string>2.1</string>
+		<key>com.alexandred.VoodooI2C</key>
+		<string>2.0</string>
 		<key>com.apple.kpi.iokit</key>
 		<string>18.5</string>
 		<key>com.apple.kpi.libkern</key>

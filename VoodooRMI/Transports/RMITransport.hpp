@@ -13,9 +13,11 @@
 
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
+#include <IOKit/IOTimerEventSource.h>
 //#include <libkern/OSMalloc.h>
 #include "../Utility/LinuxCompat.h"
 #include "VoodooSMBusDeviceNub.hpp"
+#include "VoodooI2CDeviceNub.hpp"
 
 #define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
 
@@ -36,7 +38,7 @@ public:
     
     virtual int reset() {return 0;};
     
-    inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override {
+    inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) APPLE_KEXT_OVERRIDE {
         IOService *client = getClient();
         if (!client) return kIOReturnError;
         
@@ -67,15 +69,15 @@ class RMISMBus : public RMITransport {
     OSDeclareDefaultStructors(RMISMBus);
     
 public:
-    bool init(OSDictionary *dictionary) override;
-    RMISMBus *probe(IOService *provider, SInt32 *score) override;
-    bool start(IOService *provider) override;
-    void free() override;
+    bool init(OSDictionary *dictionary) APPLE_KEXT_OVERRIDE;
+    RMISMBus *probe(IOService *provider, SInt32 *score) APPLE_KEXT_OVERRIDE;
+    bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
+    void free() APPLE_KEXT_OVERRIDE;
     
-    int readBlock(u16 rmiaddr, u8 *databuff, size_t len) override;
-    int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
+    int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
+    int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
     
-    inline int reset() override {
+    inline int reset() APPLE_KEXT_OVERRIDE {
         /*
          * I don't think this does a full reset, as it still seems to retain memory
          * I believe a PS2 reset needs to be done to completely reset the sensor
@@ -94,9 +96,61 @@ private:
     int rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
                                  bool isread, u8 *commandcode);
 };
-//
-//class RMII2C : public RMITransport {
-//    OSDeclareDefaultStructors(RMII2C);
-//};
+
+#define RMI_MOUSE_REPORT_ID        0x01 /* Mouse emulation Report */
+#define RMI_WRITE_REPORT_ID        0x09 /* Output Report */
+#define RMI_READ_ADDR_REPORT_ID        0x0a /* Output Report */
+#define RMI_READ_DATA_REPORT_ID        0x0b /* Input Report */
+#define RMI_ATTN_REPORT_ID        0x0c /* Input Report */
+#define RMI_SET_RMI_MODE_REPORT_ID    0x0f /* Feature Report */
+
+#define RMI_PAGE_SELECT_REGISTER 0xff
+#define RMI_I2C_PAGE(addr) (((addr) >> 8) & 0xff)
+
+#define INTERRUPT_SIMULATOR_TIMEOUT 5
+#define INTERRUPT_SIMULATOR_TIMEOUT_BUSY 2
+#define INTERRUPT_SIMULATOR_TIMEOUT_IDLE 50
+
+enum rmi_mode_type {
+    RMI_MODE_OFF = 0,
+    RMI_MODE_ATTN_REPORTS = 1,
+    RMI_MODE_NO_PACKED_ATTN_REPORTS = 2,
+};
+
+class RMII2C : public RMITransport {
+    OSDeclareDefaultStructors(RMII2C);
+    typedef IOService super;
+
+public:
+    RMII2C *probe(IOService *provider, SInt32 *score) APPLE_KEXT_OVERRIDE;
+    bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
+    void stop(IOService* device) APPLE_KEXT_OVERRIDE;
+
+    int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
+    int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
+    inline int reset() APPLE_KEXT_OVERRIDE {return 0;} // No reset function for rmi_i2c
+
+    void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
+    void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
+    void getInputReport();
+
+private:
+    IOWorkLoop* work_loop;
+    IOCommandGate* command_gate;
+    IOTimerEventSource* interrupt_simulator;
+    IOInterruptEventSource* interrupt_source;
+    void releaseResources();
+
+    bool reading {true};
+    IOService *client {nullptr};
+
+    VoodooI2CDeviceNub *device_nub;
+    IOLock *page_mutex;
+    int page {0};
+    
+    int rmi_write_report(u8 *report, size_t report_size);
+    int rmi_set_page(u8 page);
+    int rmi_set_mode(u8 mode);
+};
 
 #endif // RMITransport_H

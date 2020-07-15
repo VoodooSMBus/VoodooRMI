@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6F37CAE424BD89A20000114C /* RMII2C.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F37CAE324BD89A20000114C /* RMII2C.cpp */; };
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
 		A4435AF0248F8AD80083404C /* ButtonDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4435AEE248F8AD80083404C /* ButtonDevice.cpp */; };
@@ -40,6 +41,7 @@
 
 /* Begin PBXFileReference section */
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
+		6F37CAE324BD89A20000114C /* RMII2C.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMII2C.cpp; sourceTree = "<group>"; };
 		A41323E62492077C00907B0D /* Configuration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
 		A41323E72492077C00907B0D /* Configuration.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Configuration.hpp; sourceTree = "<group>"; };
 		A4435AEE248F8AD80083404C /* ButtonDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonDevice.cpp; sourceTree = "<group>"; };
@@ -138,6 +140,7 @@
 			children = (
 				A4560EEB247F32600009CBE0 /* RMITransport.hpp */,
 				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
+				6F37CAE324BD89A20000114C /* RMII2C.cpp */,
 			);
 			path = Transports;
 			sourceTree = "<group>";
@@ -304,6 +307,7 @@
 				A4560EFC247F32760009CBE0 /* F11.cpp in Sources */,
 				A4560F00247F32760009CBE0 /* F30.cpp in Sources */,
 				A4435AF0248F8AD80083404C /* ButtonDevice.cpp in Sources */,
+				6F37CAE424BD89A20000114C /* RMII2C.cpp in Sources */,
 				A4560EFD247F32760009CBE0 /* F12.cpp in Sources */,
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
 				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,

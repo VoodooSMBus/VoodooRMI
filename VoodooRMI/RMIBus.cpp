@@ -72,6 +72,7 @@ bool RMIBus::start(IOService *provider) {
     registerPowerDriver(this, RMIPowerStates, 2);
     
     registerService();
+    transport->setInterrupt(true);
     return true;
 err:
     IOLog("Could not start");
@@ -130,10 +131,30 @@ void RMIBus::handleHostNotify()
     OSSafeReleaseNULL(iter);
 }
 
+void RMIBus::handleHostNotifyI2C()
+{
+    if (!data) {
+        IOLogError("Interrupt - No data\n");
+        return;
+    }
+    if (!data->f01_container) {
+        IOLogError("Interrupt - No F01 Container\n");
+        return;
+    }
+
+    OSIterator* iter = OSCollectionIterator::withCollection(functions);
+    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
+        messageClient(kHandleRMIAttention, func);
+    OSSafeReleaseNULL(iter);
+}
+
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
         case kIOMessageVoodooSMBusHostNotify:
             handleHostNotify();
+            return kIOReturnSuccess;
+        case kIOMessageVoodooI2CHostNotify:
+            handleHostNotifyI2C();
             return kIOReturnSuccess;
         default:
             return super::message(type, provider);
@@ -171,14 +192,14 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
     
     if (whichState == 0 && awake) {
         IOLogDebug("Sleep");
+        transport->setInterrupt(false);
         messageClients(kHandleRMISuspend);
         rmi_driver_clear_irq_bits(this);
         awake = false;
     } else if (!awake) {
         IOSleep(1000);
         IOLogDebug("Wakeup");
-        IOReturn ret = transport->reset();
-        if (ret < 0)
+        if (transport->reset() < 0)
             IOLogError("Could not get SMBus Version on wakeup\n");
         // c++ lambdas are wack
         // Sensor doesn't wake up if we don't scan property tables
@@ -186,10 +207,11 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
                                  void *ctx, const struct pdt_entry *pdt) -> int
         {
             IOLogDebug("Function F%X found again", pdt->function_number);
-            return 0;
+            return kIOPMAckImplied;
         });
         rmi_driver_set_irq_bits(this);
         messageClients(kHandleRMIResume);
+        transport->setInterrupt(true);
         awake = true;
     }
 
@@ -245,6 +267,7 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
         case 0x30: /* GPIO and LED controls */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
             break;
+//        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */
 //        case 0x17: /* pointing sticks */
 //        case 0x19: /* capacitive buttons */

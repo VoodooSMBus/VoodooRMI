@@ -20,6 +20,7 @@
 #include "VoodooI2CDeviceNub.hpp"
 
 #define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
+#define kIOMessageVoodooI2CHostNotify   iokit_vendor_specific_msg(421)
 
 // power management
 static IOPMPowerState RMIPowerStates[] = {
@@ -37,7 +38,9 @@ public:
     virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {return 0;};
     
     virtual int reset() {return 0;};
-    
+
+    inline virtual bool setInterrupt(bool enable) {return true;};
+
     inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) APPLE_KEXT_OVERRIDE {
         IOService *client = getClient();
         if (!client) return kIOReturnError;
@@ -107,6 +110,7 @@ private:
 #define RMI_PAGE_SELECT_REGISTER 0xff
 #define RMI_I2C_PAGE(addr) (((addr) >> 8) & 0xff)
 
+#define INTERRUPT_SIMULATOR_INTERVAL 200
 #define INTERRUPT_SIMULATOR_TIMEOUT 5
 #define INTERRUPT_SIMULATOR_TIMEOUT_BUSY 2
 #define INTERRUPT_SIMULATOR_TIMEOUT_IDLE 50
@@ -128,7 +132,8 @@ public:
 
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
-    inline int reset() APPLE_KEXT_OVERRIDE {return 0;} // No reset function for rmi_i2c
+    inline int reset() APPLE_KEXT_OVERRIDE {return rmi_set_mode(RMI_MODE_ATTN_REPORTS);};
+    bool setInterrupt(bool enable) APPLE_KEXT_OVERRIDE;
 
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
@@ -142,6 +147,7 @@ private:
     void releaseResources();
 
     bool reading {true};
+    bool polling {true};
     IOService *client {nullptr};
 
     VoodooI2CDeviceNub *device_nub;

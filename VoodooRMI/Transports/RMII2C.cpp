@@ -2,6 +2,8 @@
  * Copyright (c) 2020 Zhen
  * Ported to macOS from linux kernel, original source at
  * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_i2c.c
+ * and code written by Alexandre, CoolStar and Kishor Prins
+ * https://github.com/VoodooI2C/VoodooI2CSynaptics
  *
  * Copyright (c) 2011-2016 Synaptics Incorporated
  * Copyright (c) 2011 Unixphere
@@ -14,7 +16,7 @@ OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 
 RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
 {
-    int error;
+    int error = 0, attempts = 0;
 
     OSData *data;
     data = OSDynamicCast(OSData, provider->getProperty("name"));
@@ -31,7 +33,13 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
         IOLog("%s: Could not cast nub\n", getName());
         return NULL;
     }
-    error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
+
+    do {
+        error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
+        IOLog("%s: Trying to set mode, attempt %d\n", getName(), attempts);
+        IOSleep(500);
+    } while (error && attempts++ < 5);
+
     if (error) {
         IOLog("%s: Failed to set mode\n", getName());
         return NULL;
@@ -80,18 +88,21 @@ bool RMII2C::start(IOService *provider)
             goto exit;
         }
         work_loop->addEventSource(interrupt_simulator);
-        interrupt_simulator->setTimeoutMS(200);
+//        interrupt_simulator->setTimeoutMS(200);
         IOLog("%s: Polling mode initialisation succeeded.", getName());
+        setProperty("Mode", "Polling");
     } else {
         work_loop->addEventSource(interrupt_source);
-        interrupt_source->enable();
+//        interrupt_source->enable();
         IOLog("%s: running on interrupt mode.", getName());
+        setProperty("Mode", "Interrupt");
     }
+    setProperty("Interrupt", false);
 
     client = getClient();
     if (!client) {
         IOLog("%s: Could not get client\n", getName());
-        goto exit;
+//        goto exit;
     }
 
     setProperty("VoodooI2CServices Supported", kOSBooleanTrue);
@@ -104,7 +115,7 @@ exit:
 
 void RMII2C::releaseResources() {
     if (command_gate) {
-        command_gate->disable();
+//        command_gate->disable();
         work_loop->removeEventSource(command_gate);
     }
     if (interrupt_source) {
@@ -156,8 +167,19 @@ int RMII2C::rmi_set_page(u8 page)
 
 int RMII2C::rmi_set_mode(u8 mode) {
     u8 command[] = { 0x22, 0x00, 0x3f, 0x03, 0x0f, 0x23, 0x00, 0x04, 0x00, RMI_SET_RMI_MODE_REPORT_ID, mode }; //magic bytes from Linux
-    IOReturn ret = device_nub->writeI2C(command, sizeof(command));
-    if (ret != kIOReturnSuccess)
+//    u8 command[] = {
+//        0x22, // registerIndex : wCommandRegister
+//        0x00, // registerIndex+1
+//        0x3f, // reportID | reportType << 4; reportType: 0x03 for HID_FEATURE_REPORT (kIOHIDReportTypeFeature) ; 0x02 for HID_OUTPUT_REPORT (kIOHIDReportTypeOutput)
+//        0x03, // hid_set_report_cmd =    { I2C_HID_CMD(0x03) };
+//        0x0f, // report_id -> RMI_SET_RMI_MODE_REPORT_ID
+//        0x23, // dataRegister & 0xFF; wDataRegister
+//        0x00, // dataRegister >> 8;
+//        0x04, // size & 0xFF; 2 + reportID + buf (reportID excluded)
+//        0x00, // size >> 8;
+//        RMI_SET_RMI_MODE_REPORT_ID, // report_id = buf[0];
+//        mode };
+    if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
     else
         return 0;
@@ -166,6 +188,11 @@ int RMII2C::rmi_set_mode(u8 mode) {
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     int ret = 0;
     uint8_t writeReport[25] = {0x25, 0x00, 0x17, 0x00};
+//    uint8_t writeReport[25] = {
+//        0x25,
+//        0x00,
+//        0x17,
+//        0x00}; // hid_no_cmd =        { .length = 0 };
 
     IOLockLock(page_mutex);
     if (RMI_I2C_PAGE(rmiaddr) != page) {
@@ -273,14 +300,42 @@ void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int 
 void RMII2C::getInputReport() {
     // Do we really need it in command gate?
     reading = true;
-    // messageclient?
-    messageClient(kIOMessageVoodooSMBusHostNotify, client);
+    messageClient(kIOMessageVoodooI2CHostNotify, client);
     reading = false;
+exit:
     return;
 }
 
 void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
     interruptOccured(owner, NULL, 0);
-    interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
+    if (polling) {
+        interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
+    }
 }
 
+bool RMII2C::setInterrupt(bool enable) {
+    // interrupt will only be enabled after client update
+    if (!client)
+        client = getClient();
+
+    if (enable) {
+        reading = false;
+        if (!interrupt_source) {
+            interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_INTERVAL);
+            polling = true;
+        }
+        else
+            interrupt_source->enable();
+    } else {
+        reading = true;
+        if (!interrupt_source)
+            polling = false;
+        else
+            interrupt_source->disable();
+    }
+
+    IOLog("%s: interrupt %s", getName(), enable ? "enabled" : "disabled");
+    setProperty("Interrupt", enable);
+
+    return true;
+}

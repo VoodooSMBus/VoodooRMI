@@ -115,7 +115,21 @@ int F30::rmi_f30_initialize()
     has_gpio_driver_control = buf[0] & RMI_F30_HAS_GPIO_DRV_CTL;
     has_mech_mouse_btns = buf[0] & RMI_F30_HAS_MECH_MOUSE_BTNS;
     gpioled_count = buf[1] & RMI_F30_GPIO_LED_COUNT;
-    
+
+    OSDictionary * attribute = OSDictionary::withCapacity(8);
+    attribute->setObject("extended_pattern", has_extended_pattern ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("mappable_buttons", has_mappable_buttons ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("led", has_led ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("gpio", has_gpio ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("haptic", has_haptic ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("gpio_driver_control", has_gpio_driver_control ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("mech_mouse_btns", has_mech_mouse_btns ? kOSBooleanTrue : kOSBooleanFalse);
+    OSNumber *count = OSNumber::withNumber(gpioled_count, 8);
+    attribute->setObject("gpioled_count", count);
+    setProperty("Attibute", attribute);
+    OSSafeReleaseNULL(count);
+    OSSafeReleaseNULL(attribute);
+
     register_count = DIV_ROUND_UP(gpioled_count, 8);
     
     if (has_gpio && has_led)
@@ -277,7 +291,10 @@ void F30::rmi_f30_report_button()
         mask = key_down << (key_code - 1);
         
         if (numButtons == 1 && i == clickpad_index) {
-            rmiBus->notify(kHandleRMIClickpadSet, key_down);
+            if (clickpadState != key_down) {
+                rmiBus->notify(kHandleRMIClickpadSet, key_down);
+                clickpadState = key_down;
+            }
             continue;
         }
         

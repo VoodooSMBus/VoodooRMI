@@ -220,7 +220,7 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
             getReport();
             break;
         case kHandleRMIClickpadSet:
-            clickpadState = !!(argument);
+            messageClient(type, sensor, argument);
             break;
         case kHandleRMITrackpoint:
             uint64_t timestamp;

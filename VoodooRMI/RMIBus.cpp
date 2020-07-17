@@ -134,11 +134,31 @@ void RMIBus::handleHostNotify()
     OSSafeReleaseNULL(iter);
 }
 
+void RMIBus::handleHostNotifyI2C()
+ {
+     if (!data) {
+         IOLogError("Interrupt - No data\n");
+         return;
+     }
+     if (!data->f01_container) {
+         IOLogError("Interrupt - No F01 Container\n");
+         return;
+     }
+
+     OSIterator* iter = OSCollectionIterator::withCollection(functions);
+     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
+         messageClient(kHandleRMIAttention, func);
+     OSSafeReleaseNULL(iter);
+ }
+
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
         case kIOMessageVoodooSMBusHostNotify:
             handleHostNotify();
             return kIOReturnSuccess;
+        case kIOMessageVoodooI2CHostNotify:
+             handleHostNotifyI2C();
+             return kIOReturnSuccess;
         default:
             return super::message(type, provider);
     }

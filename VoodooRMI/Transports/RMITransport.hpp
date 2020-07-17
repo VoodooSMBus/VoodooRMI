@@ -18,6 +18,7 @@
 #include "VoodooSMBusDeviceNub.hpp"
 
 #define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
+#define kIOMessageVoodooI2CHostNotify   iokit_vendor_specific_msg(421)
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
 #define HasResetIdentifier "RMI Has Reset"
@@ -65,10 +66,5 @@ public:
 protected:
     IOService *bus {nullptr};
 };
-
-//
-//class RMII2C : public RMITransport {
-//    OSDeclareDefaultStructors(RMII2C);
-//};
 
 #endif // RMITransport_H

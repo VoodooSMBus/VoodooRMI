@@ -4,3 +4,6 @@
 [submodule "Dependencies/VoodooSMBus"]
 	path = Dependencies/VoodooSMBus
 	url = https://github.com/VoodooSMBus/VoodooSMBus.git
+[submodule "Dependencies/VoodooI2C"]
+	path = Dependencies/VoodooI2C
+	url = https://github.com/VoodooI2C/VoodooI2C.git

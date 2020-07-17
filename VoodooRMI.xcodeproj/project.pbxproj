@@ -13,6 +13,9 @@
 		6F4B4A9024C1A0B80018F1F0 /* RMII2C.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */; };
 		6F4B4A9224C1A0B80018F1F0 /* RMII2C.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */; };
 		6F4B4A9C24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */; };
+		6FCE9B1E24C259740042525E /* VoodooTrackpoint.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 2861B6D224B5928F00383E0E /* VoodooTrackpoint.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6FCE9B1F24C2597B0042525E /* RMISMBus.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 286587D724C13D9600E74848 /* RMISMBus.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6FCE9B2024C2597F0042525E /* RMII2C.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
 		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
@@ -72,6 +75,22 @@
 			remoteInfo = RMII2C;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6FCE9B1D24C259630042525E /* Copy Plugins */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6FCE9B2024C2597F0042525E /* RMII2C.kext in Copy Plugins */,
+				6FCE9B1F24C2597B0042525E /* RMISMBus.kext in Copy Plugins */,
+				6FCE9B1E24C259740042525E /* VoodooTrackpoint.kext in Copy Plugins */,
+			);
+			name = "Copy Plugins";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
@@ -360,7 +379,7 @@
 				A4560EC2247F29EC0009CBE0 /* Sources */,
 				A4560EC3247F29EC0009CBE0 /* Frameworks */,
 				A4560EC4247F29EC0009CBE0 /* Headers */,
-				A4560EC5247F29EC0009CBE0 /* Resources */,
+				6FCE9B1D24C259630042525E /* Copy Plugins */,
 				28445F072488403F00D8858A /* Copy VoodooInput */,
 			);
 			buildRules = (
@@ -443,13 +462,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A4560EC5247F29EC0009CBE0 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -465,7 +477,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [ ! -d \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\" ]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    mv \"${BUILT_PRODUCTS_DIR}/VoodooTrackpoint.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    mv \"${BUILT_PRODUCTS_DIR}/RMISMBus.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    mv \"${BUILT_PRODUCTS_DIR}/RMII2C.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi\n";
+			shellScript = "cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;

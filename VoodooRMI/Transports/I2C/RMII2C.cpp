@@ -102,7 +102,6 @@ bool RMII2C::start(IOService *provider)
     registerPowerDriver(this, RMIPowerStates, 2);
 
     setProperty("VoodooI2CServices Supported", kOSBooleanTrue);
-    setProperty(HasResetIdentifier, kOSBooleanTrue);
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
     return true;
@@ -298,12 +297,7 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
 }
 
 bool RMII2C::setInterrupt(bool enable) {
-    // interrupt will only be enabled after client update
-    while (!client) {
-        client = getClient();
-        IOSleep(500);
-    }
-
+    IOLog("%s: interrupt %d", getName(), enable);
     if (enable) {
         reading = false;
         if (!interrupt_source) {
@@ -324,6 +318,7 @@ bool RMII2C::setInterrupt(bool enable) {
 }
 
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
+    IOLog("%s: powerState %ld", getName(), powerState);
     if (whatDevice != this)
         return kIOReturnInvalid;
 

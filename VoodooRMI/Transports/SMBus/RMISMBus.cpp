@@ -61,7 +61,6 @@ bool RMISMBus::start(IOService *provider)
 {
     bool res = super::start(provider);
     registerService();
-    setProperty(HasResetIdentifier, kOSBooleanTrue);
     setProperty(RMIBusSupported, kOSBooleanTrue);
     return res;
 }

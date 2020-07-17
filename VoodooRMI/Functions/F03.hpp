@@ -12,8 +12,8 @@
 
 #include "../RMIBus.hpp"
 #include "../Utility/PS2.hpp"
-#include "../Utility/ButtonDevice.hpp"
 #include "../Utility/Configuration.hpp"
+#include <VoodooTrackpointMessages.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 
@@ -84,14 +84,19 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
 //    void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
     RMIBus *rmiBus;
-    ButtonDevice *buttonDevice;
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
+    
+    IOService *voodooTrackpointInstance {nullptr};
+    RelativePointerEvent relativeEvent {};
+    ScrollWheelEvent scrollEvent {};
     
     unsigned int trackstickMult;
     unsigned int trackstickScrollXMult;
@@ -117,9 +122,6 @@ private:
     u8 rx_queue_length;
 
     IOWorkLoop* getWorkLoop();
-    
-    bool publishButtons();
-    void unpublishButtons();
     
     int rmi_f03_pt_write (unsigned char val);
     int ps2DoSendbyteGated(u8 byte, uint64_t timeout);

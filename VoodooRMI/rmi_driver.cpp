@@ -181,13 +181,10 @@ int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt)
         u16 cmd_addr = pdt->page_start + pdt->command_base_addr;
         u8 cmd_buf = RMI_DEVICE_RESET_CMD;
         
-        // TODO: Detect transport and call respective resets
-        // SMbus hardcoded for now
-        bool smbus = true;
+        bool transportHasReset = !!dev->transport->getProperty(HasResetIdentifier);
         
-        if (smbus) {
+        if (transportHasReset) {
             error = dev->reset();
-//            error = dev->rmi_smb_get_version();
             if (error < 0) {
                 IOLogError("Unable to reset");
                 return error;

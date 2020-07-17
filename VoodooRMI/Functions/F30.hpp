@@ -11,7 +11,7 @@
 #define F30_hpp
 
 #include <RMIBus.hpp>
-#include "../Utility/ButtonDevice.hpp"
+#include <VoodooTrackpointMessages.h>
 
 #define RMI_F30_QUERY_SIZE            2
 
@@ -67,11 +67,15 @@ public:
     bool start(IOService *provider) override;
     void stop(IOService *providerr) override;
     void free() override;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
     RMIBus *rmiBus;
-    ButtonDevice *buttonDevice;
+    
+    IOService *voodooTrackpointInstance {nullptr};
+    RelativePointerEvent relativeEvent {};
     
     /* Query Data */
     bool has_extended_pattern;
@@ -106,9 +110,6 @@ private:
     int rmi_f30_map_gpios();
     int rmi_f30_is_valid_button(int button);
     void rmi_f30_report_button();
-    
-    bool publishButtons();
-    void unpublishButtons();
 };
 
 #endif /* F30_hpp */

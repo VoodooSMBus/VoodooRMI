@@ -15,53 +15,36 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.6</string>
+	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>0.6</string>
-	<key>OSBundleCompatibleVersion</key>
-	<string>0.5</string>
+	<string>1.0</string>
 	<key>IOKitPersonalities</key>
 	<dict>
-		<key>RMIDevice</key>
+		<key>RMISMBus</key>
 		<dict>
-			<key>Configuration</key>
-			<dict>
-				<key>MinYDiffThumbDetection</key>
-				<integer>200</integer>
-				<key>ForceTouchEmulation</key>
-				<true/>
-				<key>ForceTouchMinPressure</key>
-				<integer>90</integer>
-				<key>DisableWhileTypingTimeout</key>
-				<integer>100</integer>
-				<key>TrackstickMultiplier</key>
-				<integer>20</integer>
-				<key>TrackstickScrollMultiplierX</key>
-				<integer>20</integer>
-				<key>TrackstickScrollMultiplierY</key>
-				<integer>20</integer>
-				<key>TrackstickDeadzone</key>
-				<integer>1</integer>
-			</dict>
-			<key>IOProbeScore</key>
-			<integer>2910</integer>
-			<key>IOProviderClass</key>
-			<string>RMITransport</string>
 			<key>IOPropertyMatch</key>
 			<dict>
-				<key>RMI4 Supported</key>
-				<true/>
+				<key>VoodooSMBUS Slave Device Address</key>
+				<integer>44</integer>
 			</dict>
+			<key>IOProbeScore</key>
+			<integer>500</integer>
+			<key>IOProviderClass</key>
+			<string>VoodooSMBusDeviceNub</string>
 			<key>IOClass</key>
-			<string>RMIBus</string>
+			<string>RMISMBus</string>
 			<key>CFBundleIdentifier</key>
-			<string>com.1Revenger1.VoodooRMI</string>
+			<string>com.1Revenger1.RMISMBus</string>
 		</dict>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2020 1Revenger1. All rights reserved.</string>
 	<key>OSBundleLibraries</key>
 	<dict>
+		<key>de.leo-labs.VoodooSMBus</key>
+		<string>2.1</string>
+		<key>com.1Revenger1.VoodooRMI</key>
+		<string>0.5</string>
 		<key>com.apple.kpi.iokit</key>
 		<string>18.5</string>
 		<key>com.apple.kpi.libkern</key>

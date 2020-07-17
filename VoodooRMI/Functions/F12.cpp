@@ -104,14 +104,17 @@ bool F12::attach(IOService *provider)
         data_offset += item->reg_size;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 1);
-    if (item) {
-        data1 = item;
-        data1_offset = data_offset;
-        data_offset += item->reg_size;
-        sensor->nbr_fingers = item->num_subpackets;
-        sensor->report_abs = 1;
-        sensor->attn_size += item->reg_size;
+    if (!item) {
+        return false;
+        IOLogError("F12 - No Data1 Reg!");
     }
+    
+    data1 = item;
+    data1_offset = data_offset;
+    data_offset += item->reg_size;
+    sensor->nbr_fingers = item->num_subpackets;
+    sensor->report_abs = 1;
+    sensor->attn_size += item->reg_size;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 2);
     if (item)
@@ -136,6 +139,8 @@ bool F12::attach(IOService *provider)
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
     setProperty("Number of fingers", sensor->nbr_fingers, 8);
+    IOLogDebug("F12 - Number of fingers %u", sensor->nbr_fingers);
+    
     
     return super::attach(provider);
 }
@@ -220,26 +225,8 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
             getReport();
             break;
         case kHandleRMIClickpadSet:
-            clickpadState = !!(argument);
-            break;
         case kHandleRMITrackpoint:
-            uint64_t timestamp;
-            clock_get_uptime(&timestamp);
-            absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
-            break;
-            
-            // VoodooPS2 Messages
-        case kKeyboardKeyPressTime:
-            lastKeyboardTS = *((uint64_t*) argument);
-            break;
-        case kKeyboardGetTouchStatus: {
-            bool *result = (bool *) argument;
-            *result = touchpadEnable;
-            break;
-        }
-        case kKeyboardSetTouchStatus:
-            touchpadEnable = *((bool *) argument);
-            break;
+            return messageClient(type, sensor, argument);
     }
     
     return kIOReturnSuccess;
@@ -326,7 +313,9 @@ int F12::rmi_f12_read_sensor_tuning()
 void F12::getReport()
 {
     AbsoluteTime timestamp;
-    uint64_t timestampNS;
+    
+    if (!sensor)
+        return;
     
     int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, sensor->data_pkt,
                                    sensor->pkt_size);
@@ -345,14 +334,21 @@ void F12::getReport()
         objects = sensor->pkt_size / F12_DATA1_BYTES_PER_OBJ;
 
     clock_get_uptime(&timestamp);
-    absolutetime_to_nanoseconds(timestamp, &timestampNS);
     
     if (sensor->shouldDiscardReport(timestamp))
         return;
     
     IOLogDebug("F12 Packet");
     
-    for (int i = 0; i < sensor->nbr_fingers; i++) {
+#if DEBUG
+    if (sensor->nbr_fingers > 5) {
+        IOLogDebug("More than 5 fingers!");
+    }
+#endif // debug
+    
+    int fingers = min (sensor->nbr_fingers, 5);
+    
+    for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];
         
         switch (data[0]) {
@@ -376,7 +372,7 @@ void F12::getReport()
     }
     
     report.timestamp = timestamp;
-    report.fingers = sensor->nbr_fingers;
+    report.fingers = fingers;
     
     messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
 }

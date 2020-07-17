@@ -7,9 +7,8 @@
  * Copyright (c) 2011 Unixphere
  */
 
-#include "RMITransport.hpp"
+#include "RMISMBus.hpp"
 
-OSDefineMetaClassAndStructors(RMITransport, IOService)
 OSDefineMetaClassAndStructors(RMISMBus, RMITransport)
 #define super IOService
 
@@ -23,8 +22,7 @@ bool RMISMBus::init(OSDictionary *dictionary)
 RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 {
     int retval = 0, attempts = 0;
-    IOService *service = super::probe(provider, score);
-    if(!service) {
+    if (!super::probe(provider, score)) {
         IOLog("Failed probe");
         return NULL;
     }
@@ -63,13 +61,22 @@ bool RMISMBus::start(IOService *provider)
 {
     bool res = super::start(provider);
     registerService();
+    setProperty(HasResetIdentifier, kOSBooleanTrue);
+    setProperty(RMIBusSupported, kOSBooleanTrue);
     return res;
+}
+
+void RMISMBus::stop(IOService *provider)
+{
+    super::stop(provider);
 }
 
 void RMISMBus::free()
 {
-    IOLockFree(page_mutex);
-    IOLockFree(mapping_table_mutex);
+    if (page_mutex)
+        IOLockFree(page_mutex);
+    if (mapping_table_mutex)
+        IOLockFree(mapping_table_mutex);
     super::free();
 }
 
@@ -215,3 +222,13 @@ exit:
     return retval;
 }
 
+IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
+    if (!bus) return kIOReturnError;
+    
+    switch (type) {
+        case kIOMessageVoodooSMBusHostNotify:
+            return messageClient(kIOMessageVoodooSMBusHostNotify, bus);
+        default:
+            return IOService::message(type, provider, argument);
+    }
+};

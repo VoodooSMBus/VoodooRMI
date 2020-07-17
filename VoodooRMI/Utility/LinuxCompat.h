@@ -78,9 +78,12 @@ static inline void bitmap_set (unsigned long *bitmap, unsigned int start, unsign
 {
     int bitmapIndex = start / BITS_PER_LONG;
     start %= BITS_PER_LONG;
+    start--;
+    
+    unsigned long mask = 1UL << start;
     
     while (nbits > 0) {
-        unsigned long mask = 1UL << start;
+        
         bitmap[bitmapIndex] |= mask;
         
         start++;
@@ -88,58 +91,76 @@ static inline void bitmap_set (unsigned long *bitmap, unsigned int start, unsign
         
         if (start >= BITS_PER_LONG) {
             start = 0;
+            mask = 1UL;
             bitmapIndex++;
         }
     }
 }
 
 static int ffsll(const unsigned long bitmap) {
-    int i = 0;
+    unsigned long mask = 1;
     
-    while (i < sizeof(unsigned long) * BITS_PER_BYTE) {
-        if (bitmap & 1 << i) {
-            break;
+    for (int i = 1; i <= BITS_PER_LONG; i++) {
+        if (bitmap & mask) {
+            return i + 1;
         }
+        
+        mask = mask << 1U;
         i++;
     }
     
-    return i;
+    return 0;
+}
+
+static int divideRoundUp (int n , int d) {
+    if (n % d == 0) {
+        return n / d;
+    } else {
+        return (n / d) + 1;
+    }
 }
 
 static inline int find_first_bit (const unsigned long *bitmap, int bits)
 {
-    int lim = bits/BITS_PER_LONG, res = 0;
+    int lim = divideRoundUp(bits, BITS_PER_LONG), res = 0;
     
     for (int i = 0; i < lim; i++) {
         res = ffsll(bitmap[i]);
-        if (res != sizeof(unsigned long) * BITS_PER_LONG)
+        if (res != 0 && (i * BITS_PER_BYTE) + res <= bits)
             return (i * BITS_PER_LONG) + res;
     }
     
-    return res;
+    return bits;
 }
 
 static inline int find_next_bit (const unsigned long *bitmap, int bits, int offset)
 {
-    int lim = bits/BITS_PER_LONG;
+    int lim = divideRoundUp(bits, BITS_PER_LONG);
     int startLong = offset / BITS_PER_LONG;
-    int startBit = offset % BITS_PER_LONG;
+    int startBit = (offset % BITS_PER_LONG);
+    
+    unsigned long mask = 1;
     
     for (int i = startLong; i < lim; i++) {
-        for (int bit = startBit; bit < BITS_PER_LONG; bit++) {
-            startBit = 0;
-            if (bitmap[i] & 1UL << bit)
+        for (int bit = startBit; bit <= BITS_PER_LONG; bit++) {
+            if (bitmap[i] & mask &&
+                bit + (i * BITS_PER_LONG) <= bits) {
+                
                 return bit + (i * BITS_PER_LONG);
+            }
+            
+            startBit = 1;
+            mask = mask << 1U;
         }
     }
     
     return bits;
 }
 
-static int hweight_long(unsigned long value)
+static int hweight_long(unsigned long value, int size)
 {
     int weight = 0;
-    for (int i = 0; i < BITS_PER_LONG; i++)
+    for (int i = 0; i < min(size, BITS_PER_LONG); i++)
         if (value & (1UL << i))
             weight++;
     
@@ -148,10 +169,12 @@ static int hweight_long(unsigned long value)
 
 static inline int bitmap_weight(const unsigned long *bitmap, int bits)
 {
-    int k, w = 0, lim = bits/BITS_PER_LONG;
+    int k, w = 0, lim = divideRoundUp(bits, BITS_PER_LONG);
     
-    for (k = 0; k < lim; k++)
-        w += hweight_long(bitmap[k]);
+    for (k = 0; k < lim; k++) {
+        w += hweight_long(bitmap[k], bits);
+        bits -= BITS_PER_LONG;
+    }
     
     return w;
 }

@@ -10,8 +10,8 @@
 #define RMISMBus_h
 
 #include "RMITransport.hpp"
+#include "VoodooSMBusDeviceNub.hpp"
 
-// VoodooSMBus/VoodooSMBusDeviceNub.hpp
 #define I2C_CLIENT_HOST_NOTIFY          0x40    /* We want to use I2C host notify */
 #define SMB_PROTOCOL_VERSION_ADDRESS    0xfd
 #define SMB_MAX_COUNT                   32

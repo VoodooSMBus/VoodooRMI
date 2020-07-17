@@ -15,7 +15,6 @@
 #include <IOKit/IOService.h>
 //#include <libkern/OSMalloc.h>
 #include "../Utility/LinuxCompat.h"
-#include "VoodooSMBusDeviceNub.hpp"
 
 #define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
 #define kIOMessageVoodooI2CHostNotify   iokit_vendor_specific_msg(421)

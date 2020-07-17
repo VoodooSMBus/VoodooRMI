@@ -78,7 +78,7 @@
 		2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooTrackpoint.xcodeproj; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint.xcodeproj; sourceTree = "<group>"; };
 		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
 		286587D724C13D9600E74848 /* RMISMBus.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMISMBus.kext; sourceTree = BUILT_PRODUCTS_DIR; };
-		286587D824C13D9600E74848 /* RMISMBus.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = RMISMBus.plist; path = /Users/hades/Documents/Dev/VoodooRMI/RMISMBus.plist; sourceTree = "<absolute>"; };
+		286587D824C13D9600E74848 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<absolute>"; };
 		6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMII2C.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMII2C.hpp; sourceTree = "<group>"; };
 		6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMII2C.cpp; sourceTree = "<group>"; };
@@ -160,7 +160,7 @@
 		286587DB24C13F5D00E74848 /* SMBus */ = {
 			isa = PBXGroup;
 			children = (
-				286587D824C13D9600E74848 /* RMISMBus.plist */,
+				286587D824C13D9600E74848 /* Info.plist */,
 				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 				286587AE24C13D0B00E74848 /* RMISMBus.hpp */,
 			);
@@ -549,7 +549,7 @@
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
 					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
 				);
-				INFOPLIST_FILE = RMISMBus.plist;
+				INFOPLIST_FILE = VoodooRMI/Transports/SMBus/Info.plist;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMISMBus;
@@ -571,7 +571,7 @@
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
 					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
 				);
-				INFOPLIST_FILE = RMISMBus.plist;
+				INFOPLIST_FILE = VoodooRMI/Transports/SMBus/Info.plist;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMISMBus;

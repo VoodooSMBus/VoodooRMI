@@ -43,7 +43,7 @@ Linux:
 ## Installation
 1) Add the required kexts to your bootloader
 2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, the VoodooInput from within the PS2 kext.
-3) For OpenCore users, make sure to add VoodooInput as well to your Config.plist, it's under `VoodooRMI.kext/Contents/PlugIns/VoodooInput.kext`
+3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint, and RMISMBus/RMII2C as well to your Config.plist, it's under `VoodooRMI.kext/Contents/PlugIns/`
 
 Note: If you change any configuration values in the Info.plist, they must be integers/whole numbers
 
@@ -64,5 +64,6 @@ Note that using non-integer values causes undefined behaviour which may prevent 
 | `MinYDiffThumbDetection` | 200 | Minimum distance between the second lowest and lowest finger in which Minimum Y logic is used to detect the thumb rather than using the z value from the trackpad. Setting this higher means that the thumb must be farther from the other fingers before the y coordinate is used to detect the thumb, rather than using finger area. Keeping this smaller is preferable as finger area logic seems to only be useful when all 4 fingers are grouped together closely, where the thumb is more likely to be pressing down more |
 
 ## Building
-1) Build VoodooSMBus
-2) Drop VoodooSMBus kext into the root of the RMI project
+1) `git submodule init`
+2) `git submodule update`
+3) Build within XCode

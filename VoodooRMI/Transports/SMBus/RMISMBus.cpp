@@ -7,9 +7,8 @@
  * Copyright (c) 2011 Unixphere
  */
 
-#include "RMITransport.hpp"
+#include "RMISMBus.hpp"
 
-OSDefineMetaClassAndStructors(RMITransport, IOService)
 OSDefineMetaClassAndStructors(RMISMBus, RMITransport)
 #define super IOService
 
@@ -62,12 +61,13 @@ bool RMISMBus::start(IOService *provider)
 {
     bool res = super::start(provider);
     registerService();
+    setProperty(HasResetIdentifier, kOSBooleanTrue);
+    setProperty(RMIBusSupported, kOSBooleanTrue);
     return res;
 }
 
 void RMISMBus::stop(IOService *provider)
 {
-    IOLog("STOPPFDSLKJFDSLKJFDS");
     super::stop(provider);
 }
 
@@ -222,3 +222,13 @@ exit:
     return retval;
 }
 
+IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
+    if (!bus) return kIOReturnError;
+    
+    switch (type) {
+        case kIOMessageVoodooSMBusHostNotify:
+            return messageClient(kIOMessageVoodooSMBusHostNotify, bus);
+        default:
+            return IOService::message(type, provider, argument);
+    }
+};

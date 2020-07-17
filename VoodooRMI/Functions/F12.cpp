@@ -139,6 +139,8 @@ bool F12::attach(IOService *provider)
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
     setProperty("Number of fingers", sensor->nbr_fingers, 8);
+    IOLogDebug("F12 - Number of fingers %u", sensor->nbr_fingers);
+    
     
     return super::attach(provider);
 }
@@ -338,7 +340,15 @@ void F12::getReport()
     
     IOLogDebug("F12 Packet");
     
-    for (int i = 0; i < sensor->nbr_fingers; i++) {
+#if DEBUG
+    if (sensor->nbr_fingers > 5) {
+        IOLogDebug("More than 5 fingers!");
+    }
+#endif // debug
+    
+    int fingers = min (sensor->nbr_fingers, 5);
+    
+    for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];
         
         switch (data[0]) {
@@ -362,7 +372,7 @@ void F12::getReport()
     }
     
     report.timestamp = timestamp;
-    report.fingers = sensor->nbr_fingers;
+    report.fingers = fingers;
     
     messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
 }

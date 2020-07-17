@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
+		286587C224C13D9600E74848 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
+		286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 286587AE24C13D0B00E74848 /* RMISMBus.hpp */; };
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
 		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
@@ -32,7 +35,6 @@
 		A4560F08247F38670009CBE0 /* VoodooInputMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F04247F38670009CBE0 /* VoodooInputMessages.h */; };
 		A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F05247F38670009CBE0 /* VoodooInputTransducer.h */; };
 		A4560F0A247F38670009CBE0 /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F06247F38670009CBE0 /* VoodooInputEvent.h */; };
-		A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		A4560F102480757F0009CBE0 /* F03.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0E2480757F0009CBE0 /* F03.cpp */; };
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
 /* End PBXBuildFile section */
@@ -45,20 +47,6 @@
 			remoteGlobalIDString = B33179B224AA310A00200168;
 			remoteInfo = VoodooTrackpoint;
 		};
-		2861B6D724B5929600383E0E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2861B6D324B5929600383E0E /* VoodooSMBus.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = B3953FF922D8DBC100473323;
-			remoteInfo = VoodooSMBus;
-		};
-		2861B6D924B592CF00383E0E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2861B6D324B5929600383E0E /* VoodooSMBus.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = B3953FF822D8DBC100473323;
-			remoteInfo = VoodooSMBus;
-		};
 		2861B6DB24B592D400383E0E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */;
@@ -66,12 +54,21 @@
 			remoteGlobalIDString = B33179B124AA310A00200168;
 			remoteInfo = VoodooTrackpoint;
 		};
+		286587DC24C1426600E74848 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4560EBE247F29EC0009CBE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 286587AF24C13D9600E74848;
+			remoteInfo = RMISMBus;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
 		2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooTrackpoint.xcodeproj; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint.xcodeproj; sourceTree = "<group>"; };
-		2861B6D324B5929600383E0E /* VoodooSMBus.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooSMBus.xcodeproj; path = Dependencies/VoodooSMBus/VoodooSMBus.xcodeproj; sourceTree = "<group>"; };
+		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
+		286587D724C13D9600E74848 /* RMISMBus.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMISMBus.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		286587D824C13D9600E74848 /* RMISMBus.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = RMISMBus.plist; path = /Users/hades/Documents/Dev/VoodooRMI/RMISMBus.plist; sourceTree = "<absolute>"; };
 		A41323E62492077C00907B0D /* Configuration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
 		A41323E72492077C00907B0D /* Configuration.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Configuration.hpp; sourceTree = "<group>"; };
 		A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooSMBusDeviceNub.hpp; path = Dependencies/VoodooSMBus/VoodooSMBus/VoodooSMBusDeviceNub.hpp; sourceTree = "<group>"; };
@@ -105,6 +102,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		286587BE24C13D9600E74848 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC3247F29EC0009CBE0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -118,7 +122,6 @@
 		2861B6CC24B5928A00383E0E /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
-				2861B6D324B5929600383E0E /* VoodooSMBus.xcodeproj */,
 				2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */,
 			);
 			name = Dependencies;
@@ -132,12 +135,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		2861B6D424B5929600383E0E /* Products */ = {
+		286587DB24C13F5D00E74848 /* SMBus */ = {
 			isa = PBXGroup;
 			children = (
-				2861B6D824B5929600383E0E /* VoodooSMBus.kext */,
+				286587D824C13D9600E74848 /* RMISMBus.plist */,
+				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
+				286587AE24C13D0B00E74848 /* RMISMBus.hpp */,
 			);
-			name = Products;
+			path = SMBus;
 			sourceTree = "<group>";
 		};
 		A41323EA2492078A00907B0D /* Utility */ = {
@@ -165,6 +170,7 @@
 			isa = PBXGroup;
 			children = (
 				A4560EC7247F29EC0009CBE0 /* VoodooRMI.kext */,
+				286587D724C13D9600E74848 /* RMISMBus.kext */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -190,8 +196,8 @@
 		A4560EE9247F32600009CBE0 /* Transports */ = {
 			isa = PBXGroup;
 			children = (
+				286587DB24C13F5D00E74848 /* SMBus */,
 				A4560EEB247F32600009CBE0 /* RMITransport.hpp */,
-				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 			);
 			path = Transports;
 			sourceTree = "<group>";
@@ -229,6 +235,15 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		286587BF24C13D9600E74848 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				286587C224C13D9600E74848 /* RMITransport.hpp in Headers */,
+				286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC4247F29EC0009CBE0 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -257,6 +272,24 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		286587AF24C13D9600E74848 /* RMISMBus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 286587D424C13D9600E74848 /* Build configuration list for PBXNativeTarget "RMISMBus" */;
+			buildPhases = (
+				286587B324C13D9600E74848 /* Sources */,
+				286587BE24C13D9600E74848 /* Frameworks */,
+				286587BF24C13D9600E74848 /* Headers */,
+				286587D224C13D9600E74848 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RMISMBus;
+			productName = VoodooRMI;
+			productReference = 286587D724C13D9600E74848 /* RMISMBus.kext */;
+			productType = "com.apple.product-type.kernel-extension";
+		};
 		A4560EC6247F29EC0009CBE0 /* VoodooRMI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A4560ED1247F29EC0009CBE0 /* Build configuration list for PBXNativeTarget "VoodooRMI" */;
@@ -271,8 +304,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				286587DD24C1426600E74848 /* PBXTargetDependency */,
 				2861B6DC24B592D400383E0E /* PBXTargetDependency */,
-				2861B6DA24B592CF00383E0E /* PBXTargetDependency */,
 			);
 			name = VoodooRMI;
 			productName = VoodooRMI;
@@ -306,10 +339,6 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 2861B6D424B5929600383E0E /* Products */;
-					ProjectRef = 2861B6D324B5929600383E0E /* VoodooSMBus.xcodeproj */;
-				},
-				{
 					ProductGroup = 2861B6CE24B5928F00383E0E /* Products */;
 					ProjectRef = 2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */;
 				},
@@ -317,6 +346,7 @@
 			projectRoot = "";
 			targets = (
 				A4560EC6247F29EC0009CBE0 /* VoodooRMI */,
+				286587AF24C13D9600E74848 /* RMISMBus */,
 			);
 		};
 /* End PBXProject section */
@@ -329,16 +359,16 @@
 			remoteRef = 2861B6D124B5928F00383E0E /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		2861B6D824B5929600383E0E /* VoodooSMBus.kext */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = VoodooSMBus.kext;
-			remoteRef = 2861B6D724B5929600383E0E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
+		286587D224C13D9600E74848 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC5247F29EC0009CBE0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -361,7 +391,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [ ! -d \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\" ]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${BUILT_PRODUCTS_DIR}/VoodooTrackpoint.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [ ! -d \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\" ]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    mv \"${BUILT_PRODUCTS_DIR}/VoodooTrackpoint.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    mv \"${BUILT_PRODUCTS_DIR}/RMISMBus.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi\n";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -380,6 +410,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		286587B324C13D9600E74848 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC2247F29EC0009CBE0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -393,26 +431,69 @@
 				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,
 				A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */,
-				A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		2861B6DA24B592CF00383E0E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = VoodooSMBus;
-			targetProxy = 2861B6D924B592CF00383E0E /* PBXContainerItemProxy */;
-		};
 		2861B6DC24B592D400383E0E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = VoodooTrackpoint;
 			targetProxy = 2861B6DB24B592D400383E0E /* PBXContainerItemProxy */;
 		};
+		286587DD24C1426600E74848 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 286587AF24C13D9600E74848 /* RMISMBus */;
+			targetProxy = 286587DC24C1426600E74848 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		286587D524C13D9600E74848 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
+				);
+				INFOPLIST_FILE = RMISMBus.plist;
+				MODULE_NAME = com.1Revenger1.VoodooRMI;
+				MODULE_VERSION = 1.0.0d1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMISMBus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Debug;
+		};
+		286587D624C13D9600E74848 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
+				);
+				INFOPLIST_FILE = RMISMBus.plist;
+				MODULE_NAME = com.1Revenger1.VoodooRMI;
+				MODULE_VERSION = 1.0.0d1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMISMBus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Release;
+		};
 		A4560ECF247F29EC0009CBE0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -571,6 +652,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		286587D424C13D9600E74848 /* Build configuration list for PBXNativeTarget "RMISMBus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				286587D524C13D9600E74848 /* Debug */,
+				286587D624C13D9600E74848 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A4560EC1247F29EC0009CBE0 /* Build configuration list for PBXProject "VoodooRMI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

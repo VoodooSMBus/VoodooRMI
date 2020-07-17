@@ -8,6 +8,7 @@
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
 OSDefineMetaClassAndStructors(RMIFunction, IOService)
+OSDefineMetaClassAndStructors(RMITransport, IOService)
 #define super IOService
 
 bool RMIBus::init(OSDictionary *dictionary) {
@@ -50,7 +51,6 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
         return NULL;
     }
     
-    transport->retain();
     return this;
 }
 
@@ -72,6 +72,10 @@ bool RMIBus::start(IOService *provider) {
     registerPowerDriver(this, RMIPowerStates, 2);
     
     registerService();
+    setProperty(RMIBusIdentifier, kOSBooleanTrue);
+    if (!transport->open(this))
+        return false;
+    
     return true;
 err:
     IOLog("Could not start");
@@ -211,8 +215,6 @@ void RMIBus::stop(IOService *provider) {
     functions->flushCollection();
     OSSafeReleaseNULL(iter);
     
-    if (transport)
-        OSSafeReleaseNULL(transport);
     super::stop(provider);
 }
 
@@ -226,6 +228,14 @@ void RMIBus::free() {
     if (functions)
         OSSafeReleaseNULL(functions);
     super::free();
+}
+
+bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
+    if (transport->isOpen(this)) {
+        transport->close(this);
+    }
+    
+    return super::willTerminate(provider, options);
 }
 
 int RMIBus::reset()

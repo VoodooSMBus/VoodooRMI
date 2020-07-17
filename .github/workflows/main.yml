@@ -21,7 +21,7 @@ jobs:
       run: |
         mkdir build
         xcodebuild -sdk macosx10.14 -configuration debug -scheme VoodooRMI build derivedDataPath clean build
-	mv build/Build/Products/Debug/VoodooRMI.kext build/${VOODOORMI_SHA}/
+        mv build/Build/Products/Debug/VoodooRMI.kext build/${VOODOORMI_SHA}/VoodooRMI.kext
     - uses: actions/upload-artifact@v2
       with:
         name: VoodooRMI

@@ -89,6 +89,7 @@ private:
     uint8_t clickpad_index {0};
     uint8_t numButtons {0};
     
+    bool clickpadState {false};
     uint8_t register_count;
     
     /* Control Register Data */

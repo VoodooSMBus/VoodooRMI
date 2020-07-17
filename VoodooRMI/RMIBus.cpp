@@ -201,8 +201,7 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
     } else if (!awake) {
         IOSleep(1000);
         IOLogDebug("Wakeup");
-        IOReturn ret = transport->reset();
-        if (ret < 0)
+        if (reset() < 0)
             IOLogError("Could not get SMBus Version on wakeup\n");
         // c++ lambdas are wack
         // Sensor doesn't wake up if we don't scan property tables
@@ -267,24 +266,34 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     RMIFunction * function;
     
     switch(fn->fd.function_number) {
-        case 0x01:
+        case 0x01: /* device control */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F01));
             break;
-        case 0x03:
+        case 0x03: /* PS/2 pass-through */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F03));
             break;
-        case 0x11:
+        case 0x11: /* multifinger pointing */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
             break;
-        case 0x12:
+        case 0x12: /* multifinger pointing */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
             break;
-        case 0x30:
+        case 0x30: /* GPIO and LED controls */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
             break;
+//        case 0x08: /* self test (aka BIST) */
+//        case 0x09: /* self test (aka BIST) */
+//        case 0x17: /* pointing sticks */
+//        case 0x19: /* capacitive buttons */
+//        case 0x1A: /* simple capacitive buttons */
+//        case 0x21: /* force sensing */
+//        case 0x32: /* timer */
+        case 0x34: /* device reflash */
+//        case 0x36: /* auxiliary ADC */
         case 0x3A:
-        case 0x54:
-        case 0x55:
+//        case 0x41: /* active pen pointing */
+        case 0x54: /* analog data reporting */
+        case 0x55: /* Sensor tuning */
             IOLog("F%X not implemented\n", fn->fd.function_number);
             return 0;
         default:

@@ -132,12 +132,14 @@ public:
 
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
-    inline int reset() APPLE_KEXT_OVERRIDE {return rmi_set_mode(RMI_MODE_ATTN_REPORTS);};
+    inline int reset() APPLE_KEXT_OVERRIDE {
+        return rmi_set_mode(RMI_MODE_ATTN_REPORTS);
+    };
     bool setInterrupt(bool enable) APPLE_KEXT_OVERRIDE;
 
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
-    void getInputReport();
+    void notifyClient();
 
 private:
     IOWorkLoop* work_loop;
@@ -154,7 +156,6 @@ private:
     IOLock *page_mutex;
     int page {0};
     
-    int rmi_write_report(u8 *report, size_t report_size);
     int rmi_set_page(u8 page);
     int rmi_set_mode(u8 mode);
 };

@@ -132,13 +132,14 @@ void RMII2C::releaseResources() {
     OSSafeReleaseNULL(interrupt_source);
     OSSafeReleaseNULL(work_loop);
     
-    if (device_nub) {
-        if (device_nub->isOpen(this))
-            device_nub->close(this);
-        device_nub->release();
-        device_nub = NULL;
-    }
-    
+//    if (device_nub) {
+//        if (device_nub->isOpen(this))
+//            device_nub->close(this);
+//        device_nub->release();
+//        device_nub = NULL;
+//    }
+    OSSafeReleaseNULL(device_nub);
+
     IOLockFree(page_mutex);
 }
 
@@ -193,6 +194,9 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
 //        0x00,
 //        0x17,
 //        0x00}; // hid_no_cmd =        { .length = 0 };
+    // maybe no need to strip the I2C (and RMI_READ_DATA_REPORT_ID) header?
+    u8 *i2cInput = new u8[len+4];
+    memset(databuff, 0, len);
 
     IOLockLock(page_mutex);
     if (RMI_I2C_PAGE(rmiaddr) != page) {
@@ -214,27 +218,14 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         goto exit;
     }
 
-    uint8_t i2cInput[42];
-    
-    if (device_nub->readI2C(i2cInput, sizeof(i2cInput)) != kIOReturnSuccess) {
+    if (device_nub->readI2C(i2cInput, len+4) != kIOReturnSuccess) {
         IOLog("%s: failed to read I2C input\n", getName());
         ret = -1;
         goto exit;
     }
 
-    // TODO: simplifying
-    // IOLog("RMI Read Commence\n");
-    uint8_t rmiInput[40];
-    for (int i = 0; i < 40; i++) {
-        // IOLog("0x%x ", i2cInput[i]);
-        rmiInput[i] = i2cInput[i + 2];
-    }
-    // IOLog("\n");
-    // IOLog("RMI Read End\n");
-    if (rmiInput[0] == RMI_READ_DATA_REPORT_ID) {
-        for (int i = 0; i < len; i++) {
-            databuff[i] = rmiInput[i + 2];
-        }
+    if (i2cInput[2] == RMI_READ_DATA_REPORT_ID) {
+        memcpy(databuff, i2cInput+4, len);
     }
 exit:
 //    IOLog("read %zd bytes at %#06x: %d (%*ph)\n", len, rmiaddr, ret, (int)len, databuff);

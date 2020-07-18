@@ -37,7 +37,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
 
     do {
         IOLog("%s: Trying to set mode, attempt %d\n", getName(), attempts);
-        error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
+        error = rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
 

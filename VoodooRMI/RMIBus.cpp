@@ -134,7 +134,7 @@ void RMIBus::handleHostNotify()
     OSSafeReleaseNULL(iter);
 }
 
-void RMIBus::handleHostNotifyI2C()
+void RMIBus::handleHostNotifyLegacy()
  {
      if (!data) {
          IOLogError("Interrupt - No data\n");
@@ -153,12 +153,13 @@ void RMIBus::handleHostNotifyI2C()
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
+        case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
             handleHostNotify();
             return kIOReturnSuccess;
-        case kIOMessageVoodooI2CHostNotify:
+        case kIOMessageVoodooI2CLegacyHostNotify:
             if (awake)
-                handleHostNotifyI2C();
+                handleHostNotifyLegacy();
             return kIOReturnSuccess;
         default:
             return super::message(type, provider);

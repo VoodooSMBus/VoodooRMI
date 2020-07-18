@@ -18,6 +18,7 @@
 
 #define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
 #define kIOMessageVoodooI2CHostNotify   iokit_vendor_specific_msg(421)
+#define kIOMessageVoodooI2CLegacyHostNotify   iokit_vendor_specific_msg(422)
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
 

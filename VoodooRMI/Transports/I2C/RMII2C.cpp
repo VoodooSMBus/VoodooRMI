@@ -301,7 +301,7 @@ void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int 
 void RMII2C::notifyClient() {
     // Do we really need it in command gate?
     reading = true;
-    messageClient(legacy ? kIOMessageVoodooI2CHostNotify : kIOMessageVoodooSMBusHostNotify, bus);
+    messageClient(legacy ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
     reading = false;
 }
 

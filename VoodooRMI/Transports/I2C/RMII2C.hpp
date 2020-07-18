@@ -59,11 +59,15 @@ public:
     };
 
     inline virtual bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override {
-        if (!client || !bus)
-            client = getClient();
+        if (forClient && forClient->getProperty(RMIBusIdentifier)) {
+            bus = forClient;
+            bus->retain();
 
-        setInterrupt(true);
-        return RMITransport::handleOpen(forClient, options, arg);
+            setInterrupt(true);
+            return true;
+        }
+
+        return IOService::handleOpen(forClient, options, arg);
     }
 
 private:
@@ -79,7 +83,6 @@ private:
 
     bool reading {true};
     bool polling {true};
-    IOService *client {nullptr};
 
     VoodooI2CDeviceNub *device_nub;
     IOLock *page_mutex;

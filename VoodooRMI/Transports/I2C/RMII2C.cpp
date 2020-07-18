@@ -36,8 +36,8 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
     }
 
     do {
-        error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         IOLog("%s: Trying to set mode, attempt %d\n", getName(), attempts);
+        error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         IOSleep(500);
     } while (error && attempts++ < 5);
 
@@ -186,8 +186,11 @@ int RMII2C::rmi_set_mode(u8 mode) {
 
     if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
-    else
-        return 0;
+
+    // ready to read
+    reading = false;
+    IOLog("%s: reset finished", getName());
+    return 0;
 }
 
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
@@ -277,7 +280,7 @@ exit:
 }
 
 void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int intCount) {
-    if (reading || !client)// || !awake)
+    if (reading || !bus)
         return;
 
     command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMII2C::notifyClient));
@@ -286,7 +289,7 @@ void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int 
 void RMII2C::notifyClient() {
     // Do we really need it in command gate?
     reading = true;
-    messageClient(kIOMessageVoodooI2CHostNotify, client);
+    messageClient(kIOMessageVoodooI2CHostNotify, bus);
     reading = false;
 }
 
@@ -299,7 +302,6 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
 bool RMII2C::setInterrupt(bool enable) {
     IOLog("%s: interrupt %d", getName(), enable);
     if (enable) {
-        reading = false;
         if (!interrupt_source) {
             interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_INTERVAL);
             polling = true;
@@ -319,6 +321,8 @@ bool RMII2C::setInterrupt(bool enable) {
 
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
     IOLog("%s: powerState %ld", getName(), powerState);
+    if (!bus)
+        return kIOPMAckImplied;
     if (whatDevice != this)
         return kIOReturnInvalid;
 

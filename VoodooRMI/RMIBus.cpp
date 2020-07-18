@@ -157,8 +157,9 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             handleHostNotify();
             return kIOReturnSuccess;
         case kIOMessageVoodooI2CHostNotify:
-             handleHostNotifyI2C();
-             return kIOReturnSuccess;
+            if (awake)
+                handleHostNotifyI2C();
+            return kIOReturnSuccess;
         default:
             return super::message(type, provider);
     }

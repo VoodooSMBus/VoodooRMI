@@ -155,7 +155,8 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
         case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
-            handleHostNotify();
+            if (awake)
+                handleHostNotify();
             return kIOReturnSuccess;
         case kIOMessageVoodooI2CLegacyHostNotify:
             if (awake)

@@ -23,6 +23,15 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
     data = OSDynamicCast(OSData, provider->getProperty("name"));
     IOLog("%s: RMII2C probing %s\n", getName(), data->getBytesNoCopy());
 
+    OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
+    if (isLegacy == nullptr) {
+        IOLog("%s Legacy mode not set, default to false", getName());
+    } else {
+        legacy = isLegacy->getValue();
+        if (legacy)
+            IOLog("%s: running in legacy mode", getName());
+    }
+
     IOService *service = super::probe(provider, score);
     if(!service) {
         IOLog("%s: Failed to probe provider\n", getName());
@@ -37,7 +46,10 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
 
     do {
         IOLog("%s: Trying to set mode, attempt %d\n", getName(), attempts);
-        error = rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
+        if (legacy)
+            error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
+        else
+            error = rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
 
@@ -289,7 +301,7 @@ void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int 
 void RMII2C::notifyClient() {
     // Do we really need it in command gate?
     reading = true;
-    messageClient(kIOMessageVoodooI2CHostNotify, bus);
+    messageClient(legacy ? kIOMessageVoodooI2CHostNotify : kIOMessageVoodooSMBusHostNotify, bus);
     reading = false;
 }
 

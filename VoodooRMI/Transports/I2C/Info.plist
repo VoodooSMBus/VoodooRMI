@@ -33,6 +33,8 @@
 			<string>VoodooI2CDeviceNub</string>
 			<key>IOClass</key>
 			<string>RMII2C</string>
+			<key>Legacy</key>
+			<false/>
 			<key>CFBundleIdentifier</key>
 			<string>com.1Revenger1.RMII2C</string>
 		</dict>

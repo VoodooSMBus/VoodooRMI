@@ -39,9 +39,9 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
         IOLog("%s: Trying to set mode, attempt %d\n", getName(), attempts);
         error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         IOSleep(500);
-    } while (error && attempts++ < 5);
+    } while (error < 0 && attempts++ < 5);
 
-    if (error) {
+    if (error < 0) {
         IOLog("%s: Failed to set mode\n", getName());
         return NULL;
     }
@@ -190,7 +190,7 @@ int RMII2C::rmi_set_mode(u8 mode) {
     // ready to read
     reading = false;
     IOLog("%s: reset finished", getName());
-    return 0;
+    return 1;
 }
 
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {

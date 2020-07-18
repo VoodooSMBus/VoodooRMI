@@ -51,11 +51,7 @@ public:
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
     inline int reset() APPLE_KEXT_OVERRIDE {
-        int error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
-        if (!error)
-            return 1;
-        else
-            return error;
+        return rmi_set_mode(RMI_MODE_ATTN_REPORTS);
     };
 
     inline virtual bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override {

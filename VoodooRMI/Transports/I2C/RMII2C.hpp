@@ -64,12 +64,11 @@ private:
     void notifyClient();
     void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
-    bool setInterrupt(bool enable);
     void startInterrupt();
     void stopInterrupt();
 
     bool ready {false};
-    bool legacy {false};
+    int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
 
     VoodooI2CDeviceNub *device_nub;
     IOLock *page_mutex;

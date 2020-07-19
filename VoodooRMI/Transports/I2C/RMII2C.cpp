@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only
  * Copyright (c) 2020 Zhen
  * Ported to macOS from linux kernel, original source at
- * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_i2c.c
  * https://github.com/torvalds/linux/blob/master/drivers/hid/hid-rmi.c
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_i2c.c (depreciated?)
  * and code written by Alexandre, CoolStar and Kishor Prins
  * https://github.com/VoodooI2C/VoodooI2CSynaptics
  *
@@ -26,10 +26,9 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
     if (isLegacy == nullptr) {
         IOLog("%s::%s Legacy mode not set, default to false", getName(), name);
-    } else {
-        legacy = isLegacy->getValue();
-        if (legacy)
-            IOLog("%s::%s running in legacy mode", getName(), name);
+    } else if (isLegacy->getValue()) {
+        reportMode = RMI_MODE_ATTN_REPORTS;
+        IOLog("%s::%s running in legacy mode", getName(), name);
     }
 
     IOService *service = super::probe(provider, score);
@@ -46,10 +45,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
 
     do {
         IOLog("%s::%s Trying to set mode, attempt %d\n", getName(), name, attempts);
-        if (legacy)
-            error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
-        else
-            error = rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
+        error = rmi_set_mode(reportMode);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
 
@@ -151,8 +147,10 @@ void RMII2C::stop(IOService *device) {
 }
 
 int RMII2C::rmi_set_page(u8 page) {
-    // simplified version of rmi_write_report, hid_hw_output_report, i2c_hid_output_report,
-    // i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
+    /*
+     * simplified version of rmi_write_report, hid_hw_output_report, i2c_hid_output_report,
+     * i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
+     */
     u8 writeReport[] = {
         0x25,  // outputRegister & 0xFF; wOutputRegister
         0x00,  // outputRegister >> 8;
@@ -195,13 +193,8 @@ int RMII2C::rmi_set_mode(u8 mode) {
 }
 
 int RMII2C::reset() {
-    int retval;
-    if (legacy)
-        retval = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
-    else
-        retval = rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
+    int retval = rmi_set_mode(reportMode);
 
-    // ready to read
     if (retval >= 0)
         ready = true;
 
@@ -313,7 +306,7 @@ void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int 
 }
 
 void RMII2C::notifyClient() {
-    messageClient(legacy ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
+    messageClient(reportMode == RMI_MODE_ATTN_REPORTS ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
 }
 
 void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
@@ -321,27 +314,8 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
     interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
 }
 
-bool RMII2C::setInterrupt(bool enable) {
-    IOLog("%s::%s interrupt %d", getName(), name, enable);
-    if (interrupt_source) {
-        if (enable) {
-            interrupt_source->enable();
-        } else {
-            ready = false;
-            interrupt_source->disable();
-        }
-    } else {
-        if (enable)
-            interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_INTERVAL);
-        else
-            interrupt_simulator->cancelTimeout();
-    }
-
-    return true;
-}
-
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
-//    IOLog("%s::%s powerState %ld", getName(), name, powerState);
+    IOLog("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
     if (!bus)
         return kIOPMAckImplied;
     if (whatDevice != this)

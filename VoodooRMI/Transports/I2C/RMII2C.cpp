@@ -12,40 +12,40 @@
 
 #include "RMII2C.hpp"
 
-//OSDefineMetaClassAndStructors(RMITransport, IOService)
 OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 
-RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
-{
+RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     int error = 0, attempts = 0;
 
     OSData *data;
     data = OSDynamicCast(OSData, provider->getProperty("name"));
-    IOLog("%s: RMII2C probing %s\n", getName(), data->getBytesNoCopy());
+    name = (const char *)(data->getBytesNoCopy());
+
+    IOLog("%s::%s probing\n", getName(), name);
 
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
     if (isLegacy == nullptr) {
-        IOLog("%s Legacy mode not set, default to false", getName());
+        IOLog("%s::%s Legacy mode not set, default to false", getName(), name);
     } else {
         legacy = isLegacy->getValue();
         if (legacy)
-            IOLog("%s: running in legacy mode", getName());
+            IOLog("%s::%s running in legacy mode", getName(), name);
     }
 
     IOService *service = super::probe(provider, score);
     if(!service) {
-        IOLog("%s: Failed to probe provider\n", getName());
+        IOLog("%s::%s Failed to probe provider\n", getName(), name);
         return NULL;
     }
 
     device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
     if (!device_nub) {
-        IOLog("%s: Could not cast nub\n", getName());
+        IOLog("%s::%s Could not cast nub\n", getName(), name);
         return NULL;
     }
 
     do {
-        IOLog("%s: Trying to set mode, attempt %d\n", getName(), attempts);
+        IOLog("%s::%s Trying to set mode, attempt %d\n", getName(), name, attempts);
         if (legacy)
             error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         else
@@ -54,7 +54,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
     } while (error < 0 && attempts++ < 5);
 
     if (error < 0) {
-        IOLog("%s: Failed to set mode\n", getName());
+        IOLog("%s::%s Failed to set mode\n", getName(), name);
         return NULL;
     }
 
@@ -67,52 +67,45 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score)
     error = rmi_set_page(0);
     IOLockUnlock(page_mutex);
     if (error) {
-        IOLog("%s: Failed to set page select to 0\n", getName());
+        IOLog("%s::%s Failed to set page select to 0\n", getName(), name);
         return NULL;
     }
     return this;
 }
 
-bool RMII2C::start(IOService *provider)
-{
+bool RMII2C::start(IOService *provider) {
     if(!super::start(provider))
         return false;
 
     work_loop = getWorkLoop();
 
     if (!work_loop) {
-        IOLog("%s: Could not get work loop\n", getName());
+        IOLog("%s::%s Could not get work loop\n", getName(), name);
         goto exit;
     }
 
     command_gate = IOCommandGate::commandGate(this);
     if (!command_gate || (work_loop->addEventSource(command_gate) != kIOReturnSuccess)) {
-        IOLog("%s: Could not open command gate\n", getName());
+        IOLog("%s::%s Could not open command gate\n", getName(), name);
         goto exit;
     }
 
     /* Implementation of polling */
     interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
     if (!interrupt_source) {
-        IOLog("%s: Could not get interrupt event source\n, trying to fallback on polling.", getName());
+        IOLog("%s::%s Could not get interrupt event source, trying to fallback on polling.", getName(), name);
         interrupt_simulator = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &RMII2C::simulateInterrupt));
         if (!interrupt_simulator) {
-            IOLog("%s: Could not get timer event source\n", getName());
+            IOLog("%s::%s Could not get timer event source\n", getName(), name);
             goto exit;
         }
-        work_loop->addEventSource(interrupt_simulator);
-        IOLog("%s: Polling mode initialisation succeeded.", getName());
-        setProperty("Interrupt mode", "Polling");
-    } else {
-        work_loop->addEventSource(interrupt_source);
-        IOLog("%s: running on interrupt mode.", getName());
-        setProperty("Interrupt mode", "Native");
     }
 
     PMinit();
     provider->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);
 
+    setProperty("Interrupt mode", (!interrupt_source) ? "Polling" : "Pinned");
     setProperty("VoodooI2CServices Supported", kOSBooleanTrue);
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
@@ -124,7 +117,6 @@ exit:
 
 void RMII2C::releaseResources() {
     if (command_gate) {
-//        command_gate->disable();
         work_loop->removeEventSource(command_gate);
         OSSafeReleaseNULL(command_gate);
     }
@@ -158,11 +150,10 @@ void RMII2C::stop(IOService *device) {
     super::stop(device);
 }
 
-int RMII2C::rmi_set_page(u8 page)
-{
+int RMII2C::rmi_set_page(u8 page) {
     // simplified version of rmi_write_report, hid_hw_output_report, i2c_hid_output_report,
     // i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
-    u8 writeReport[8] = {
+    u8 writeReport[] = {
         0x25,  // outputRegister & 0xFF; wOutputRegister
         0x00,  // outputRegister >> 8;
         0x06,  // size & 0xFF
@@ -173,7 +164,7 @@ int RMII2C::rmi_set_page(u8 page)
         page };
 
     if (device_nub->writeI2C(writeReport, sizeof(writeReport)) != kIOReturnSuccess) {
-        IOLog("%s: failed to write request output report\n", getName());
+        IOLog("%s::%s failed to write request output report\n", getName(), name);
         return -1;
     }
 
@@ -199,15 +190,39 @@ int RMII2C::rmi_set_mode(u8 mode) {
     if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
 
-    // ready to read
-    reading = false;
-    IOLog("%s: reset finished", getName());
+    IOLog("%s::%s reset completed", getName(), name);
     return 1;
+}
+
+int RMII2C::reset() {
+    int retval;
+    if (legacy)
+        retval = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
+    else
+        retval = rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
+
+    // ready to read
+    if (retval >= 0)
+        ready = true;
+
+    return retval;
+};
+
+bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
+    if (forClient && forClient->getProperty(RMIBusIdentifier)) {
+        bus = forClient;
+        bus->retain();
+
+        startInterrupt();
+        return true;
+    }
+
+    return IOService::handleOpen(forClient, options, arg);
 }
 
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     int retval = 0;
-    u8 writeReport[10] = {
+    u8 writeReport[] = {
         0x25,  // outputRegister & 0xFF; wOutputRegister
         0x00,  // outputRegister >> 8;
         0x08,  // size & 0xFF; 2 + reportID + buf (reportID excluded)
@@ -219,7 +234,6 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         (u8) (len & 0xFF),
         (u8) (len >> 8) };
 
-    // maybe no need to strip the I2C (and RMI_READ_DATA_REPORT_ID) header?
     u8 *i2cInput = new u8[len+4];
     memset(databuff, 0, len);
 
@@ -231,19 +245,19 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     }
 
     if (device_nub->writeI2C(writeReport, sizeof(writeReport)) != kIOReturnSuccess) {
-        IOLog("%s: failed to read request output report\n", getName());
+        IOLog("%s::%s failed to read request output report\n", getName(), name);
         retval = -1;
         goto exit;
     }
 
     if (device_nub->readI2C(i2cInput, len+4) != kIOReturnSuccess) {
-        IOLog("%s: failed to read I2C input\n", getName());
+        IOLog("%s::%s failed to read I2C input\n", getName(), name);
         retval = -1;
         goto exit;
     }
 
     if (i2cInput[2] != RMI_READ_DATA_REPORT_ID) {
-        IOLog("%s: RMI_READ_DATA_REPORT_ID mismatch\n", getName());
+        IOLog("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d\n", getName(), name, i2cInput[2]);
         retval = -1;
         goto exit;
     }
@@ -278,7 +292,7 @@ int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
     memcpy(writeReport+8, buf, len);
 
     if (device_nub->writeI2C(writeReport, len+8) != kIOReturnSuccess) {
-        IOLog("%s: failed to write request output report\n", getName());
+        IOLog("%s::%s failed to write request output report\n", getName(), name);
         retval = -1;
         goto exit;
     }
@@ -292,55 +306,72 @@ exit:
 }
 
 void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int intCount) {
-    if (reading || !bus)
+    if (!ready || !bus)
         return;
 
     command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMII2C::notifyClient));
 }
 
 void RMII2C::notifyClient() {
-    // Do we really need it in command gate?
-    reading = true;
     messageClient(legacy ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
-    reading = false;
 }
 
 void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
     interruptOccured(owner, NULL, 0);
-    if (polling)
-        interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
+    interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
 }
 
 bool RMII2C::setInterrupt(bool enable) {
-    IOLog("%s: interrupt %d", getName(), enable);
-    if (enable) {
-        if (!interrupt_source) {
-            interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_INTERVAL);
-            polling = true;
-        } else {
+    IOLog("%s::%s interrupt %d", getName(), name, enable);
+    if (interrupt_source) {
+        if (enable) {
             interrupt_source->enable();
+        } else {
+            ready = false;
+            interrupt_source->disable();
         }
     } else {
-        reading = true;
-        if (!interrupt_source)
-            polling = false;
+        if (enable)
+            interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_INTERVAL);
         else
-            interrupt_source->disable();
+            interrupt_simulator->cancelTimeout();
     }
 
     return true;
 }
 
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
-    IOLog("%s: powerState %ld", getName(), powerState);
+//    IOLog("%s::%s powerState %ld", getName(), name, powerState);
     if (!bus)
         return kIOPMAckImplied;
     if (whatDevice != this)
         return kIOReturnInvalid;
 
     if (powerState == 0)
-        setInterrupt(false);
+        stopInterrupt();
     else
-        setInterrupt(true);
+        startInterrupt();
     return kIOPMAckImplied;
+}
+
+void RMII2C::startInterrupt() {
+    if (interrupt_simulator) {
+        work_loop->addEventSource(interrupt_simulator);
+        interrupt_simulator->setTimeoutMS(200);
+        interrupt_simulator->enable();
+    } else if (interrupt_source) {
+        work_loop->addEventSource(interrupt_source);
+        interrupt_source->enable();
+    }
+}
+
+void RMII2C::stopInterrupt() {
+    ready = false;
+    if (interrupt_simulator) {
+        interrupt_simulator->disable();
+        work_loop->removeEventSource(interrupt_simulator);
+    } else if (interrupt_source) {
+        interrupt_source->disable();
+        work_loop->removeEventSource(interrupt_source);
+    }
 }

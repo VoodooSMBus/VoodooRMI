@@ -43,31 +43,17 @@ class RMII2C : public RMITransport {
     typedef IOService super;
 
 public:
+    const char* name;
+
     RMII2C *probe(IOService *provider, SInt32 *score) APPLE_KEXT_OVERRIDE;
     bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
     void stop(IOService* device) APPLE_KEXT_OVERRIDE;
     IOReturn setPowerState(unsigned long powerState, IOService *whatDevice) APPLE_KEXT_OVERRIDE;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) APPLE_KEXT_OVERRIDE;
 
+    int reset() APPLE_KEXT_OVERRIDE;
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
-    inline int reset() APPLE_KEXT_OVERRIDE {
-        if (legacy)
-            return rmi_set_mode(RMI_MODE_ATTN_REPORTS);
-        else
-            return rmi_set_mode(RMI_MODE_NO_PACKED_ATTN_REPORTS);
-    };
-
-    inline virtual bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override {
-        if (forClient && forClient->getProperty(RMIBusIdentifier)) {
-            bus = forClient;
-            bus->retain();
-
-            setInterrupt(true);
-            return true;
-        }
-
-        return IOService::handleOpen(forClient, options, arg);
-    }
 
 private:
     IOWorkLoop* work_loop;
@@ -79,9 +65,10 @@ private:
     void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     bool setInterrupt(bool enable);
+    void startInterrupt();
+    void stopInterrupt();
 
-    bool reading {true};
-    bool polling {true};
+    bool ready {false};
     bool legacy {false};
 
     VoodooI2CDeviceNub *device_nub;

@@ -23,10 +23,16 @@
 		<key>RMII2C</key>
 		<dict>
 			<key>IOPropertyMatch</key>
-			<dict>
-				<key>name</key>
-				<string>SYNA2B31</string>
-			</dict>
+			<array>
+				<dict>
+					<key>name</key>
+					<string>SYNA2B31</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>SYNA2B33</string>
+				</dict>
+			</array>
 			<key>IOProbeScore</key>
 			<integer>500</integer>
 			<key>IOProviderClass</key>

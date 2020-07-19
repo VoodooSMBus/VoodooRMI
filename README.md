@@ -2,7 +2,7 @@
 
 A port for macOS of Synaptic's RMI code from Linux. It is for touchscreens, touchpads, and other sensors. Many PS2 trackpads and sensors support other buses like I2C or SMBus, though SMBus is advantageous for macOS due to not requiring ACPI edits.
 
-This communicates over SMBus or I2C (not implemented yet).
+This driver communicates over SMBus or I2C.
 
 ## Currently Working  
 * Force Touch emulation for clickpads (press down clickpad and increase area finger uses)
@@ -11,8 +11,6 @@ This communicates over SMBus or I2C (not implemented yet).
 * Trackstick
 * Power Management
 * SMBus Communication
-
-## WIP
 * I2C Communication
 
 ## How do I know if my device is compatible?
@@ -26,9 +24,13 @@ Linux:
   * I've seen one or two examples where there was a trackpad that supported SMBus but nothing appeared at the address (Wack!)
 * Likely compatible if you run `dmesg` and find a message along the lines of `"Your touchpad x says it can support a different bus."` and it's a synaptics trackpad.
 
-**I2C** (Not working)  
+**I2C**
+Windows:
+* Check for `HID-compliant touch pad` in device manager
+  * In properties, verify `location` is `on I2C HID Device` in `General` and `Hardware Ids` contains `SYNA` in `Details`
+
 Linux:
-* Check for the presence of RMI4 in `dmesg`.
+* Check for the presence of `i2c-SYNA` in `dmesg`.
 * Get `i2c-tools` from your package manager, and use the `i2cdetect` tool to see if there are any devices at address 0x2c for any bus that isn't SMBus. If you see it under SMBus, I'd use SMBus as it doesn't require any pinning!
 
 ## Requirements
@@ -40,11 +42,29 @@ Linux:
   * OpenCore users can just disable Mouse/Trackpad in their config.plist.
   * Clover users - go inside the VoodooPS2 kext and remove Mouse/Trackpad from the PlugIns folder.
 
+**I2C**
+* [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C)
+  * Follow their [Documentation](https://voodooi2c.github.io) to identify if you need GPIO pinning.
+  * Polling mode should just work
+* If your device's ACPI name is not included below or marked as unknown, you may try manually add it and consider a PR/issue
+
+| Name | Main function |
+|---|---|
+| `SYNA0000` | unknown |
+| `SYNA2393` | unknown |
+| `SYNA2B2C` | unknown |
+| `SYNA2B31` | F12 |
+| `SYNA2B33` | F11 |
+| `SYNA2B34` | unknown |
+| `SYNA3105` | unknown |
+| `SYNA3602` | unknown |
+| `SYNA7500` | unknown |
+| `SYNA7501` | unknown |
+
 ## Installation
 1) Add the required kexts to your bootloader
 2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, the VoodooInput from within the PS2 kext.
-3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint, and RMISMBus/RMII2C as well to your Config.plist, it's under `VoodooRMI.kext/Contents/PlugIns/`
-
+3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C (add after VoodooRMI), as well to your Config.plist, it's under `VoodooRMI.kext/Contents/PlugIns/`
 Note: If you change any configuration values in the Info.plist, they must be integers/whole numbers
 
 ## Configuration

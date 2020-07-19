@@ -9,7 +9,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Checkout submodules
-      run: git submodule update --init
+      run: git submodule update --init --recursive
     - name: get shortsha
       id: vars
       run: |

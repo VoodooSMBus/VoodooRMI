@@ -68,6 +68,7 @@ public:
 private:
     OSDictionary *config;
     void handleHostNotify();
+    void handleHostNotifyLegacy();
 };
     
 #endif /* RMIBus_h */

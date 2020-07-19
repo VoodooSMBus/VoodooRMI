@@ -37,7 +37,7 @@ bool F12::attach(IOService *provider)
     
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("F11: Provider is not RMIBus\n");
+        IOLogError("F12: Provider is not RMIBus\n");
         return false;
     }
     
@@ -72,7 +72,7 @@ bool F12::attach(IOService *provider)
     
     ret = rmi_read_register_desc(query_addr, &data_reg_desc);
     if (ret) {
-        IOLogError("Failed to read the Data Register Descriptor: %d\n",
+        IOLogError("F12 - Failed to read the Data Register Descriptor: %d\n",
                    ret);
         return ret;
     }

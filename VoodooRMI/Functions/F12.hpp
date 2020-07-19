@@ -65,7 +65,6 @@ private:
     RMIBus *rmiBus;
     IOService *voodooInputInstance {nullptr};
     
-    bool clickpadState {false};
     bool pressureLock {false};
     bool touchpadEnable {true};
     bool forceTouchEmulation {true};

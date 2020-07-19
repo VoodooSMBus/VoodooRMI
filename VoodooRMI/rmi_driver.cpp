@@ -181,16 +181,14 @@ int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt)
         u16 cmd_addr = pdt->page_start + pdt->command_base_addr;
         u8 cmd_buf = RMI_DEVICE_RESET_CMD;
         
-        bool transportHasReset = !!dev->transport->getProperty(HasResetIdentifier);
-        
-        if (transportHasReset) {
-            error = dev->reset();
-            if (error < 0) {
-                IOLogError("Unable to reset");
-                return error;
-            }
-            return RMI_SCAN_DONE;
+        error = dev->reset();
+        if (error < 0) {
+            IOLogError("Unable to reset");
+            return error;
         }
+
+        if (error > 0)
+            return RMI_SCAN_DONE;
         
         // Only send reset if there is no reset in transport (SMBus has one which just gets version)
         IOLogDebug("Sending Reset\n");

@@ -52,7 +52,7 @@
 		<key>com.alexandred.VoodooI2C</key>
 		<string>2.0</string>
 		<key>com.1Revenger1.VoodooRMI</key>
-		<string>0.6</string>
+		<string>1.0</string>
 		<key>com.apple.kpi.iokit</key>
 		<string>18.5</string>
 		<key>com.apple.kpi.libkern</key>

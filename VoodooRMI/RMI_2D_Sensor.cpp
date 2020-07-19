@@ -23,7 +23,7 @@ bool RMI2DSensor::init(OSDictionary *dictionary)
     forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
     minYDiffGesture = Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", 200);
     
-    return super::init(dictionary);
+    return super::init();
 }
 
 bool RMI2DSensor::start(IOService *provider)

@@ -19,6 +19,8 @@ This driver communicates over SMBus or I2C.
 Windows:
 * Check under Device Manager for a Synaptics SMBus device
 
+![](/docs/images/Windows-SMBus-Device.png)
+
 Linux:
 * If you are using intertouch (i.e. psmouse.intertouch=1) for your synaptics trackpad, then it's compatible
 * Get `i2c-tools` from your package manager. Run `i2cdetect -l`, and note the number for SMBus (It's usually zero). Run `i2cdetect #` where # is the number you got from running the prior command. Synaptic devices are always at address 0x2c, so check at that address for anything other than `--`. It will usually appear as `UU` in my experiance if it's a Synaptics device.

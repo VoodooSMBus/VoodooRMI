@@ -69,8 +69,8 @@ Linux:
 1) Add the required kexts to your bootloader
 2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, VoodooInput from within the PS2 kext.
 3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C to your Config.plist.
-  * RMISMBus/RMII2C should be after VoodooRMI
-  * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
+    * RMISMBus/RMII2C should be after VoodooRMI
+    * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
 
 ## Configuration
 

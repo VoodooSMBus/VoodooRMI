@@ -15,6 +15,7 @@ This driver communicates over SMBus or I2C.
 
 ## How do I know if my device is compatible?
 **SMBus**  
+
 Windows:
 * Check under Device Manager for a Synaptics SMBus device
 
@@ -25,6 +26,7 @@ Linux:
 * Likely compatible if you run `dmesg` and find a message along the lines of `"Your touchpad x says it can support a different bus."` and it's a synaptics trackpad.
 
 **I2C**
+
 Windows:
 * Check for `HID-compliant touch pad` in device manager
   * In properties, verify `location` is `on I2C HID Device` in `General` and `Hardware Ids` contains `SYNA` in `Details`
@@ -38,7 +40,9 @@ Linux:
 **SMBus**
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
   * Apple's SMBus **PCI** controller cannot load, as it interfers with VoodooSMBus.
-* You likely want VoodooPS2 for keyboard as well. Make sure VoodooPS2Mouse/VoodooPS2Trackpad does not load.
+* VoodooPS2
+  * Needed for PS2 reset of the trackpad
+  * Generally users should only add VoodooPS2Controller and VoodooPS2Keyboard. Trackpad/Mouse will cause VoodooRMI to not attach.
   * OpenCore users can just disable Mouse/Trackpad in their config.plist.
   * Clover users - go inside the VoodooPS2 kext and remove Mouse/Trackpad from the PlugIns folder.
 
@@ -63,14 +67,15 @@ Linux:
 
 ## Installation
 1) Add the required kexts to your bootloader
-2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, the VoodooInput from within the PS2 kext.
-3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C (add after VoodooRMI), as well to your Config.plist, it's under `VoodooRMI.kext/Contents/PlugIns/`
-Note: If you change any configuration values in the Info.plist, they must be integers/whole numbers
+2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, VoodooInput from within the PS2 kext.
+3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C to your Config.plist.
+  * RMISMBus/RMII2C should be after VoodooRMI
+  * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
 
 ## Configuration
 
 The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling  
-Note that using non-integer values causes undefined behaviour which may prevent the kext from loading
+**Note** that using non-integer values causes undefined behaviour which may prevent the kext from loading
 
 | Value | Default | Description |
 | ----- | ------- | ----------- |
@@ -84,6 +89,5 @@ Note that using non-integer values causes undefined behaviour which may prevent 
 | `MinYDiffThumbDetection` | 200 | Minimum distance between the second lowest and lowest finger in which Minimum Y logic is used to detect the thumb rather than using the z value from the trackpad. Setting this higher means that the thumb must be farther from the other fingers before the y coordinate is used to detect the thumb, rather than using finger area. Keeping this smaller is preferable as finger area logic seems to only be useful when all 4 fingers are grouped together closely, where the thumb is more likely to be pressing down more |
 
 ## Building
-1) `git submodule init`
-2) `git submodule update`
-3) Build within XCode
+1) `git submodule update --init --recursive`
+2) Build within XCode

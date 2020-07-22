@@ -433,9 +433,11 @@ int F12::rmi_read_register_desc(u16 addr,
     rdesc->num_registers = bitmap_weight(rdesc->presense_map,
                                          RMI_REG_DESC_PRESENSE_BITS);
     
-    rdesc->registers = reinterpret_cast<rmi_register_desc_item *>(IOMalloc(rdesc->num_registers * sizeof(struct rmi_register_desc_item)));
+    rdesc->registers = reinterpret_cast<rmi_register_desc_item *>(IOMalloc(rdesc->num_registers * sizeof(rmi_register_desc_item)));
     if (!rdesc->registers)
         return -ENOMEM;
+    
+    memset (rdesc->registers, 0, rdesc->num_registers * sizeof(rmi_register_desc_item));
     
     /*
      * Allocate a temporary buffer to hold the register structure.

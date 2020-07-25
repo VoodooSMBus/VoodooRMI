@@ -27,11 +27,7 @@
 int rmi_driver_probe(RMIBus *dev)
 {
     int retval;
-    
-//    pdata = rmi_get_platform_data(rmi_dev);
-    
-    dev->data->rmi_dev = dev;
-    
+
     /*
      * Right before a warm boot, the sensor might be in some unusual state,
      * such as F54 diagnostics, or F34 bootloader mode after a firmware
@@ -68,25 +64,15 @@ int rmi_driver_probe(RMIBus *dev)
                  PDT_PROPERTIES_LOCATION, retval);
     }
     
-    retval = rmi_probe_interrupts(dev->data);
+    retval = rmi_probe_interrupts(dev, dev->data);
     if (retval)
         goto err;
     
-    // allocate device
-
-    
     return 0;
-//
-//err_disable_irq:
-//    rmi_disable_irq(dev, false);
 err:
     IOLogError("Could not probe");
     return retval;
 }
-
-#define RMI_SCAN_CONTINUE    0
-#define RMI_SCAN_DONE        1
-
 
 static int rmi_read_pdt_entry(RMIBus *rmi_dev,
                               struct pdt_entry *entry, u16 pdt_address)
@@ -152,7 +138,7 @@ static int rmi_scan_pdt_page(RMIBus *dev,
         *empty_pages = 0;
     
     return (data->bootloader_mode || *empty_pages >= 2) ?
-    RMI_SCAN_DONE : RMI_SCAN_CONTINUE;
+        RMI_SCAN_DONE : RMI_SCAN_CONTINUE;
 }
 
 int rmi_scan_pdt(RMIBus *dev, void *ctx,
@@ -178,28 +164,12 @@ int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt)
     int error;
     
     if (pdt->function_number == 0x01) {
-        u16 cmd_addr = pdt->page_start + pdt->command_base_addr;
-        u8 cmd_buf = RMI_DEVICE_RESET_CMD;
-        
         error = dev->reset();
         if (error < 0) {
             IOLogError("Unable to reset");
             return error;
         }
 
-        if (error > 0)
-            return RMI_SCAN_DONE;
-        
-        // Only send reset if there is no reset in transport (SMBus has one which just gets version)
-        IOLogDebug("Sending Reset\n");
-        error = dev->blockWrite(cmd_addr, &cmd_buf, 1);
-        if (error) {
-            IOLogError("Initial reset failed. Code = %d\n", error);
-            return error;
-        }
-        
-        IOSleep(DEFAULT_RESET_DELAY_MS);
-        
         return RMI_SCAN_DONE;
     }
     
@@ -252,9 +222,8 @@ static int rmi_count_irqs(RMIBus *rmi_dev,
     return RMI_SCAN_CONTINUE;
 }
 
-int rmi_probe_interrupts(rmi_driver_data *data)
+int rmi_probe_interrupts(RMIBus *rmi_dev, rmi_driver_data *data)
 {
-    RMIBus *rmi_dev = data->rmi_dev;
     int irq_count = 0;
     int retval;
     
@@ -326,8 +295,6 @@ static int rmi_create_function(RMIBus *rmi_dev,
     
     rmi_driver_copy_pdt_to_fd(pdt, &fn->fd);
     
-    fn->dev = rmi_dev;
-    
     fn->num_of_irqs = pdt->interrupt_source_count;
     fn->irq_pos = *current_irq_count;
     *current_irq_count += fn->num_of_irqs;
@@ -339,13 +306,9 @@ static int rmi_create_function(RMIBus *rmi_dev,
     if (error)
         return error;
     
-    // TODO: Why are these stored?
+    // Keep F01 around for reading/writing IRQ
     if (pdt->function_number == 0x01)
         data->f01_container = fn;
-    else if (pdt->function_number == 0x34)
-        data->f34_container = fn;
-    // We don't need the function data anymore,
-    // just the descriptors stored in the Functions
     else IOFree(fn, size);
     
     return RMI_SCAN_CONTINUE;
@@ -453,8 +416,6 @@ int rmi_enable_sensor(RMIBus *rmi_dev)
     if (retval < 0)
         return retval;
     
-//    return rmi_process_interrupt_requests(rmi_dev);
-    
     retval = rmi_driver_set_irq_bits(rmi_dev);
     if (retval < 0)
         return retval;
@@ -462,9 +423,8 @@ int rmi_enable_sensor(RMIBus *rmi_dev)
     return 0;
 }
 
-int rmi_init_functions(rmi_driver_data *data)
+int rmi_init_functions(RMIBus *rmi_dev, rmi_driver_data *data)
 {
-    RMIBus *rmi_dev = data->rmi_dev;
     int irq_count = 0;
     int retval;
     
@@ -500,9 +460,6 @@ void rmi_free_function_list(RMIBus *rmi_dev)
     
     if (data->f01_container)
         IOFree(data->f01_container, sizeof(rmi_function));
-    if (data->f34_container)
-        IOFree(data->f34_container, sizeof(rmi_function));
     data->f01_container = NULL;
-    data->f34_container = NULL;
 }
 

@@ -59,7 +59,7 @@ bool RMIBus::start(IOService *provider) {
         return false;
     int retval;
     
-    retval = rmi_init_functions(data);
+    retval = rmi_init_functions(this, data);
     if (retval)
         goto err;
 

@@ -314,7 +314,7 @@ void F12::getReport()
 {
     AbsoluteTime timestamp;
     
-    if (!sensor)
+    if (!sensor || !data1)
         return;
     
     int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, sensor->data_pkt,
@@ -325,21 +325,11 @@ void F12::getReport()
         return;
     }
     
-    if (!data1) return;
-    
-    int objects = data1->num_subpackets;
-    u8 *data = &sensor->data_pkt[data1_offset];
-    
-    if ((data1->num_subpackets * F12_DATA1_BYTES_PER_OBJ) > sensor->pkt_size)
-        objects = sensor->pkt_size / F12_DATA1_BYTES_PER_OBJ;
-
     clock_get_uptime(&timestamp);
-    
     if (sensor->shouldDiscardReport(timestamp))
         return;
     
     IOLogDebug("F12 Packet");
-    
 #if DEBUG
     if (sensor->nbr_fingers > 5) {
         IOLogDebug("More than 5 fingers!");
@@ -347,6 +337,7 @@ void F12::getReport()
 #endif // debug
     
     int fingers = min (sensor->nbr_fingers, 5);
+    u8 *data = &sensor->data_pkt[data1_offset];
     
     for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];
@@ -433,9 +424,11 @@ int F12::rmi_read_register_desc(u16 addr,
     rdesc->num_registers = bitmap_weight(rdesc->presense_map,
                                          RMI_REG_DESC_PRESENSE_BITS);
     
-    rdesc->registers = reinterpret_cast<rmi_register_desc_item *>(IOMalloc(rdesc->num_registers * sizeof(struct rmi_register_desc_item)));
+    rdesc->registers = reinterpret_cast<rmi_register_desc_item *>(IOMalloc(rdesc->num_registers * sizeof(rmi_register_desc_item)));
     if (!rdesc->registers)
         return -ENOMEM;
+    
+    memset (rdesc->registers, 0, rdesc->num_registers * sizeof(rmi_register_desc_item));
     
     /*
      * Allocate a temporary buffer to hold the register structure.

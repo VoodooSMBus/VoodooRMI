@@ -22,7 +22,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     name = (const char *)(data->getBytesNoCopy());
 
     IOLog("%s::%s probing\n", getName(), name);
-
+    
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
     if (isLegacy == nullptr) {
         IOLog("%s::%s Legacy mode not set, default to false", getName(), name);
@@ -44,7 +44,9 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     }
 
     do {
+#if DEBUG
         IOLog("%s::%s Trying to set mode, attempt %d\n", getName(), name, attempts);
+#endif //DEBUG
         error = rmi_set_mode(reportMode);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
@@ -257,7 +259,6 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
 
     memcpy(databuff, i2cInput+4, len);
 exit:
-//    IOLog("read %zd bytes at %#06x: %d (%*ph)\n", len, rmiaddr, ret, (int)len, databuff);
     delete[] i2cInput;
     IOLockUnlock(page_mutex);
     return retval;
@@ -292,7 +293,6 @@ int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
     retval = 0;
 
 exit:
-//    IOLog("write %zd bytes at %#06x: %d (%*ph)\n", len, rmiaddr, ret, (int)len, buf);
     delete [] writeReport;
     IOLockUnlock(page_mutex);
     return retval;

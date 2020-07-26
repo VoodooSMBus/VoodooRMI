@@ -24,7 +24,7 @@ Windows:
 Linux:
 * If you are using intertouch (i.e. psmouse.intertouch=1) for your synaptics trackpad, then it's compatible
 * Get `i2c-tools` from your package manager. Run `i2cdetect -l`, and note the number for SMBus (It's usually zero). Run `i2cdetect #` where # is the number you got from running the prior command. Synaptic devices are always at address 0x2c, so check at that address for anything other than `--`. It will usually appear as `UU` in my experiance if it's a Synaptics device.
-  * I've seen one or two examples where there was a trackpad that supported SMBus but nothing appeared at the address (Wack!)
+  * If the trackpad does not show up, there is a chance that it will still work. There have been one or two examples of the trackpad not showing up but still being compatible.
 * Likely compatible if you run `dmesg` and find a message along the lines of `"Your touchpad x says it can support a different bus."` and it's a synaptics trackpad.
 
 **I2C**

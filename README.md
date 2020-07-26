@@ -35,7 +35,7 @@ Windows:
 
 Linux:
 * Check for the presence of `i2c-SYNA` in `dmesg`.
-* Get `i2c-tools` from your package manager, and use the `i2cdetect` tool to see if there are any devices at address 0x2c for any bus that isn't SMBus. If you see it under SMBus, I'd use SMBus as it doesn't require any pinning!
+* Get `i2c-tools` from your package manager, and use the `i2cdetect` tool to see if there are any devices at address 0x2c for any bus that isn't SMBus. If you see it under SMBus, I'd use SMBus as the trackpad seemingly operates better under SMBus!
 
 ## Requirements
 
@@ -74,6 +74,10 @@ Linux:
     * RMISMBus/RMII2C should be after VoodooRMI
     * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
 
+You generally only want **one** of the two below kexts
+* RMII2C is needed if using VoodooI2C for your trackpad
+* RMISMBus is needed if using VoodooSMBus for your trackpad
+
 ## Configuration
 
 The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling  
@@ -93,3 +97,17 @@ The values below can be edited under Info.plist within the kext itself - these c
 ## Building
 1) `git submodule update --init --recursive`
 2) Build within XCode
+
+For loading, you may need to put RMII2C/RMISMBus's dependencies into the kextload command (including VoodooRMI)
+```
+sudo kextutil -vvvv -d VoodooRMI.kext -d VoodooSMBus.kext VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
+```
+
+## Troubleshooting
+
+Couple things to keep in mind:
+1) Make sure VoodooSMBus/VoodooI2C is loading and attaching
+    * [VoodooSMBus Troubleshooting](https://github.com/VoodooSMBus/VoodooSMBus/tree/dev#voodoosmbus-does-not-load)
+    * [VoodooI2C Troubleshooting](https://voodooi2c.github.io/#Troubleshooting/Troubleshooting)
+2) Make sure VoodooInput/VoodooTrackpoint are loading
+3) IORegistryExplorer is a good way to see which Functions are loading, and what is/isn't loading

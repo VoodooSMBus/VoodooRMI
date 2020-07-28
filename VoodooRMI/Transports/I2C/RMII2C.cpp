@@ -17,10 +17,7 @@ OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     int error = 0, attempts = 0;
 
-    OSData *data;
-    data = OSDynamicCast(OSData, provider->getProperty("name"));
-    name = (const char *)(data->getBytesNoCopy());
-
+    name = provider->getName();
     IOLog("%s::%s probing\n", getName(), name);
     
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
@@ -31,8 +28,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
         IOLog("%s::%s running in legacy mode", getName(), name);
     }
 
-    IOService *service = super::probe(provider, score);
-    if(!service) {
+    if(!super::probe(provider, score)) {
         IOLog("%s::%s Failed to probe provider\n", getName(), name);
         return NULL;
     }
@@ -114,23 +110,13 @@ exit:
 }
 
 void RMII2C::releaseResources() {
-    if (command_gate) {
+    if (command_gate)
         work_loop->removeEventSource(command_gate);
-        OSSafeReleaseNULL(command_gate);
-    }
+    OSSafeReleaseNULL(command_gate);
 
-    if (interrupt_source) {
-        interrupt_source->disable();
-        work_loop->removeEventSource(interrupt_source);
-        OSSafeReleaseNULL(interrupt_source);
-    }
-
-    if (interrupt_simulator) {
-        interrupt_simulator->disable();
-        work_loop->removeEventSource(interrupt_simulator);
-        OSSafeReleaseNULL(interrupt_simulator);
-    }
-
+    stopInterrupt();
+    OSSafeReleaseNULL(interrupt_source);
+    OSSafeReleaseNULL(interrupt_simulator);
     OSSafeReleaseNULL(work_loop);
 
     if (device_nub) {

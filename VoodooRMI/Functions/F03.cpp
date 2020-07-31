@@ -112,6 +112,7 @@ bool F03::start(IOService *provider)
         IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest\n",
                    ob_len, obs, ob_len);
     
+    setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
     registerService();
     
     u8 param[2] = {0};
@@ -129,8 +130,6 @@ bool F03::start(IOService *provider)
     error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
     
     index = 0;
-    
-    setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
     
     IOLog("Start finished");
     return super::start(provider);

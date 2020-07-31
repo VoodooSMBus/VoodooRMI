@@ -53,10 +53,11 @@ bool F30::start(IOService *provider)
         return false;;
     }
     
-    registerService();
     if (numButtons != 1) {
         setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
     }
+    
+    registerService();
 //        publishButtons();
     
     return true;

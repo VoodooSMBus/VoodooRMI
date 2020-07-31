@@ -100,6 +100,7 @@ The values below can be edited under Info.plist within the kext itself - these c
 
 For loading, you may need to put RMII2C/RMISMBus's dependencies into the kextload command (including VoodooRMI)
 ```
+cd path/to/unziped-VoodooRMI_Debug
 sudo kextutil -vvvv -d VoodooRMI.kext -d VoodooSMBus.kext VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
 ```
 

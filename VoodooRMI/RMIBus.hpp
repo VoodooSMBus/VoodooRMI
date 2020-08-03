@@ -17,38 +17,13 @@ class RMIFunction;
 #include "RMITransport.hpp"
 #include "rmi.h"
 #include "rmi_driver.hpp"
+#include "RMI_2D_Sensor.hpp"
 
 #include <F01.hpp>
 #include <F03.hpp>
 #include <F11.hpp>
+#include <F12.hpp>
 #include <F30.hpp>
-#include <F34.hpp>
-
-#define IOLogError(arg...) IOLog("Error: " arg)
-
-#ifdef DEBUG
-#define IOLogDebug(arg...) IOLog("Debug: " arg)
-#else
-#define IOLogDebug(arg...)
-#endif // DEBUG
-
-// Message types defined by ApplePS2Keyboard
-enum {
-    // from keyboard to mouse/touchpad
-    kKeyboardSetTouchStatus = iokit_vendor_specific_msg(100),   // set disable/enable touchpad (data is bool*)
-    kKeyboardGetTouchStatus = iokit_vendor_specific_msg(101),   // get disable/enable touchpad (data is bool*)
-    kKeyboardKeyPressTime = iokit_vendor_specific_msg(110)      // notify of timestamp a non-modifier key was pressed (data is uint64_t*)
-};
-
-// RMI message types
-enum {
-    kHandleRMIAttention = iokit_vendor_specific_msg(2046),
-    kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
-    kHandleRMISuspend = iokit_vendor_specific_msg(2048),
-    kHandleRMIResume = iokit_vendor_specific_msg(2049),
-    kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
-    kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051)
-};
 
 class RMIBus : public IOService {
     OSDeclareDefaultStructors(RMIBus);
@@ -69,7 +44,7 @@ public:
     
     // rmi_read
     inline int read(u16 addr, u8 *buf) {
-        return transport->read(addr, buf);
+        return transport->readBlock(addr, buf, 1);
     }
     // rmi_read_block
     inline int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
@@ -77,7 +52,7 @@ public:
     }
     // rmi_write
     inline int write(u16 rmiaddr, u8 *buf) {
-        return transport->write(rmiaddr, buf);
+        return transport->blockWrite(rmiaddr, buf, 1);
     }
     // rmi_block_write
     inline int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {

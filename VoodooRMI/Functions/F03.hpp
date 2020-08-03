@@ -18,8 +18,7 @@
 #include <IOKit/IOCommandGate.h>
 
 #define PSMOUSE_CMD_ENABLE 0x00f4
-#define MULT_DIVISOR 5
-#define DEFAULT_MULT 5
+#define DEFAULT_MULT 20
 
 /*
  * These constants are from the TrackPoint System
@@ -99,6 +98,9 @@ private:
     unsigned int trackstickScrollYMult;
     unsigned int trackstickDeadzone;
     
+    bool isScrolling;
+    bool middlePressed;
+    
     // ps2
     unsigned int flags, cmdcnt;
     u8 cmdbuf[8];
@@ -124,7 +126,7 @@ private:
     int ps2CommandGated(u8 *param, unsigned int *command);
     int ps2Command(u8 *param, unsigned int command);
     // TODO: Move to math file as long as with abs in rmi_driver.h
-    int signum (unsigned int value);
+    int signum (int value);
     
     void handlePacketGated(u8 packet);
 };

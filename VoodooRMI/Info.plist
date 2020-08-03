@@ -24,18 +24,20 @@
 		<dict>
 			<key>Configuration</key>
 			<dict>
+				<key>MinYDiffThumbDetection</key>
+				<integer>200</integer>
 				<key>ForceTouchEmulation</key>
 				<true/>
 				<key>ForceTouchMinPressure</key>
-				<integer>80</integer>
+				<integer>90</integer>
 				<key>DisableWhileTypingTimeout</key>
-				<integer>500</integer>
+				<integer>100</integer>
 				<key>TrackstickMultiplier</key>
-				<integer>5</integer>
+				<integer>20</integer>
 				<key>TrackstickScrollMultiplierX</key>
-				<integer>5</integer>
+				<integer>20</integer>
 				<key>TrackstickScrollMultiplierY</key>
-				<integer>5</integer>
+				<integer>20</integer>
 				<key>TrackstickDeadzone</key>
 				<integer>1</integer>
 			</dict>

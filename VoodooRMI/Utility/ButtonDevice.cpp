@@ -1,10 +1,7 @@
-//
-//  ButtonDevice.cpp
-//  VoodooRMI
-//
-//  Created by Gwy on 6/9/20.
-//  Copyright © 2020 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Simple HID device that handles buttons
+ */
 
 #include "ButtonDevice.hpp"
 #include "RMIBus.hpp"

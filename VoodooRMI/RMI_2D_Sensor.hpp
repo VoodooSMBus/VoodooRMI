@@ -10,8 +10,12 @@
 #ifndef RMI_2D_Sensor_hpp
 #define RMI_2D_Sensor_hpp
 
-#include "LinuxCompat.h"
+#include <IOKit/IOService.h>
+#include "Utility/LinuxCompat.h"
+#include "Utility/Configuration.hpp"
 #include "rmi.h"
+#include "VoodooInputMultitouch/VoodooInputTransducer.h"
+#include "VoodooInputMultitouch/VoodooInputMessages.h"
 
 enum rmi_2d_sensor_object_type {
     RMI_2D_OBJECT_NONE,
@@ -23,13 +27,23 @@ enum rmi_2d_sensor_object_type {
 
 struct rmi_2d_sensor_abs_object {
     enum rmi_2d_sensor_object_type type;
-    int mt_tool;
     u16 x;
     u16 y;
     u8 z;
     u8 wx;
     u8 wy;
 };
+
+struct RMI2DSensorReport {
+    rmi_2d_sensor_abs_object objs[10];
+    int fingers;
+    AbsoluteTime timestamp;
+};
+
+//struct rmi_2d_sensor {
+//    struct rmi_2d_axis_alignment axis_align;
+//    int dmax;
+//};
 
 /**
  * @axis_align - controls parameters that are useful in system prototyping
@@ -43,43 +57,52 @@ struct rmi_2d_sensor_abs_object {
  * position when two fingers are on the device.  When this is true, we
  * assume we have one of those sensors and report events appropriately..
  */
-struct rmi_2d_sensor {
-    struct rmi_2d_axis_alignment axis_align;
-    struct input_mt_pos *tracking_pos;
-    int *tracking_slots;
-    bool kernel_tracking;
-    struct rmi_2d_sensor_abs_object *objs;
-    int dmax;
-    u16 min_x;
+class RMI2DSensor : public IOService {
+    OSDeclareDefaultStructors(RMI2DSensor)
+public:
+    u16 min_x{0};
+    u16 min_y{0};
     u16 max_x;
-    u16 min_y;
     u16 max_y;
-    u8 nbr_fingers;
+    u8 x_mm;
+    u8 y_mm;
+    
     u8 *data_pkt;
     int pkt_size;
     int attn_size;
-    bool topbuttonpad;
-    RMIFunction *fn;
-    u8 report_abs;
-    u8 report_rel;
-    u8 x_mm;
-    u8 y_mm;
+    
+    u8 report_abs {0};
+    u8 report_rel {0};
+    
+    u8 nbr_fingers;
+    
+    bool init(OSDictionary *dictionary) override;
+    bool start(IOService *provider) override;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
+    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    void free() override;
+    
+    bool shouldDiscardReport(AbsoluteTime timestamp);
+private:
+    int lastFingers;
+    
+    VoodooInputEvent inputEvent {};
+    IOService *voodooInputInstance {nullptr};
+    
+    bool freeFingerTypes[kMT2FingerTypeCount];
+    bool clickpadState {false};
+    bool pressureLock {false};
+    bool touchpadEnable {true};
+    bool forceTouchEmulation {true};
+    u8 forceTouchMinPressure {80};
+    uint32_t minYDiffGesture {200};
+    
+    uint64_t disableWhileTypingTimeout, lastKeyboardTS;
+
+    MT2FingerType getFingerType();
+    void setThumbFingerType(int fingers, RMI2DSensorReport *report);
+    void handleReport(RMI2DSensorReport *report);
 };
-
-int rmi_2d_sensor_of_probe(struct device *dev,
-                           struct rmi_2d_sensor_platform_data *pdata);
-
-void rmi_2d_sensor_abs_process(struct rmi_2d_sensor *sensor,
-                               struct rmi_2d_sensor_abs_object *obj,
-                               int slot);
-
-void rmi_2d_sensor_abs_report(struct rmi_2d_sensor *sensor,
-                              struct rmi_2d_sensor_abs_object *obj,
-                              int slot);
-
-void rmi_2d_sensor_rel_report(struct rmi_2d_sensor *sensor, int x, int y);
-
-int rmi_2d_sensor_configure_input(struct rmi_function *fn,
-                                  struct rmi_2d_sensor *sensor);
 
 #endif /* RMI_2D_Sensor_hpp */

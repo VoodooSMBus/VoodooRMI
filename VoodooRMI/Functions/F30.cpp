@@ -326,6 +326,7 @@ trackpoint_exit:
 void F30::unpublishButtons() {
     if (buttonDevice) {
         buttonDevice->stop(this);
+        buttonDevice->detach(this);
         OSSafeReleaseNULL(buttonDevice);
     }
 }

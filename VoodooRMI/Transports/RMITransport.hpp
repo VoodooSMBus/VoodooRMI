@@ -29,11 +29,8 @@ class RMITransport : public IOService {
     OSDeclareDefaultStructors(RMITransport);
     
 public:
-    virtual int read(u16 addr, u8 *buf) {return 0;};
     // rmi_read_block
     virtual int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {return 0;};
-    // rmi_write
-    virtual int write(u16 rmiaddr, u8 *buf) {return 0;};
     // rmi_block_write
     virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {return 0;};
     
@@ -75,9 +72,7 @@ public:
     bool start(IOService *provider) override;
     void free() override;
     
-    int read(u16 addr, u8 *buf) override;
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) override;
-    int write(u16 rmiaddr, u8 *buf) override;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
     
     inline int reset() override {

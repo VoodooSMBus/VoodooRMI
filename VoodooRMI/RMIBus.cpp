@@ -155,8 +155,8 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
         switch (type) {
             case kHandleRMIClickpadSet:
             case kHandleRMITrackpoint:
-                if (OSDynamicCast(F11, func)) {
-                    IOLogDebug("Sending event %u to F11: %u", type, argument);
+                if (OSDynamicCast(F11, func) || OSDynamicCast(F12, func)) {
+                    IOLogDebug("Sending event %u to F11/F12: %u", type, argument);
                     messageClient(type, func, reinterpret_cast<void *>(argument));
                     return;
                 }
@@ -245,15 +245,16 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
         case 0x11:
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
             break;
+        case 0x12:
+            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
+            break;
         case 0x30:
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
             break;
-        case 0x34:
-            return 0;
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F34));
-            break;
+        case 0x3A:
         case 0x54:
-            IOLog("F54 not implemented - Debug function\n");
+        case 0x55:
+            IOLog("F%X not implemented\n", fn->fd.function_number);
             return 0;
         default:
             IOLogError("Unknown function: %02X - Continuing to load\n", fn->fd.function_number);

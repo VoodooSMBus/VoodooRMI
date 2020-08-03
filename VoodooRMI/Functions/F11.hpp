@@ -10,11 +10,8 @@
 #ifndef F11_hpp
 #define F11_hpp
 
-#include "../RMI_2D_Sensor.hpp"
 #include <RMIBus.hpp>
 #include <IOKit/IOMessage.h>
-#include "VoodooInputMultitouch/VoodooInputTransducer.h"
-#include "VoodooInputMultitouch/VoodooInputMessages.h"
 
 /*
  *  Aren't we glad that header files exist?
@@ -507,8 +504,6 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     
@@ -523,21 +518,7 @@ private:
     OSDictionary *miscProps;
     OSDictionary *sizeProps;
     
-    int lastFingers;
-    VoodooInputEvent inputEvent {};
-    IOService *voodooInputInstance {nullptr};
-    
-    bool freeFingerType[kMT2FingerTypeCount];
-    MT2FingerType getFingerType(VoodooInputTransducer *transducer);
-    void setThumbFingerType(int fingers);
-    
-    bool clickpadState {false};
-    bool pressureLock {false};
-    bool touchpadEnable {true};
-    bool forceTouchEmulation {true};
-    u8 forceTouchMinPressure {80};
-    
-    uint64_t disableWhileTypingTimeout, lastKeyboardTS;
+    RMI2DSensorReport report {};
     
     /** Data pertaining to F11 in general.  For per-sensor data, see struct
     * f11_2d_sensor.
@@ -560,7 +541,7 @@ private:
     struct f11_2d_ctrl dev_controls;
     IOLock *dev_controls_mutex;
     u16 rezero_wait_ms;
-    struct rmi_2d_sensor sensor;
+    RMI2DSensor *sensor;
     struct f11_2d_sensor_queries sens_query;
     struct f11_2d_data data_2d;
     struct rmi_2d_sensor_platform_data sensor_pdata;
@@ -576,7 +557,6 @@ private:
                                f11_2d_ctrl *ctrl,
                                u16 ctrl_base_addr);
     int f11_2d_construct_data();
-    
     
     inline u8 rmi_f11_parse_finger_state(u8 n_finger)
     {

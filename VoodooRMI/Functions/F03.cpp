@@ -174,18 +174,42 @@ void F03::handlePacketGated(u8 packet)
     dx -= signum(dx) * min(abs(dx), trackstickDeadzone);
     dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
     
-    if (dx || dy) {
-        // Must multiply first then divide so we don't multiply by zero
-        if(buttons & 0x04) {
-            buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
-                                            (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
-                                            0);
+    // For middle button, we do not actually tell macOS it's been pressed until it's been released and we didn't scroll
+    // We first say that it's been pressed internally - but if we scroll at all, then instead we say we scroll
+    if (buttons & 0x04 && !isScrolling) {
+        if (dx || dy) {
+            isScrolling = true;
+            middlePressed = false;
         } else {
-            buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
-                                                (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
-                                                buttons);
+            middlePressed = true;
         }
+    }
+    
+    // When middle button is released, if we registered a middle press w/o scrolling, send middle click as a seperate packet
+    // Otherwise just turn scrolling off and remove middle buttons from packet
+    if (!(buttons & 0x04)) {
+        if (middlePressed) {
+            middlePressed = false;
+            buttonDevice->updateRelativePointer(0, 0, 0x04);
+        } else {
+            isScrolling = false;
+        }
+    } else {
+        buttons &= ~0x04;
+    }
+    
+    // Must multiply first then divide so we don't multiply by zero
+    if (isScrolling) {
+        buttonDevice->updateScrollwheel((SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT),
+                                        (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT),
+                                        0);
+    } else {
+        buttonDevice->updateRelativePointer((SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT),
+                                            (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT),
+                                            buttons);
+    }
 
+    if (dx || dy) {
         rmiBus->notify(kHandleRMITrackpoint);
     }
 
@@ -437,11 +461,12 @@ void F03::unpublishButtons()
 {
     if (buttonDevice) {
         buttonDevice->stop(this);
+        buttonDevice->detach(this);
         OSSafeReleaseNULL(buttonDevice);
     }
 }
 
-int F03::signum(unsigned int value)
+int F03::signum(int value)
 {
     if (value > 0) return 1;
     if (value < 0) return -1;

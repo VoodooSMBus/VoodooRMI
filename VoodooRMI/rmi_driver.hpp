@@ -28,9 +28,6 @@
 #define PDT_END_SCAN_LOCATION    0x0005
 #define RMI4_END_OF_PDT(id) ((id) == 0x00 || (id) == 0xff)
 
-// macOS kernel/math has absolute value in it. It's only for doubles though
-#define abs(x) ((x < 0) ? (-x) : (x))
-
 struct pdt_entry {
     u16 page_start;
     u8 query_base_addr;

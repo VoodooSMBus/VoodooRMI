@@ -53,16 +53,19 @@ bool F30::start(IOService *provider)
         return false;;
     }
     
+    if (numButtons != 1) {
+        setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+    }
+    
     registerService();
-    if (numButtons != 1)
-        publishButtons();
+//        publishButtons();
     
     return true;
 }
 
 void F30::stop(IOService *provider)
 {
-    unpublishButtons();
+//    unpublishButtons();
     super::stop(provider);
 }
 
@@ -118,6 +121,23 @@ int F30::rmi_f30_initialize()
     
     register_count = DIV_ROUND_UP(gpioled_count, 8);
     
+    OSDictionary * attribute = OSDictionary::withCapacity(9);
+    attribute->setObject("extended_pattern", has_extended_pattern ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("mappable_buttons", has_mappable_buttons ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("led", has_led ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("gpio", has_gpio ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("haptic", has_haptic ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("gpio_driver_control", has_gpio_driver_control ? kOSBooleanTrue : kOSBooleanFalse);
+    attribute->setObject("mech_mouse_btns", has_mech_mouse_btns ? kOSBooleanTrue : kOSBooleanFalse);
+    OSNumber *count = OSNumber::withNumber(gpioled_count, 8);
+    attribute->setObject("gpioled_count", count);
+    OSSafeReleaseNULL(count);
+    count = OSNumber::withNumber(register_count, 8);
+    attribute->setObject("register_count", count);
+    OSSafeReleaseNULL(count);
+    setProperty("Attibute", attribute);
+    OSSafeReleaseNULL(attribute);
+
     if (has_gpio && has_led)
         rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
                               register_count, &ctrl_reg);
@@ -277,7 +297,10 @@ void F30::rmi_f30_report_button()
         mask = key_down << (key_code - 1);
         
         if (numButtons == 1 && i == clickpad_index) {
-            rmiBus->notify(kHandleRMIClickpadSet, key_down);
+            if (clickpadState != key_down) {
+                 rmiBus->notify(kHandleRMIClickpadSet, key_down);
+                 clickpadState = key_down;
+             }
             continue;
         }
         
@@ -291,42 +314,35 @@ void F30::rmi_f30_report_button()
         }
     }
     
-    if (numButtons > 1)
-        buttonDevice->updateButtons(btns);
+    if (numButtons > 1) {
+        AbsoluteTime timestamp;
+        clock_get_uptime(&timestamp);
+        
+        relativeEvent.dx = relativeEvent.dy = 0;
+        relativeEvent.buttons = btns;
+        relativeEvent.timestamp = timestamp;
+        
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+    }
     
     if (hasTrackstickButtons)
         rmiBus->notify(kHandleRMITrackpointButton, trackstickBtns);
 }
 
-bool F30::publishButtons() {
-    buttonDevice = OSTypeAlloc(ButtonDevice);
-    if (!buttonDevice) {
-        IOLogError("No memory to allocate TrackpointDevice instance\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->init(NULL)) {
-        IOLogError("Failed to init TrackpointDevice\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->attach(this)) {
-        IOLogError("Failed to attach TrackpointDevice\n");
-        goto trackpoint_exit;
-    }
-    if (!buttonDevice->start(this)) {
-        IOLogError("Failed to start TrackpointDevice \n");
-        goto trackpoint_exit;
+bool F30::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
+{
+    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
+        voodooTrackpointInstance = forClient;
+        voodooTrackpointInstance->retain();
+
+        return true;
     }
     
-    return true;
-trackpoint_exit:
-    unpublishButtons();
-    return false;
+    return super::handleOpen(forClient, options, arg);
 }
 
-void F30::unpublishButtons() {
-    if (buttonDevice) {
-        buttonDevice->stop(this);
-        buttonDevice->detach(this);
-        OSSafeReleaseNULL(buttonDevice);
-    }
+void F30::handleClose(IOService *forClient, IOOptionBits options)
+{
+    OSSafeReleaseNULL(voodooTrackpointInstance);
+    super::handleClose(forClient, options);
 }

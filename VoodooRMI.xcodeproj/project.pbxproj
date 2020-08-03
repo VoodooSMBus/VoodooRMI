@@ -7,10 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
+		286587C224C13D9600E74848 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
+		286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 286587AE24C13D0B00E74848 /* RMISMBus.hpp */; };
+		6F4B4A9024C1A0B80018F1F0 /* RMII2C.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */; };
+		6F4B4A9224C1A0B80018F1F0 /* RMII2C.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */; };
+		6F4B4A9C24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */; };
+		6FCE9B1E24C259740042525E /* VoodooTrackpoint.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 2861B6D224B5928F00383E0E /* VoodooTrackpoint.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6FCE9B1F24C2597B0042525E /* RMISMBus.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 286587D724C13D9600E74848 /* RMISMBus.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6FCE9B2024C2597F0042525E /* RMII2C.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
-		A4435AF0248F8AD80083404C /* ButtonDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4435AEE248F8AD80083404C /* ButtonDevice.cpp */; };
-		A4435AF1248F8AD80083404C /* ButtonDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4435AEF248F8AD80083404C /* ButtonDevice.hpp */; };
+		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
+		A43A3A5824B4F74000B9A714 /* VoodooTrackpointMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5724B4F74000B9A714 /* VoodooTrackpointMessages.h */; };
 		A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */; };
 		A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED6247F2A650009CBE0 /* RMIBus.hpp */; };
 		A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560ED7247F2A650009CBE0 /* RMI_2D_Sensor.cpp */; };
@@ -32,18 +41,72 @@
 		A4560F08247F38670009CBE0 /* VoodooInputMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F04247F38670009CBE0 /* VoodooInputMessages.h */; };
 		A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F05247F38670009CBE0 /* VoodooInputTransducer.h */; };
 		A4560F0A247F38670009CBE0 /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F06247F38670009CBE0 /* VoodooInputEvent.h */; };
-		A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		A4560F102480757F0009CBE0 /* F03.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0E2480757F0009CBE0 /* F03.cpp */; };
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
-		C6274AD324BC9A6F003AE326 /* VoodooSMBus.kext in Resources */ = {isa = PBXBuildFile; fileRef = C6274AD224BC9A6F003AE326 /* VoodooSMBus.kext */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2861B6D124B5928F00383E0E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B33179B224AA310A00200168;
+			remoteInfo = VoodooTrackpoint;
+		};
+		2861B6DB24B592D400383E0E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = B33179B124AA310A00200168;
+			remoteInfo = VoodooTrackpoint;
+		};
+		286587DC24C1426600E74848 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4560EBE247F29EC0009CBE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 286587AF24C13D9600E74848;
+			remoteInfo = RMISMBus;
+		};
+		6F4B4AA824C1AEEA0018F1F0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4560EBE247F29EC0009CBE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6F4B4A8C24C1A0B80018F1F0;
+			remoteInfo = RMII2C;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6FCE9B1D24C259630042525E /* Copy Plugins */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6FCE9B2024C2597F0042525E /* RMII2C.kext in Copy Plugins */,
+				6FCE9B1F24C2597B0042525E /* RMISMBus.kext in Copy Plugins */,
+				6FCE9B1E24C259740042525E /* VoodooTrackpoint.kext in Copy Plugins */,
+			);
+			name = "Copy Plugins";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
+		2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooTrackpoint.xcodeproj; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint.xcodeproj; sourceTree = "<group>"; };
+		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
+		286587D724C13D9600E74848 /* RMISMBus.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMISMBus.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		286587D824C13D9600E74848 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMII2C.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMII2C.hpp; sourceTree = "<group>"; };
+		6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMII2C.cpp; sourceTree = "<group>"; };
+		6F4B4A9324C1A0B80018F1F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooI2CDeviceNub.hpp; path = Dependencies/VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CDevice/VoodooI2CDeviceNub.hpp; sourceTree = "<group>"; };
 		A41323E62492077C00907B0D /* Configuration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
 		A41323E72492077C00907B0D /* Configuration.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Configuration.hpp; sourceTree = "<group>"; };
-		A4435AEE248F8AD80083404C /* ButtonDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonDevice.cpp; sourceTree = "<group>"; };
-		A4435AEF248F8AD80083404C /* ButtonDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ButtonDevice.hpp; sourceTree = "<group>"; };
+		A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooSMBusDeviceNub.hpp; path = Dependencies/VoodooSMBus/VoodooSMBus/VoodooSMBusDeviceNub.hpp; sourceTree = "<group>"; };
+		A43A3A5724B4F74000B9A714 /* VoodooTrackpointMessages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooTrackpointMessages.h; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint/VoodooTrackpointMessages.h; sourceTree = "<group>"; };
 		A4560EC7247F29EC0009CBE0 /* VoodooRMI.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoodooRMI.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4560ECE247F29EC0009CBE0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = rmi_driver.hpp; sourceTree = "<group>"; };
@@ -70,10 +133,23 @@
 		A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMISMBus.cpp; sourceTree = "<group>"; };
 		A4560F0E2480757F0009CBE0 /* F03.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F03.cpp; sourceTree = "<group>"; };
 		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
-		C6274AD224BC9A6F003AE326 /* VoodooSMBus.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = VoodooSMBus.kext; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		286587BE24C13D9600E74848 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F4B4A8A24C1A0B80018F1F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC3247F29EC0009CBE0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -84,11 +160,45 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2861B6CC24B5928A00383E0E /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */,
+			);
+			name = Dependencies;
+			sourceTree = "<group>";
+		};
+		2861B6CE24B5928F00383E0E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2861B6D224B5928F00383E0E /* VoodooTrackpoint.kext */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		286587DB24C13F5D00E74848 /* SMBus */ = {
+			isa = PBXGroup;
+			children = (
+				286587D824C13D9600E74848 /* Info.plist */,
+				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
+				286587AE24C13D0B00E74848 /* RMISMBus.hpp */,
+			);
+			path = SMBus;
+			sourceTree = "<group>";
+		};
+		6F4B4A8E24C1A0B80018F1F0 /* I2C */ = {
+			isa = PBXGroup;
+			children = (
+				6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */,
+				6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */,
+				6F4B4A9324C1A0B80018F1F0 /* Info.plist */,
+			);
+			path = I2C;
+			sourceTree = "<group>";
+		};
 		A41323EA2492078A00907B0D /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				A4435AEF248F8AD80083404C /* ButtonDevice.hpp */,
-				A4435AEE248F8AD80083404C /* ButtonDevice.cpp */,
 				A41323E72492077C00907B0D /* Configuration.hpp */,
 				A41323E62492077C00907B0D /* Configuration.cpp */,
 				A4560EDD247F2A660009CBE0 /* LinuxCompat.h */,
@@ -100,7 +210,7 @@
 		A4560EBD247F29EC0009CBE0 = {
 			isa = PBXGroup;
 			children = (
-				C6274AD224BC9A6F003AE326 /* VoodooSMBus.kext */,
+				2861B6CC24B5928A00383E0E /* Dependencies */,
 				A4560F02247F381B0009CBE0 /* Headers */,
 				A4560EC9247F29EC0009CBE0 /* VoodooRMI */,
 				A4560EC8247F29EC0009CBE0 /* Products */,
@@ -111,6 +221,8 @@
 			isa = PBXGroup;
 			children = (
 				A4560EC7247F29EC0009CBE0 /* VoodooRMI.kext */,
+				286587D724C13D9600E74848 /* RMISMBus.kext */,
+				6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -136,8 +248,9 @@
 		A4560EE9247F32600009CBE0 /* Transports */ = {
 			isa = PBXGroup;
 			children = (
+				6F4B4A8E24C1A0B80018F1F0 /* I2C */,
+				286587DB24C13F5D00E74848 /* SMBus */,
 				A4560EEB247F32600009CBE0 /* RMITransport.hpp */,
-				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 			);
 			path = Transports;
 			sourceTree = "<group>";
@@ -162,7 +275,10 @@
 		A4560F02247F381B0009CBE0 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				A43A3A5724B4F74000B9A714 /* VoodooTrackpointMessages.h */,
+				A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */,
 				A4560F03247F38660009CBE0 /* MultitouchHelpers.h */,
+				6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */,
 				A4560F06247F38670009CBE0 /* VoodooInputEvent.h */,
 				A4560F04247F38670009CBE0 /* VoodooInputMessages.h */,
 				A4560F05247F38670009CBE0 /* VoodooInputTransducer.h */,
@@ -173,6 +289,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		286587BF24C13D9600E74848 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				286587C224C13D9600E74848 /* RMITransport.hpp in Headers */,
+				286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F4B4A8824C1A0B80018F1F0 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F4B4A9024C1A0B80018F1F0 /* RMII2C.hpp in Headers */,
+				6F4B4A9C24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC4247F29EC0009CBE0 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -180,14 +314,15 @@
 				A41323E92492077C00907B0D /* Configuration.hpp in Headers */,
 				A4560EFE247F32760009CBE0 /* F01.hpp in Headers */,
 				A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */,
-				A4435AF1248F8AD80083404C /* ButtonDevice.hpp in Headers */,
 				A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */,
 				A4560F112480757F0009CBE0 /* F03.hpp in Headers */,
 				A4560EFA247F32760009CBE0 /* F12.hpp in Headers */,
+				A43A3A5824B4F74000B9A714 /* VoodooTrackpointMessages.h in Headers */,
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
 				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
 				A4560F07247F38670009CBE0 /* MultitouchHelpers.h in Headers */,
+				A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */,
 				A4560EE4247F2A660009CBE0 /* RMI_2D_Sensor.hpp in Headers */,
 				A4560EFB247F32760009CBE0 /* F30.hpp in Headers */,
 				A4560EE2247F2A660009CBE0 /* rmi.h in Headers */,
@@ -200,6 +335,42 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		286587AF24C13D9600E74848 /* RMISMBus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 286587D424C13D9600E74848 /* Build configuration list for PBXNativeTarget "RMISMBus" */;
+			buildPhases = (
+				286587B324C13D9600E74848 /* Sources */,
+				286587BE24C13D9600E74848 /* Frameworks */,
+				286587BF24C13D9600E74848 /* Headers */,
+				286587D224C13D9600E74848 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RMISMBus;
+			productName = VoodooRMI;
+			productReference = 286587D724C13D9600E74848 /* RMISMBus.kext */;
+			productType = "com.apple.product-type.kernel-extension";
+		};
+		6F4B4A8C24C1A0B80018F1F0 /* RMII2C */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F4B4A9624C1A0B80018F1F0 /* Build configuration list for PBXNativeTarget "RMII2C" */;
+			buildPhases = (
+				6F4B4A8824C1A0B80018F1F0 /* Headers */,
+				6F4B4A8924C1A0B80018F1F0 /* Sources */,
+				6F4B4A8A24C1A0B80018F1F0 /* Frameworks */,
+				6F4B4A8B24C1A0B80018F1F0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RMII2C;
+			productName = RMII2C;
+			productReference = 6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */;
+			productType = "com.apple.product-type.kernel-extension";
+		};
 		A4560EC6247F29EC0009CBE0 /* VoodooRMI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A4560ED1247F29EC0009CBE0 /* Build configuration list for PBXNativeTarget "VoodooRMI" */;
@@ -208,12 +379,15 @@
 				A4560EC2247F29EC0009CBE0 /* Sources */,
 				A4560EC3247F29EC0009CBE0 /* Frameworks */,
 				A4560EC4247F29EC0009CBE0 /* Headers */,
-				A4560EC5247F29EC0009CBE0 /* Resources */,
+				6FCE9B1D24C259630042525E /* Copy Plugins */,
 				28445F072488403F00D8858A /* Copy VoodooInput */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				6F4B4AA924C1AEEA0018F1F0 /* PBXTargetDependency */,
+				286587DD24C1426600E74848 /* PBXTargetDependency */,
+				2861B6DC24B592D400383E0E /* PBXTargetDependency */,
 			);
 			name = VoodooRMI;
 			productName = VoodooRMI;
@@ -226,9 +400,12 @@
 		A4560EBE247F29EC0009CBE0 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1140;
+				LastUpgradeCheck = 1160;
 				ORGANIZATIONNAME = 1Revenger1;
 				TargetAttributes = {
+					6F4B4A8C24C1A0B80018F1F0 = {
+						CreatedOnToolsVersion = 12.0;
+					};
 					A4560EC6247F29EC0009CBE0 = {
 						CreatedOnToolsVersion = 9.4.1;
 					};
@@ -245,19 +422,43 @@
 			mainGroup = A4560EBD247F29EC0009CBE0;
 			productRefGroup = A4560EC8247F29EC0009CBE0 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 2861B6CE24B5928F00383E0E /* Products */;
+					ProjectRef = 2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A4560EC6247F29EC0009CBE0 /* VoodooRMI */,
+				286587AF24C13D9600E74848 /* RMISMBus */,
+				6F4B4A8C24C1A0B80018F1F0 /* RMII2C */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXReferenceProxy section */
+		2861B6D224B5928F00383E0E /* VoodooTrackpoint.kext */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = VoodooTrackpoint.kext;
+			remoteRef = 2861B6D124B5928F00383E0E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
 /* Begin PBXResourcesBuildPhase section */
-		A4560EC5247F29EC0009CBE0 /* Resources */ = {
+		286587D224C13D9600E74848 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C6274AD324BC9A6F003AE326 /* VoodooSMBus.kext in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F4B4A8B24C1A0B80018F1F0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,7 +477,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [ ! -d \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\" ]; then\n    mkdir \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n    cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\nfi\n";
+			shellScript = "cp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\n";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -295,6 +496,22 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		286587B324C13D9600E74848 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F4B4A8924C1A0B80018F1F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F4B4A9224C1A0B80018F1F0 /* RMII2C.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4560EC2247F29EC0009CBE0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -303,19 +520,124 @@
 				A4560F102480757F0009CBE0 /* F03.cpp in Sources */,
 				A4560EFC247F32760009CBE0 /* F11.cpp in Sources */,
 				A4560F00247F32760009CBE0 /* F30.cpp in Sources */,
-				A4435AF0248F8AD80083404C /* ButtonDevice.cpp in Sources */,
 				A4560EFD247F32760009CBE0 /* F12.cpp in Sources */,
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
 				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,
 				A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */,
-				A4560F0C247F406F0009CBE0 /* RMISMBus.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		2861B6DC24B592D400383E0E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = VoodooTrackpoint;
+			targetProxy = 2861B6DB24B592D400383E0E /* PBXContainerItemProxy */;
+		};
+		286587DD24C1426600E74848 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 286587AF24C13D9600E74848 /* RMISMBus */;
+			targetProxy = 286587DC24C1426600E74848 /* PBXContainerItemProxy */;
+		};
+		6F4B4AA924C1AEEA0018F1F0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6F4B4A8C24C1A0B80018F1F0 /* RMII2C */;
+			targetProxy = 6F4B4AA824C1AEEA0018F1F0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		286587D524C13D9600E74848 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
+				);
+				INFOPLIST_FILE = VoodooRMI/Transports/SMBus/Info.plist;
+				MODULE_NAME = com.1Revenger1.VoodooRMI;
+				MODULE_VERSION = 1.0.0d1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMISMBus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Debug;
+		};
+		286587D624C13D9600E74848 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
+				);
+				INFOPLIST_FILE = VoodooRMI/Transports/SMBus/Info.plist;
+				MODULE_NAME = com.1Revenger1.VoodooRMI;
+				MODULE_VERSION = 1.0.0d1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMISMBus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Release;
+		};
+		6F4B4A9424C1A0B80018F1F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = VoodooRMI/Transports/I2C/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MODULE_NAME = com.1Revenger1.RMII2C;
+				MODULE_VERSION = 1.0.0d1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMII2C;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Debug;
+		};
+		6F4B4A9524C1A0B80018F1F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.0d1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = VoodooRMI/Transports/I2C/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MODULE_NAME = com.1Revenger1.RMII2C;
+				MODULE_VERSION = 1.0.0d1;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.RMII2C;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				WRAPPER_EXTENSION = kext;
+			};
+			name = Release;
+		};
 		A4560ECF247F29EC0009CBE0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -437,7 +759,7 @@
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
-					"$(PROJECT_DIR)/VoodooSMBus.kext/Contents/Resources/Headers",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
 				);
 				INFOPLIST_FILE = VoodooRMI/Info.plist;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
@@ -459,7 +781,7 @@
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
-					"$(PROJECT_DIR)/VoodooSMBus.kext/Contents/Resources/Headers",
+					"$(PROJECT_DIR)/Dependencies/VoodooTrackpoint/VoodooTrackpoint",
 				);
 				INFOPLIST_FILE = VoodooRMI/Info.plist;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
@@ -474,6 +796,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		286587D424C13D9600E74848 /* Build configuration list for PBXNativeTarget "RMISMBus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				286587D524C13D9600E74848 /* Debug */,
+				286587D624C13D9600E74848 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6F4B4A9624C1A0B80018F1F0 /* Build configuration list for PBXNativeTarget "RMII2C" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F4B4A9424C1A0B80018F1F0 /* Debug */,
+				6F4B4A9524C1A0B80018F1F0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A4560EC1247F29EC0009CBE0 /* Build configuration list for PBXProject "VoodooRMI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

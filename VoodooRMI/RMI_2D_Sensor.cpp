@@ -23,7 +23,7 @@ bool RMI2DSensor::init(OSDictionary *dictionary)
     forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
     minYDiffGesture = Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", 200);
     
-    return super::init(dictionary);
+    return super::init();
 }
 
 bool RMI2DSensor::start(IOService *provider)
@@ -41,6 +41,8 @@ bool RMI2DSensor::start(IOService *provider)
     
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
+    
+    memset(invalidFinger, false, 10);
     
     registerService();
     
@@ -117,6 +119,9 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
     int realFingerCount = 0;
     
+    if (!voodooInputInstance)
+        return;
+    
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
@@ -133,6 +138,8 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         if (isValid) {
             realFingerCount++;
             
+            // Dissallow large objects
+            transducer.isValid = obj.z < 120 && obj.wx < 7 && obj.wy < 7;
             transducer.previousCoordinates = transducer.currentCoordinates;
             transducer.currentCoordinates.width = obj.z / 1.5;
             transducer.timestamp = report->timestamp;
@@ -173,7 +180,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         
         if (trans.isValid) {
             // Rudimentry palm detection
-            trans.isValid = obj.z < 120 && (abs(obj.wx - obj.wy) < 3 || trans.fingerType == kMT2FingerTypeThumb);
+            trans.isValid = trans.isValid && (abs(obj.wx - obj.wy) < 3 || trans.fingerType == kMT2FingerTypeThumb);
             
             if (trans.fingerType == kMT2FingerTypeUndefined) {
                 trans.fingerType = getFingerType();

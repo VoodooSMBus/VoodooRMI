@@ -12,8 +12,6 @@
 
 #include <IOKit/IOService.h>
 
-class RMIBus;
-
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? (-x) : (x))
 
@@ -93,7 +91,6 @@ struct rmi_function_descriptor {
 struct rmi_function {
     int size;
     struct rmi_function_descriptor fd;
-    RMIBus *dev;
     
     unsigned int num_of_irqs;
     int irq[RMI_FN_MAX_IRQS];
@@ -252,8 +249,6 @@ struct rmi_2d_sensor_platform_data {
 };
 
 struct rmi_driver_data {
-    RMIBus *rmi_dev;
-    
     rmi_function *f01_container;
     rmi_function *f34_container;
     bool bootloader_mode;
@@ -275,20 +270,6 @@ struct rmi_driver_data {
     
     bool enabled;
     IOLock *enabled_mutex;
-    
-    rmi4_attn_data attn_data;
-    
-    struct {
-        union {
-            struct __kfifo          kfifo;
-            struct rmi4_attn_data   *type;
-            const  rmi4_attn_data   *const_type;
-            char                    (*rectype)[0];
-            struct rmi4_attn_data   *ptr;
-            struct rmi4_attn_data const *ptr_const;
-        };
-        rmi4_attn_data buf[16];
-    } attn_fifo;
 };
 
 #endif /* rmi_h */

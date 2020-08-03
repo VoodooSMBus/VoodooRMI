@@ -109,7 +109,9 @@ bool F11::getReport()
     int error, fingers, abs_size;
     u8 finger_state;
     AbsoluteTime timestamp;
-    uint64_t timestampNS;
+    
+    if (!sensor)
+        return false;
     
     error = rmiBus->readBlock(fn_descriptor->data_base_addr,
                               sensor->data_pkt, sensor->pkt_size);
@@ -120,7 +122,6 @@ bool F11::getReport()
     }
     
     clock_get_uptime(&timestamp);
-    absolutetime_to_nanoseconds(timestamp, &timestampNS);
     
     if (sensor->shouldDiscardReport(timestamp))
         return true;

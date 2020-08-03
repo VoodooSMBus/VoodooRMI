@@ -33,6 +33,7 @@ public:
     virtual bool init(OSDictionary *dictionary) override;
     virtual bool start(IOService *provider) override;
     virtual void stop(IOService *provider) override;
+    virtual bool willTerminate(IOService *provider, IOOptionBits options) override;
     virtual void free() override;
     IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
     
@@ -67,6 +68,7 @@ public:
 private:
     OSDictionary *config;
     void handleHostNotify();
+    void handleHostNotifyLegacy();
 };
     
 #endif /* RMIBus_h */

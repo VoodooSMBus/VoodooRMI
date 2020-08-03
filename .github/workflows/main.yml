@@ -1,0 +1,29 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: get shortsha
+      id: vars
+      run: |
+        echo ::set-output name=sha_short::$(git rev-parse --short=8 ${{ github.sha }})
+    - name: build
+      env:
+          DEVELOPER_DIR: /Applications/Xcode_10.3.app/Contents/Developer
+          VOODOORMI_SHA: VoodooRMI-${{ steps.vars.outputs.sha_short }}
+      run: |
+        mkdir build
+        mkdir build/${VOODOORMI_SHA}
+        xcodebuild -sdk macosx10.14 -configuration Debug -scheme VoodooRMI -derivedDataPath build clean build
+        mv build/Build/Products/Debug/VoodooRMI.kext build/${VOODOORMI_SHA}/VoodooRMI.kext
+    - uses: actions/upload-artifact@v2
+      with:
+        name: VoodooRMI
+        path: build/VoodooRMI-*

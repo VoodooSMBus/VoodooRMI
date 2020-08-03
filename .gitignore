@@ -3,3 +3,4 @@ VoodooInput/
 **/xcuserdata/
 **/*.kext
 build
+DerivedData

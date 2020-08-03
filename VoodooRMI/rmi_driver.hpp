@@ -28,6 +28,9 @@
 #define PDT_END_SCAN_LOCATION    0x0005
 #define RMI4_END_OF_PDT(id) ((id) == 0x00 || (id) == 0xff)
 
+#define RMI_SCAN_CONTINUE    0
+#define RMI_SCAN_DONE        1
+
 struct pdt_entry {
     u16 page_start;
     u8 query_base_addr;
@@ -44,8 +47,8 @@ int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt);
 int rmi_scan_pdt(RMIBus *dev, void *ctx,
                 int (*callback)(RMIBus* dev,
                                 void *ctx, const struct pdt_entry *entry));
-int rmi_probe_interrupts(rmi_driver_data *data);
-int rmi_init_functions(struct rmi_driver_data *data);
+int rmi_probe_interrupts(RMIBus *rmi_dev, rmi_driver_data *data);
+int rmi_init_functions(RMIBus *rmi_dev, rmi_driver_data *data);
 void rmi_free_function_list(RMIBus *rmi_dev);
 int rmi_enable_sensor(RMIBus *rmi_dev);
 int rmi_driver_set_irq_bits(RMIBus *rmi_dev);

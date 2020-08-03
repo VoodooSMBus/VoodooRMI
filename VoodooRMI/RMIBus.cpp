@@ -8,6 +8,7 @@
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
 OSDefineMetaClassAndStructors(RMIFunction, IOService)
+OSDefineMetaClassAndStructors(RMITransport, IOService)
 #define super IOService
 
 bool RMIBus::init(OSDictionary *dictionary) {
@@ -40,7 +41,6 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
     }
         
     transport = OSDynamicCast(RMITransport, provider);
-    
     if (!transport) {
         IOLogError("%s Could not get transport instance\n", getName());
         return NULL;
@@ -59,7 +59,7 @@ bool RMIBus::start(IOService *provider) {
         return false;
     int retval;
     
-    retval = rmi_init_functions(data);
+    retval = rmi_init_functions(this, data);
     if (retval)
         goto err;
 
@@ -78,6 +78,10 @@ bool RMIBus::start(IOService *provider) {
     registerPowerDriver(this, RMIPowerStates, 2);
     
     registerService();
+    setProperty(RMIBusIdentifier, kOSBooleanTrue);
+    if (!transport->open(this))
+        return false;
+    
     return true;
 err:
     IOLog("Could not start");
@@ -136,10 +140,33 @@ void RMIBus::handleHostNotify()
     OSSafeReleaseNULL(iter);
 }
 
+void RMIBus::handleHostNotifyLegacy()
+ {
+     if (!data) {
+         IOLogError("Interrupt - No data\n");
+         return;
+     }
+     if (!data->f01_container) {
+         IOLogError("Interrupt - No F01 Container\n");
+         return;
+     }
+
+     OSIterator* iter = OSCollectionIterator::withCollection(functions);
+     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
+         messageClient(kHandleRMIAttention, func);
+     OSSafeReleaseNULL(iter);
+ }
+
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
+        case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
-            handleHostNotify();
+            if (awake)
+                handleHostNotify();
+            return kIOReturnSuccess;
+        case kIOMessageVoodooI2CLegacyHostNotify:
+            if (awake)
+                handleHostNotifyLegacy();
             return kIOReturnSuccess;
         default:
             return super::message(type, provider);
@@ -183,8 +210,7 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
     } else if (!awake) {
         IOSleep(1000);
         IOLogDebug("Wakeup");
-        IOReturn ret = transport->reset();
-        if (ret < 0)
+        if (reset() < 0)
             IOLogError("Could not get SMBus Version on wakeup\n");
         // c++ lambdas are wack
         // Sensor doesn't wake up if we don't scan property tables
@@ -209,22 +235,35 @@ void RMIBus::stop(IOService *provider) {
     rmi_driver_clear_irq_bits(this);
     
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-        func->detach(this);
         func->stop(this);
+        func->detach(this);
+        func->release();
     }
     
     functions->flushCollection();
     OSSafeReleaseNULL(iter);
+    
     super::stop(provider);
 }
 
 void RMIBus::free() {
-    rmi_free_function_list(this);
+    if (data) {
+        rmi_free_function_list(this);
+        IOLockFree(data->enabled_mutex);
+        IOLockFree(data->irq_mutex);
+    }
     
-    IOLockFree(data->enabled_mutex);
-    IOLockFree(data->irq_mutex);
-    OSSafeReleaseNULL(functions);
+    if (functions)
+        OSSafeReleaseNULL(functions);
     super::free();
+}
+
+bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
+    if (transport->isOpen(this)) {
+        transport->close(this);
+    }
+    
+    return super::willTerminate(provider, options);
 }
 
 int RMIBus::reset()
@@ -236,24 +275,34 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     RMIFunction * function;
     
     switch(fn->fd.function_number) {
-        case 0x01:
+        case 0x01: /* device control */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F01));
             break;
-        case 0x03:
+        case 0x03: /* PS/2 pass-through */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F03));
             break;
-        case 0x11:
+        case 0x11: /* multifinger pointing */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
             break;
-        case 0x12:
+        case 0x12: /* multifinger pointing */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
             break;
-        case 0x30:
+        case 0x30: /* GPIO and LED controls */
             function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
             break;
+//        case 0x08: /* self test (aka BIST) */
+//        case 0x09: /* self test (aka BIST) */
+//        case 0x17: /* pointing sticks */
+//        case 0x19: /* capacitive buttons */
+//        case 0x1A: /* simple capacitive buttons */
+//        case 0x21: /* force sensing */
+//        case 0x32: /* timer */
+        case 0x34: /* device reflash */
+//        case 0x36: /* auxiliary ADC */
         case 0x3A:
-        case 0x54:
-        case 0x55:
+//        case 0x41: /* active pen pointing */
+        case 0x54: /* analog data reporting */
+        case 0x55: /* Sensor tuning */
             IOLog("F%X not implemented\n", fn->fd.function_number);
             return 0;
         default:
@@ -291,11 +340,5 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     }
     
     functions->setObject(function);
-    
-    // For some reason we need to free here otherwise unloading doesn't work.
-    // It still is retained by the dictionary and kernel.
-    // so it's *probably* fine? Freeing in ::stop causes a page fault
-    // TODO: Sanity Check (please ;-;)
-    OSSafeReleaseNULL(function);
     return 0;
 }

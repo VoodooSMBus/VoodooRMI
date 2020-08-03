@@ -67,12 +67,6 @@ bool RMIBus::start(IOService *provider) {
     if (retval)
         goto err;
     
-    setProperty(kIOHIDPointerAccelerationTypeKey, kIOHIDTrackpadAccelerationType);
-    setProperty(kIOHIDScrollAccelerationTypeKey, kIOHIDTrackpadScrollAccelerationKey);
-    setProperty(kIOHIDScrollResolutionKey, 800 << 16, 32);
-    setProperty("HIDScrollResolutionX", 800 << 16, 32);
-    setProperty("HIDScrollResolutionY", 800 << 16, 32);
-    
     PMinit();
     provider->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);

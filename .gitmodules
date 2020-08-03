@@ -7,3 +7,6 @@
 [submodule "Dependencies/VoodooI2C"]
 	path = Dependencies/VoodooI2C
 	url = https://github.com/VoodooI2C/VoodooI2C.git
+[submodule "Dependencies/VoodooGPIO"]
+	path = Dependencies/VoodooGPIO
+	url = https://github.com/coolstar/VoodooGPIO.git

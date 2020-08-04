@@ -26,6 +26,10 @@
 			<array>
 				<dict>
 					<key>name</key>
+					<string>SYNA0000</string>
+				</dict>
+				<dict>
+					<key>name</key>
 					<string>SYNA2B31</string>
 				</dict>
 				<dict>

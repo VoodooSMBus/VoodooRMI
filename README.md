@@ -59,7 +59,7 @@ Linux:
 
 | Name | Main function |
 |---|---|
-| `SYNA0000` | unknown |
+| `SYNA0000` | F11 |
 | `SYNA2393` | unknown |
 | `SYNA2B2C` | unknown |
 | `SYNA2B31` | F12 |

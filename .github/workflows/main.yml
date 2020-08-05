@@ -20,11 +20,8 @@ jobs:
           VOODOORMI_SHA: VoodooRMI-${{ steps.vars.outputs.sha_short }}
       run: |
         mkdir -p build/${VOODOORMI_SHA}/{Debug,Release}
-        ls build/${VOODOORMI_SHA}
         xcodebuild -sdk macosx10.14 -configuration Debug -scheme VoodooRMI -derivedDataPath build clean build
         xcodebuild -sdk macosx10.14 -configuration Release -scheme VoodooRMI -derivedDataPath build build
-        ls build/Build/Products/Debug
-        ls build/${VOODOORMI_SHA}/Debug/
         mv build/Build/Products/Debug/VoodooRMI.kext build/${VOODOORMI_SHA}/Debug/VoodooRMI.kext
         mv build/Build/Products/Release/VoodooRMI.kext build/${VOODOORMI_SHA}/Release/VoodooRMI.kext
     - uses: actions/upload-artifact@v2

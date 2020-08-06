@@ -17,9 +17,14 @@ OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     int error = 0, attempts = 0;
 
+    if (!super::probe(provider, score)) {
+        IOLog("%s Failed to probe provider\n", getName());
+        return NULL;
+    }
+
     name = provider->getName();
     IOLog("%s::%s probing\n", getName(), name);
-    
+
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
     if (isLegacy == nullptr) {
         IOLog("%s::%s Legacy mode not set, default to false", getName(), name);
@@ -28,15 +33,20 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
         IOLog("%s::%s running in legacy mode", getName(), name);
     }
 
-    if(!super::probe(provider, score)) {
-        IOLog("%s::%s Failed to probe provider\n", getName(), name);
-        return NULL;
-    }
-
     device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
     if (!device_nub) {
         IOLog("%s::%s Could not cast nub\n", getName(), name);
         return NULL;
+    }
+
+    acpi_device = (OSDynamicCast(IOACPIPlatformDevice, provider->getProperty("acpi-device")));
+    if (!acpi_device) {
+        IOLog("%s::%s Could not found acpi device\n", getName(), name);
+    } else {
+        // Sometimes an I2C HID will have power state methods, lets turn it on in case
+        acpi_device->evaluateObject("_PS0");
+        if (getHIDDescriptorAddress() != kIOReturnSuccess)
+            IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
     }
 
     do {
@@ -124,6 +134,7 @@ void RMII2C::releaseResources() {
             device_nub->close(this);
         device_nub = nullptr;
     }
+    OSSafeReleaseNULL(acpi_device);
 
     IOLockFree(page_mutex);
 }
@@ -156,6 +167,38 @@ int RMII2C::rmi_set_page(u8 page) {
 
     this->page = page;
     return 0;
+}
+
+IOReturn RMII2C::getHIDDescriptorAddress() {
+    uuid_t guid;
+    uuid_parse(HID_I2C_DSM_HIDG, guid);
+
+    // convert to mixed-endian
+    *(uint32_t *)guid = OSSwapInt32(*(uint32_t *)guid);
+    *((uint16_t *)guid + 2) = OSSwapInt16(*((uint16_t *)guid + 2));
+    *((uint16_t *)guid + 3) = OSSwapInt16(*((uint16_t *)guid + 3));
+
+    UInt32 result;
+    OSObject *params[4] = {
+        OSData::withBytes(guid, 16),
+        OSNumber::withNumber(0x1, 8),
+        OSNumber::withNumber(0x1, 8),
+        OSNumber::withNumber((UInt32)0x0, 8)
+    };
+
+    if (acpi_device->evaluateInteger("_DSM", &result, params, 4) != kIOReturnSuccess && acpi_device->evaluateInteger("XDSM", &result, params, 4) != kIOReturnSuccess) {
+        IOLog("%s::%s Could not find suitable _DSM or XDSM method in ACPI tables\n", getName(), name);
+        return kIOReturnNotFound;
+    }
+
+    setProperty("HIDDescriptorAddress", result, 32);
+
+    params[0]->release();
+    params[1]->release();
+    params[2]->release();
+    params[3]->release();
+
+    return kIOReturnSuccess;
 }
 
 int RMII2C::rmi_set_mode(u8 mode) {

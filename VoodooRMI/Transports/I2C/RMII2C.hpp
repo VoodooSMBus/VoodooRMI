@@ -36,6 +36,8 @@
 #define INTERRUPT_SIMULATOR_TIMEOUT_BUSY 2
 #define INTERRUPT_SIMULATOR_TIMEOUT_IDLE 50
 
+#define HID_I2C_DSM_HIDG "3cdff6f7-4267-4555-ad05-b30a3d8938de"
+
 enum rmi_mode_type {
     RMI_MODE_OFF = 0,
     RMI_MODE_ATTN_REPORTS = 1,
@@ -60,28 +62,34 @@ public:
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
 
 private:
+    bool ready {false};
+    UInt16 hid_descriptor_register;
+    int page {0};
+    int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
+
+    IOACPIPlatformDevice *acpi_device {nullptr};
+    VoodooI2CDeviceNub *device_nub {nullptr};
+
+    IOLock *page_mutex {nullptr};
+
     IOWorkLoop* work_loop;
     IOCommandGate* command_gate;
     IOTimerEventSource* interrupt_simulator;
     IOInterruptEventSource* interrupt_source;
 
-    void notifyClient();
     void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
-    void startInterrupt();
-    void stopInterrupt();
+    void notifyClient();
 
-    bool ready {false};
-    int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
-
-    VoodooI2CDeviceNub *device_nub;
-    IOLock *page_mutex;
-    int page {0};
+    IOReturn getHIDDescriptorAddress();
 
     int rmi_set_page(u8 page);
     int rmi_set_mode(u8 mode);
 
     void releaseResources();
+
+    void startInterrupt();
+    void stopInterrupt();
 };
 
 #endif

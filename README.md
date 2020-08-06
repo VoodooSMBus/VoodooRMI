@@ -16,7 +16,7 @@ This driver communicates over SMBus or I2C.
 ## How do I know if my device is compatible?
 
 VoodooRMI is not likely to work on devices which have Ivy Bridge CPUs or older. Refer to [issue #33](https://github.com/VoodooSMBus/VoodooRMI/issues/33#issuecomment-667596831)
-
+If you are using OpenCore bootloader and having some issues with the Synaptic SMBus PS/2 touchpad, this kext can't work because VoodooPS2Controller attach to PS2M/MOU so that RMISMBUS can't load.
 **SMBus**  
 
 Windows:

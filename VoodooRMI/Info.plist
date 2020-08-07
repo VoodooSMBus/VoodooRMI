@@ -34,6 +34,8 @@
 				<integer>90</integer>
 				<key>DisableWhileTypingTimeout</key>
 				<integer>100</integer>
+				<key>DisableWhileTrackpointTimeout </key>
+				<integer>100</integer>
 				<key>TrackstickMultiplier</key>
 				<integer>10</integer>
 				<key>TrackstickScrollMultiplierX</key>

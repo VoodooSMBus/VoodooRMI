@@ -140,8 +140,8 @@ int RMII2C::rmi_set_page(u8 page) {
      * i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
      */
     u8 writeReport[] = {
-        0x25,  // outputRegister & 0xFF; wOutputRegister
-        0x00,  // outputRegister >> 8;
+        HID_OUTPUT_REGISTER,  // outputRegister & 0xFF; wOutputRegister
+        HID_OUTPUT_REGISTER >> 8,  // outputRegister >> 8;
         0x06,  // size & 0xFF
         0x00,  // size >> 8
         RMI_WRITE_REPORT_ID,
@@ -160,14 +160,14 @@ int RMII2C::rmi_set_page(u8 page) {
 
 int RMII2C::rmi_set_mode(u8 mode) {
     u8 command[] = {
-        0x22, // registerIndex : wCommandRegister
-        0x00, // registerIndex+1
+        HID_COMMAND_REGISTER, // registerIndex : wCommandRegister
+        HID_COMMAND_REGISTER >> 8, // registerIndex+1
         0x3f, // reportID | reportType << 4;
               // reportType: 0x03 for HID_FEATURE_REPORT (kIOHIDReportTypeFeature) ; 0x02 for HID_OUTPUT_REPORT (kIOHIDReportTypeOutput)
         0x03, // hid_set_report_cmd =    { I2C_HID_CMD(0x03) };
-        0x0f, // report_id -> RMI_SET_RMI_MODE_REPORT_ID
-        0x23, // dataRegister & 0xFF; wDataRegister
-        0x00, // dataRegister >> 8;
+        RMI_SET_RMI_MODE_REPORT_ID, // report_id -> RMI_SET_RMI_MODE_REPORT_ID
+        HID_DATA_REGISTER, // dataRegister & 0xFF; wDataRegister
+        HID_DATA_REGISTER >> 8, // dataRegister >> 8;
         0x04, // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00, // size >> 8;
         RMI_SET_RMI_MODE_REPORT_ID, // report_id = buf[0];
@@ -204,8 +204,8 @@ bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     int retval = 0;
     u8 writeReport[] = {
-        0x25,  // outputRegister & 0xFF; wOutputRegister
-        0x00,  // outputRegister >> 8;
+        HID_OUTPUT_REGISTER,  // outputRegister & 0xFF; wOutputRegister
+        HID_OUTPUT_REGISTER >> 8,  // outputRegister >> 8;
         0x08,  // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00,  // size >> 8;
         RMI_READ_ADDR_REPORT_ID,
@@ -225,13 +225,7 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
             goto exit;
     }
 
-    if (device_nub->writeI2C(writeReport, sizeof(writeReport)) != kIOReturnSuccess) {
-        IOLog("%s::%s failed to read request output report\n", getName(), name);
-        retval = -1;
-        goto exit;
-    }
-
-    if (device_nub->readI2C(i2cInput, len+4) != kIOReturnSuccess) {
+    if (device_nub->writeReadI2C(writeReport, sizeof(writeReport), i2cInput, len+4) != kIOReturnSuccess) {
         IOLog("%s::%s failed to read I2C input\n", getName(), name);
         retval = -1;
         goto exit;
@@ -253,8 +247,8 @@ exit:
 int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
     int retval = 0;
     u8 *writeReport = new u8[len+8] {
-        0x25,  // outputRegister & 0xFF; wOutputRegister
-        0x00,  // outputRegister >> 8;
+        HID_OUTPUT_REGISTER,  // outputRegister & 0xFF; wOutputRegister
+        HID_OUTPUT_REGISTER >> 8,  // outputRegister >> 8;
         (u8) ((len + 6) & 0xFF),  // size & 0xFF; 2 + reportID + buf (reportID excluded)
         (u8) ((len + 6) >> 8),  // size >> 8;
         RMI_WRITE_REPORT_ID,

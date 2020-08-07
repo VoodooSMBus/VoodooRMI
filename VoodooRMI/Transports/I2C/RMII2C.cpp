@@ -39,15 +39,16 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
         return NULL;
     }
 
-    acpi_device = (OSDynamicCast(IOACPIPlatformDevice, provider->getProperty("acpi-device")));
-    if (!acpi_device) {
-        IOLog("%s::%s Could not found acpi device\n", getName(), name);
-    } else {
-        // Sometimes an I2C HID will have power state methods, lets turn it on in case
-        acpi_device->evaluateObject("_PS0");
-        if (getHIDDescriptorAddress() != kIOReturnSuccess)
-            IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
-    }
+    // FIXME: Read Descriptor register from ACPI
+//    acpi_device = (OSDynamicCast(IOACPIPlatformDevice, provider->getProperty("acpi-device")));
+//    if (!acpi_device) {
+//        IOLog("%s::%s Could not found acpi device\n", getName(), name);
+//    } else {
+//        // Sometimes an I2C HID will have power state methods, lets turn it on in case
+//        acpi_device->evaluateObject("_PS0");
+//        if (getHIDDescriptorAddress() != kIOReturnSuccess)
+//            IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
+//    }
 
     if (!wHIDDescRegister)
         wHIDDescRegister = RMI_HID_DESC_REGISTER;

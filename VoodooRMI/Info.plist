@@ -35,11 +35,11 @@
 				<key>DisableWhileTypingTimeout</key>
 				<integer>100</integer>
 				<key>TrackstickMultiplier</key>
-				<integer>20</integer>
+				<integer>10</integer>
 				<key>TrackstickScrollMultiplierX</key>
-				<integer>20</integer>
+				<integer>30</integer>
 				<key>TrackstickScrollMultiplierY</key>
-				<integer>20</integer>
+				<integer>30</integer>
 				<key>TrackstickDeadzone</key>
 				<integer>1</integer>
 			</dict>

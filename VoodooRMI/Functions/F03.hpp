@@ -18,7 +18,7 @@
 #include <IOKit/IOCommandGate.h>
 
 #define PSMOUSE_CMD_ENABLE 0x00f4
-#define DEFAULT_MULT 20
+#define DEFAULT_MULT 10
 
 /*
  * These constants are from the TrackPoint System

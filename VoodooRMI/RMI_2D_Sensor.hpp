@@ -100,6 +100,7 @@ private:
     uint32_t minYDiffGesture {200};
     
     uint64_t disableWhileTypingTimeout, lastKeyboardTS;
+    uint64_t disableWhileTrackpointTimeout, lastTrackpointTS;
 
     MT2FingerType getFingerType();
     void setThumbFingerType(int fingers, RMI2DSensorReport *report);

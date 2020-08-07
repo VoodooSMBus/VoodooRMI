@@ -27,9 +27,11 @@
 #define RMI_PAGE_SELECT_REGISTER 0xff
 #define RMI_I2C_PAGE(addr) (((addr) >> 8) & 0xff)
 
-#define HID_DATA_REGISTER       0x0023
-#define HID_OUTPUT_REGISTER     0x0025
-#define HID_COMMAND_REGISTER    0x0022
+// fallback when HID descriptor is not available
+#define RMI_HID_DESC_REGISTER       0x20
+#define RMI_HID_COMMAND_REGISTER    0x22
+#define RMI_HID_DATA_REGISTER       0x23
+#define RMI_HID_OUTPUT_REGISTER     0x25
 
 #define INTERRUPT_SIMULATOR_INTERVAL 200
 #define INTERRUPT_SIMULATOR_TIMEOUT 5
@@ -43,6 +45,23 @@ enum rmi_mode_type {
     RMI_MODE_ATTN_REPORTS = 1,
     RMI_MODE_NO_PACKED_ATTN_REPORTS = 2,
 };
+
+typedef struct __attribute__((__packed__)) {
+    __le16 wHIDDescLength;
+    __le16 bcdVersion;
+    __le16 wReportDescLength;
+    __le16 wReportDescRegister;
+    __le16 wInputRegister;
+    __le16 wMaxInputLength;
+    __le16 wOutputRegister;
+    __le16 wMaxOutputLength;
+    __le16 wCommandRegister;
+    __le16 wDataRegister;
+    __le16 wVendorID;
+    __le16 wProductID;
+    __le16 wVersionID;
+    __le32 reserved;
+} i2c_hid_desc;
 
 class RMII2C : public RMITransport {
     OSDeclareDefaultStructors(RMII2C);
@@ -63,7 +82,6 @@ public:
 
 private:
     bool ready {false};
-    UInt16 hid_descriptor_register;
     int page {0};
     int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
 
@@ -81,7 +99,11 @@ private:
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     void notifyClient();
 
+    __le16 wHIDDescRegister {0};
+    i2c_hid_desc hdesc;
+
     IOReturn getHIDDescriptorAddress();
+    IOReturn getHIDDescriptor();
 
     int rmi_set_page(u8 page);
     int rmi_set_mode(u8 mode);

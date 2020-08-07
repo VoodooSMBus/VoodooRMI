@@ -49,6 +49,15 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
             IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
     }
 
+    if (!wHIDDescRegister)
+        wHIDDescRegister = RMI_HID_DESC_REGISTER;
+
+    if (getHIDDescriptor() != kIOReturnSuccess) {
+        hdesc.wCommandRegister  = RMI_HID_COMMAND_REGISTER;
+        hdesc.wDataRegister     = RMI_HID_DATA_REGISTER;
+        hdesc.wOutputRegister   = RMI_HID_OUTPUT_REGISTER;
+    }
+
     do {
 #if DEBUG
         IOLog("%s::%s Trying to set mode, attempt %d\n", getName(), name, attempts);
@@ -151,8 +160,8 @@ int RMII2C::rmi_set_page(u8 page) {
      * i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
      */
     u8 writeReport[] = {
-        HID_OUTPUT_REGISTER,  // outputRegister & 0xFF; wOutputRegister
-        HID_OUTPUT_REGISTER >> 8,  // outputRegister >> 8;
+        (u8) (hdesc.wOutputRegister & 0xFF),
+        (u8) (hdesc.wOutputRegister >> 8),
         0x06,  // size & 0xFF
         0x00,  // size >> 8
         RMI_WRITE_REPORT_ID,
@@ -201,16 +210,43 @@ IOReturn RMII2C::getHIDDescriptorAddress() {
     return kIOReturnSuccess;
 }
 
+IOReturn RMII2C::getHIDDescriptor() {
+    u8 command[] = {
+        (u8) (wHIDDescRegister & 0xFF),
+        (u8) (wHIDDescRegister >> 8) };
+
+    if (device_nub->writeReadI2C(command, sizeof(command), (UInt8 *)&hdesc, sizeof(i2c_hid_desc)) != kIOReturnSuccess) {
+        IOLog("%s::%s Read descriptor from 0x%02x failed\n", getName(), name, wHIDDescRegister);
+        return kIOReturnError;
+    }
+
+    if (hdesc.bcdVersion != 0x0100) {
+        IOLog("%s::%s BCD version %d mismatch\n", getName(), name, hdesc.bcdVersion);
+        return kIOReturnInvalid;
+    }
+    
+    if (hdesc.wHIDDescLength != sizeof(i2c_hid_desc)) {
+        IOLog("%s::%s descriptor length %d mismatch\n", getName(), name, hdesc.wHIDDescLength);
+        return kIOReturnInvalid;
+    }
+
+    setProperty("VendorID", hdesc.wVendorID, 16);
+    setProperty("ProductID", hdesc.wProductID, 16);
+    setProperty("VersionID", hdesc.wVersionID, 16);
+
+    return kIOReturnSuccess;
+}
+
 int RMII2C::rmi_set_mode(u8 mode) {
     u8 command[] = {
-        HID_COMMAND_REGISTER, // registerIndex : wCommandRegister
-        HID_COMMAND_REGISTER >> 8, // registerIndex+1
-        0x3f, // reportID | reportType << 4;
+        (u8) (hdesc.wCommandRegister & 0xFF),
+        (u8) (hdesc.wCommandRegister >> 8),
+        RMI_SET_RMI_MODE_REPORT_ID + (0x3 << 4), // reportID | reportType << 4;
               // reportType: 0x03 for HID_FEATURE_REPORT (kIOHIDReportTypeFeature) ; 0x02 for HID_OUTPUT_REPORT (kIOHIDReportTypeOutput)
         0x03, // hid_set_report_cmd =    { I2C_HID_CMD(0x03) };
-        RMI_SET_RMI_MODE_REPORT_ID, // report_id -> RMI_SET_RMI_MODE_REPORT_ID
-        HID_DATA_REGISTER, // dataRegister & 0xFF; wDataRegister
-        HID_DATA_REGISTER >> 8, // dataRegister >> 8;
+        RMI_SET_RMI_MODE_REPORT_ID, // report_id
+        (u8) (hdesc.wDataRegister & 0xFF),
+        (u8) (hdesc.wDataRegister >> 8),
         0x04, // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00, // size >> 8;
         RMI_SET_RMI_MODE_REPORT_ID, // report_id = buf[0];
@@ -246,13 +282,17 @@ bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
 
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     int retval = 0;
+
+    if (hdesc.wMaxInputLength && (len + 4 > hdesc.wMaxInputLength))
+        setProperty("InputLength exceed", len);
+
     u8 writeReport[] = {
-        HID_OUTPUT_REGISTER,  // outputRegister & 0xFF; wOutputRegister
-        HID_OUTPUT_REGISTER >> 8,  // outputRegister >> 8;
+        (u8) (hdesc.wOutputRegister & 0xFF),
+        (u8) (hdesc.wOutputRegister >> 8),
         0x08,  // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00,  // size >> 8;
         RMI_READ_ADDR_REPORT_ID,
-        0x00,  // /* old 1 byte read count */
+        0x00,  // old 1 byte read count
         (u8) (rmiaddr & 0xFF),
         (u8) (rmiaddr >> 8),
         (u8) (len & 0xFF),
@@ -289,9 +329,13 @@ exit:
 
 int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
     int retval = 0;
+
+    if (hdesc.wMaxOutputLength && (len + 6 > hdesc.wMaxOutputLength))
+        setProperty("InputLength exceed", len);
+
     u8 *writeReport = new u8[len+8] {
-        HID_OUTPUT_REGISTER,  // outputRegister & 0xFF; wOutputRegister
-        HID_OUTPUT_REGISTER >> 8,  // outputRegister >> 8;
+        (u8) (hdesc.wOutputRegister & 0xFF),
+        (u8) (hdesc.wOutputRegister >> 8),
         (u8) ((len + 6) & 0xFF),  // size & 0xFF; 2 + reportID + buf (reportID excluded)
         (u8) ((len + 6) >> 8),  // size >> 8;
         RMI_WRITE_REPORT_ID,

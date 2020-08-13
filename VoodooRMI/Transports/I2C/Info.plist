@@ -44,7 +44,7 @@
 			<key>IOClass</key>
 			<string>RMII2C</string>
 			<key>Legacy</key>
-			<false/>
+			<true/>
 			<key>CFBundleIdentifier</key>
 			<string>com.1Revenger1.RMII2C</string>
 		</dict>

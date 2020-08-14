@@ -120,12 +120,14 @@ bool F03::start(IOService *provider)
     // Sending these are important to make the trackpoint work.
     // But the responses don't work at all and it's voodoo how it actually works
     error = ps2Command(param, MAKE_PS2_CMD( 0, 2, TP_READ_ID));
+    if (error)
+        IOLogError("Failed to send PS2 READ id command - status : %d", error);
 
     u8 param1[2] = { TP_POR };
 
     error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
-//    if (param1[0] != 0xAA || param1[1] != 0x00)
-//        IOLogError("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
+    if (param1[0] != 0xAA || param1[1] != 0x00)
+        IOLogError("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
 
     error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
     
@@ -148,7 +150,6 @@ void F03::stop(IOService *provider)
 
 int F03::rmi_f03_pt_write(unsigned char val)
 {
-    
     int error = rmiBus->write(fn_descriptor->data_base_addr, &val);
     if (error) {
         IOLogError("F03 - Failed to write to F03 TX register (%d).\n", error);
@@ -276,15 +277,17 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
                 if (cmdcnt)
                     cmdbuf[--cmdcnt] = ob_data;
                 
-                if (flags & PS2_FLAG_CMD1) {
-                    flags &= ~PS2_FLAG_CMD1;
-                    if (cmdcnt)
-                        command_gate->commandWakeup(&status);
-                }
                 
                 if (flags & PS2_FLAG_ACK) {
                     flags &= ~PS2_FLAG_ACK;
                     command_gate->commandWakeup(&status);
+                }
+                
+                // CMD1 is checked before CMD
+                if (flags & PS2_FLAG_CMD1) {
+                    flags &= ~PS2_FLAG_CMD1;
+                    if (cmdcnt)
+                        command_gate->commandWakeup(&status);
                 }
                 
                 if (!cmdcnt) {
@@ -350,28 +353,39 @@ IOWorkLoop* F03::getWorkLoop()
 int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
 {
     AbsoluteTime time;
+    AbsoluteTime currentTime;
+    int error = 0;
+    IOReturn result = 0;
     
     flags |= PS2_FLAG_ACK;
     
-    int error = rmi_f03_pt_write(byte);
-    if (error) {
-        IOLogDebug("Failed to write to F03 device: %d\n", error);
+    for (int i = 0; i < 2; i++) {
+        error = rmi_f03_pt_write(byte);
+    
+        if (error) {
+            error = 0;
+            continue;
+        }
+        
+        clock_get_uptime(&currentTime);
+        nanoseconds_to_absolutetime(timeout, &time);
+        IOReturn result = command_gate->commandSleep(&status, currentTime + time, THREAD_ABORTSAFE);
+        status = 0;
+        
+        // Success
+        if (!result) {
+            break;
+        }
     }
-    nanoseconds_to_absolutetime(timeout, &time);
-    IOReturn result = command_gate->commandSleep(&status, time, THREAD_ABORTSAFE);
-    status = 0;
+    
+    if (error) {
+        IOLogError("Failed to write to F03 device: %d\n", error);
+    }
     
     if (result) {
-        int error = rmi_f03_pt_write(byte);
-        if (error) {
-            IOLogDebug("Failed to write to F03 device: %d\n", error);
-        }
-        result = command_gate->commandSleep(&status, time, THREAD_ABORTSAFE);
-        status = 0;
+        IOLogError("Failed to get a response from F03 device: %s\n", stringFromReturn(result));
+        error = result;
     }
-    
-    if (result == THREAD_TIMED_OUT)
-        error = THREAD_TIMED_OUT;
     
     flags &= ~PS2_FLAG_ACK;
     
@@ -452,14 +466,15 @@ int F03::ps2Command(u8 *param, unsigned int command)
 
 bool F03::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
+    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)
+        && super::handleOpen(forClient, options, arg)) {
         voodooTrackpointInstance = forClient;
         voodooTrackpointInstance->retain();
 
         return true;
     }
     
-    return super::handleOpen(forClient, options, arg);
+    return false;
 }
 
 void F03::handleClose(IOService *forClient, IOOptionBits options)

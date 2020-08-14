@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>KEXT</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.1</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.1</string>
+	<key>OSBundleCompatibleVersion</key>
+	<string>1.0.0</string>
+	<key>IOKitPersonalities</key>
+	<dict>
+		<key>RMISMBus</key>
+		<dict>
+			<key>IOPropertyMatch</key>
+			<dict>
+				<key>VoodooSMBUS Slave Device Address</key>
+				<integer>44</integer>
+			</dict>
+			<key>IOProbeScore</key>
+			<integer>500</integer>
+			<key>IOProviderClass</key>
+			<string>VoodooSMBusDeviceNub</string>
+			<key>IOClass</key>
+			<string>RMISMBus</string>
+			<key>CFBundleIdentifier</key>
+			<string>com.1Revenger1.VoodooRMI</string>
+		</dict>
+		<key>RMIDevice</key>
+		<dict>
+			<key>Configuration</key>
+			<dict>
+				<key>MinYDiffThumbDetection</key>
+				<integer>200</integer>
+				<key>ForceTouchEmulation</key>
+				<true/>
+				<key>ForceTouchMinPressure</key>
+				<integer>90</integer>
+				<key>DisableWhileTypingTimeout</key>
+				<integer>100</integer>
+				<key>DisableWhileTrackpointTimeout </key>
+				<integer>100</integer>
+				<key>TrackstickMultiplier</key>
+				<integer>10</integer>
+				<key>TrackstickScrollMultiplierX</key>
+				<integer>30</integer>
+				<key>TrackstickScrollMultiplierY</key>
+				<integer>30</integer>
+				<key>TrackstickDeadzone</key>
+				<integer>1</integer>
+			</dict>
+			<key>IOProbeScore</key>
+			<integer>2910</integer>
+			<key>IOProviderClass</key>
+			<string>RMITransport</string>
+			<key>IOPropertyMatch</key>
+			<dict>
+				<key>RMI4 Supported</key>
+				<true/>
+			</dict>
+			<key>IOClass</key>
+			<string>RMIBus</string>
+			<key>CFBundleIdentifier</key>
+			<string>com.1Revenger1.VoodooRMI</string>
+		</dict>
+	</dict>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2020 1Revenger1. All rights reserved.</string>
+	<key>OSBundleLibraries</key>
+	<dict>
+		<key>de.leo-labs.VoodooSMBus</key>
+		<string>2.1</string>
+		<key>com.apple.kpi.iokit</key>
+		<string>18.5</string>
+		<key>com.apple.kpi.libkern</key>
+		<string>18.5</string>
+		<key>com.apple.kpi.mach</key>
+		<string>18.5</string>
+		<key>com.apple.iokit.IOHIDFamily</key>
+		<string>2.0</string>
+	</dict>
+	<key>OSBundleRequired</key>
+	<string>Console</string>
+</dict>
+</plist>

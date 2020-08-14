@@ -51,14 +51,15 @@ public:
     }
     
     inline virtual bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override {
-        if (forClient && forClient->getProperty(RMIBusIdentifier)) {
+        if (forClient && forClient->getProperty(RMIBusIdentifier)
+            && IOService::handleOpen(forClient, options, arg)) {
             bus = forClient;
             bus->retain();
             
             return true;
         }
         
-        return IOService::handleOpen(forClient, options, arg);
+        return false;
     }
     
 protected:

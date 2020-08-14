@@ -237,7 +237,16 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         goto exit;
     }
 
-    memcpy(databuff, i2cInput+4, len);
+    // FIXME: whether to rebuild packet
+    if (reportMode == RMI_MODE_ATTN_REPORTS && len == 68) {
+        memcpy(databuff, i2cInput+4, 16);
+        device_nub->readI2C(i2cInput, len+4);
+        memcpy(databuff+16, i2cInput+4, 16);
+        device_nub->readI2C(i2cInput, len+4);
+        memcpy(databuff+32, i2cInput+4, 16);
+    } else {
+        memcpy(databuff, i2cInput+4, len);
+    }
 exit:
     delete[] i2cInput;
     IOLockUnlock(page_mutex);

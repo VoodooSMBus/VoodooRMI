@@ -38,7 +38,9 @@
 #define INTERRUPT_SIMULATOR_TIMEOUT_BUSY 2
 #define INTERRUPT_SIMULATOR_TIMEOUT_IDLE 50
 
-#define HID_I2C_DSM_HIDG "3cdff6f7-4267-4555-ad05-b30a3d8938de"
+#define I2C_DSM_HIDG "3cdff6f7-4267-4555-ad05-b30a3d8938de"
+#define I2C_DSM_REVISION 1
+#define HIDG_DESC_INDEX 1
 
 enum rmi_mode_type {
     RMI_MODE_OFF = 0,
@@ -99,7 +101,7 @@ private:
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     void notifyClient();
 
-    __le16 wHIDDescRegister {0};
+    __le16 wHIDDescRegister {RMI_HID_DESC_REGISTER};
     i2c_hid_desc hdesc;
 
     IOReturn getHIDDescriptorAddress();

@@ -78,9 +78,6 @@ bool RMIBus::start(IOService *provider) {
     if (!transport->open(this))
         return false;
     
-    // PS2 must be initizlized after Interrupts are enabled
-    messageClients(kHandleRMIPS2Init);
-    
     OSSafeReleaseNULL(iter);
     return true;
 err:

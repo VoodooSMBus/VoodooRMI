@@ -59,14 +59,15 @@ void RMI2DSensor::free()
 
 bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
+        && super::handleOpen(forClient, options, arg)) {
         voodooInputInstance = forClient;
         voodooInputInstance->retain();
         
         return true;
     }
     
-    return super::handleOpen(forClient, options, arg);
+    return false;
 }
 
 void RMI2DSensor::handleClose(IOService *forClient, IOOptionBits options)

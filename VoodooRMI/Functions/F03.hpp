@@ -16,6 +16,7 @@
 #include <VoodooTrackpointMessages.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
+#include <IOKit/IOTimerEventSource.h>
 
 #define PSMOUSE_CMD_ENABLE 0x00f4
 #define DEFAULT_MULT 20
@@ -95,6 +96,7 @@ private:
     IOCommandGate *command_gate;
     
     IOService *voodooTrackpointInstance {nullptr};
+    IOTimerEventSource *timer {nullptr};
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};
     
@@ -127,6 +129,9 @@ private:
     int ps2DoSendbyteGated(u8 byte, uint64_t timeout);
     int ps2CommandGated(u8 *param, unsigned int *command);
     int ps2Command(u8 *param, unsigned int command);
+    void handleByte(u8);
+    void initPS2();
+    void initPS2Interrupt (OSObject *owner, IOTimerEventSource *timer);
     // TODO: Move to math file as long as with abs in rmi_driver.h
     int signum (int value);
     

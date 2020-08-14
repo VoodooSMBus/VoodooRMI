@@ -55,9 +55,11 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
 }
 
 bool RMIBus::start(IOService *provider) {
+    int retval;
+    OSIterator* iter = OSCollectionIterator::withCollection(functions);
+    
     if (!super::start(provider))
         return false;
-    int retval;
     
     retval = rmi_init_functions(this, data);
     if (retval)
@@ -76,6 +78,10 @@ bool RMIBus::start(IOService *provider) {
     if (!transport->open(this))
         return false;
     
+    // PS2 must be initizlized after Interrupts are enabled
+    messageClients(kHandleRMIPS2Init);
+    
+    OSSafeReleaseNULL(iter);
     return true;
 err:
     IOLog("Could not start");

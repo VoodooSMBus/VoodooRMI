@@ -27,10 +27,10 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
 
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
     if (isLegacy == nullptr) {
-        IOLog("%s::%s Legacy mode not set, default to false", getName(), name);
+        IOLog("%s::%s Legacy mode not set, default to false\n", getName(), name);
     } else if (isLegacy->getValue()) {
         reportMode = RMI_MODE_ATTN_REPORTS;
-        IOLog("%s::%s running in legacy mode", getName(), name);
+        IOLog("%s::%s running in legacy mode\n", getName(), name);
     }
 
     device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
@@ -39,21 +39,21 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
         return NULL;
     }
 
-    // FIXME: Read Descriptor register from ACPI
-//    acpi_device = (OSDynamicCast(IOACPIPlatformDevice, provider->getProperty("acpi-device")));
-//    if (!acpi_device) {
-//        IOLog("%s::%s Could not found acpi device\n", getName(), name);
-//    } else {
-//        // Sometimes an I2C HID will have power state methods, lets turn it on in case
-//        acpi_device->evaluateObject("_PS0");
-//        if (getHIDDescriptorAddress() != kIOReturnSuccess)
-//            IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
-//    }
+    acpi_device = (OSDynamicCast(IOACPIPlatformDevice, provider->getProperty("acpi-device")));
+    if (!acpi_device) {
+        IOLog("%s::%s Could not found acpi device\n", getName(), name);
+    } else {
+        // Sometimes an I2C HID will have power state methods, lets turn it on in case
+        acpi_device->evaluateObject("_PS0");
+        if (getHIDDescriptorAddress() != kIOReturnSuccess)
+            IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
+    }
 
     if (getHIDDescriptor() != kIOReturnSuccess) {
         hdesc.wCommandRegister  = RMI_HID_COMMAND_REGISTER;
         hdesc.wDataRegister     = RMI_HID_DATA_REGISTER;
         hdesc.wOutputRegister   = RMI_HID_OUTPUT_REGISTER;
+        IOLog("%s::%s Using default HID register addresses\n", getName(), name);
     }
 
     do {
@@ -104,7 +104,7 @@ bool RMII2C::start(IOService *provider) {
     /* Implementation of polling */
     interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
     if (!interrupt_source) {
-        IOLog("%s::%s Could not get interrupt event source, trying to fallback on polling.", getName(), name);
+        IOLog("%s::%s Could not get interrupt event source, trying to fallback on polling\n", getName(), name);
         interrupt_simulator = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &RMII2C::simulateInterrupt));
         if (!interrupt_simulator) {
             IOLog("%s::%s Could not get timer event source\n", getName(), name);
@@ -254,7 +254,7 @@ int RMII2C::rmi_set_mode(u8 mode) {
     if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
 
-    IOLog("%s::%s reset completed", getName(), name);
+    IOLog("%s::%s reset completed\n", getName(), name);
     return 1;
 }
 
@@ -282,8 +282,8 @@ bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
 int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     int retval = 0;
 
-    if (hdesc.wMaxInputLength && (len + 4 > hdesc.wMaxInputLength))
-        setProperty("InputLength exceed", len);
+    if (hdesc.wMaxInputLength && (len > hdesc.wMaxInputLength))
+        len = hdesc.wMaxInputLength;
 
     u8 writeReport[] = {
         (u8) (hdesc.wOutputRegister & 0xFF),
@@ -381,7 +381,7 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
 }
 
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
-    IOLog("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
+    IOLog("%s::%s powerState %ld : %s\n", getName(), name, powerState, powerState ? "on" : "off");
     if (!bus)
         return kIOPMAckImplied;
     if (whatDevice != this)

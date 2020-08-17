@@ -114,6 +114,7 @@ private:
     u8 status {0};
     
     // Packet storage
+    u8 emptyPkt[3];
     u8 databuf[3];
     u8 index;
     
@@ -135,7 +136,7 @@ private:
     // TODO: Move to math file as long as with abs in rmi_driver.h
     int signum (int value);
     
-    void handlePacketGated(u8 packet);
+    void handlePacket(u8 *packet);
 };
 
 #endif /* F03_hpp */

@@ -154,11 +154,11 @@ int F03::rmi_f03_pt_write(unsigned char val)
     return error;
 }
 
-void F03::handlePacketGated(u8 packet)
+void F03::handlePacket(u8 *packet)
 {
-    UInt32 buttons = (databuf[0] & 0x7) | overwrite_buttons;
-    SInt32 dx = ((databuf[0] & 0x10) ? 0xffffff00 : 0) | databuf[1];
-    SInt32 dy = -(((databuf[0] & 0x20) ? 0xffffff00 : 0) | databuf[2]);
+    UInt32 buttons = (packet[0] & 0x7) | overwrite_buttons;
+    SInt32 dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
+    SInt32 dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
     index = 0;
     
     AbsoluteTime timestamp;
@@ -188,16 +188,11 @@ void F03::handlePacketGated(u8 packet)
     // Otherwise just turn scrolling off and remove middle buttons from packet
     if (!(buttons & 0x04)) {
         if (middlePressed) {
-            middlePressed = false;
-            
-            relativeEvent.buttons = 0x04;
-            relativeEvent.dx = 0;
-            relativeEvent.dy = 0;
-            relativeEvent.timestamp = timestamp;
-            messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
-        } else {
-            isScrolling = false;
+            buttons |= 0x04;
         }
+        
+        middlePressed = false;
+        isScrolling = false;
     } else {
         buttons &= ~0x04;
     }
@@ -267,14 +262,7 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             // We do not lose any info casting to unsigned int.
             // This message originates in RMIBus::Notify, which sends an unsigned int
             overwrite_buttons = (unsigned int)((intptr_t) argument);
-
-            AbsoluteTime timestamp;
-            clock_get_uptime(&timestamp);
-            relativeEvent.buttons = overwrite_buttons;
-            relativeEvent.dx = relativeEvent.dy = 0;
-            relativeEvent.timestamp = timestamp;
-            
-            messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+            handlePacket(emptyPkt);
             break;
         }
         case kHandleRMIResume:
@@ -343,12 +331,13 @@ void F03::initPS2()
     if (error)
         IOLogError("Failed to set scale: %d\n", error);
     
-    u8 rate[1] = {10};
+    u8 rate[1] = {100};
     error = ps2Command(rate, PS2_CMD_SETRATE);
     if (error)
         IOLogError("Failed to set resolution: %d\n", error);
     
     memset(databuf, 0, sizeof(databuf));
+    memset(emptyPkt, 0, sizeof(databuf));
     index = 0;
     
     error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
@@ -376,7 +365,7 @@ void F03::handleByte(u8 byte)
         databuf[index++] = byte;
         
         if (index == 3)
-            handlePacketGated(byte);
+            handlePacket(databuf);
     }
     
     if (flags & PS2_FLAG_ACK) {

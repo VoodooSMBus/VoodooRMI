@@ -74,7 +74,7 @@ public:
 
     RMII2C *probe(IOService *provider, SInt32 *score) APPLE_KEXT_OVERRIDE;
     bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
-    void stop(IOService* device) APPLE_KEXT_OVERRIDE;
+    void stop(IOService *provider) APPLE_KEXT_OVERRIDE;
     IOReturn setPowerState(unsigned long powerState, IOService *whatDevice) APPLE_KEXT_OVERRIDE;
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) APPLE_KEXT_OVERRIDE;
 

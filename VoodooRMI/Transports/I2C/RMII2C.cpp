@@ -139,10 +139,10 @@ void RMII2C::releaseResources() {
     IOLockFree(page_mutex);
 }
 
-void RMII2C::stop(IOService *device) {
+void RMII2C::stop(IOService *provider) {
     releaseResources();
     PMstop();
-    super::stop(device);
+    super::stop(provider);
 }
 
 int RMII2C::rmi_set_page(u8 page) {
@@ -171,11 +171,11 @@ int RMII2C::rmi_set_page(u8 page) {
 
 IOReturn RMII2C::getHIDDescriptorAddress() {
     IOReturn ret;
-    OSObject* obj = nullptr;
+    OSObject *obj = nullptr;
 
     ret = device_nub->evaluateDSM(I2C_DSM_HIDG, HIDG_DESC_INDEX, &obj);
     if (ret == kIOReturnSuccess) {
-        OSNumber* number = OSDynamicCast(OSNumber, obj);
+        OSNumber *number = OSDynamicCast(OSNumber, obj);
         if (number != nullptr) {
             wHIDDescRegister = number->unsigned16BitValue();
             setProperty("HIDDescriptorAddress", wHIDDescRegister, 16);

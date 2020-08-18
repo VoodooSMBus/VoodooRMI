@@ -370,7 +370,6 @@ void F03::initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer)
 
 void F03::handleByte(u8 byte)
 {
-    IOLogDebug("CmdCnt: %d, Flags: %x\n", cmdcnt, flags);
     if (!cmdcnt && !flags) {
         // Wait for start of packets
         if (index == 0 && ((byte == PS2_RET_ACK) || !(byte & 0x08)))

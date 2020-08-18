@@ -61,7 +61,7 @@ Linux:
 |---|---|
 | `SYNA0000` | F11 |
 | `SYNA2393` | unknown |
-| `SYNA2B2C` | unknown |
+| `SYNA2B2C` | F12 |
 | `SYNA2B31` | F12 |
 | `SYNA2B33` | F11 |
 | `SYNA2B34` | unknown |

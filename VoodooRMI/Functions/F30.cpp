@@ -304,7 +304,7 @@ void F30::rmi_f30_report_button()
             continue;
         }
         
-        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+        IOLogDebug("Key %u is %s\n", key_code, key_down ? "Down": "Up");
         
         if (i >= TRACKSTICK_RANGE_START &&
             i <= TRACKSTICK_RANGE_END) {

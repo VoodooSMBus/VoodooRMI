@@ -162,7 +162,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
             transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
-            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
+            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]\n",
                        i, obj.x, obj.y, obj.z, obj.wx, obj.wy,
                        transducer.fingerType,
                        transducer.currentCoordinates.pressure,
@@ -245,7 +245,7 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
     }
     
     if (lowestFingerIndex == -1) {
-        IOLogError("LowestFingerIndex = -1 When there are 4+ fingers");
+        IOLogError("LowestFingerIndex = -1 When there are 4+ fingers\n");
         return;
     }
     

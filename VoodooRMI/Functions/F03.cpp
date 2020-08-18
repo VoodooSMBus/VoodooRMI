@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only
- * Copyright (c) 2020 Avery Black
- * Ported to macOS from linux kernel, original source at
- * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/F03.c
- *
- * Copyright (c) 2011-2016 Synaptics Incorporated
- * Copyright (c) 2011 Unixphere
- */
+* Copyright (c) 2020 Avery Black
+* Ported to macOS from linux kernel, original source at
+* https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/F03.c
+* https://github.com/torvalds/linux/blob/master/drivers/input/mouse/trackpoint.c
+* https://github.com/torvalds/linux/blob/master/drivers/input/mouse/psmouse-base.c
+*
+* Synaptic RMI4:
+* Copyright (c) 2011-2016 Synaptics Incorporated
+* Copyright (c) 2011 Unixphere
+*/
 
 #include "F03.hpp"
 
@@ -306,12 +309,22 @@ void F03::initPS2()
         return;
     }
     
-    error = ps2Command(param, MAKE_PS2_CMD( 0, 2, TP_READ_ID));
+    error = ps2Command(param, MAKE_PS2_CMD(0, 2, TP_READ_ID));
     if (error) {
         IOLogError("Failed to send PS2 READ id command - status : %d", error);
         return;
     }
-        
+    
+    IOLog("Got [%x, %x]\n", param[0], param[1]);
+    if (param[0] < TP_VARIANT_IBM || param[0] > TP_VARIANT_NXP) {
+        setProperty("Vendor", OSString::withCString("Invalid Vendor"));
+        setProperty("Firmware ID", OSString::withCString("Invalid Firmware ID"));
+    } else {
+        vendor = param[0];
+        setProperty("Vendor", OSString::withCString(trackpoint_variants[param[0]]));
+        setProperty("Firmware ID", param[1], 8);
+    }
+    
     u8 param1[2] = { TP_POR };
 
     error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
@@ -366,28 +379,22 @@ void F03::handleByte(u8 byte)
         
         if (index == 3)
             handlePacket(databuf);
+        return;
     }
     
     if (flags & PS2_FLAG_ACK) {
         flags &= ~PS2_FLAG_ACK;
         command_gate->commandWakeup(&status);
+        return;
     }
     
-    // CMD1 is checked before CMD
-    if (flags & PS2_FLAG_CMD1) {
-        flags &= ~PS2_FLAG_CMD1;
+    if (cmdcnt) {
+        cmdbuf[--cmdcnt] = byte;
+    }
+    
+    if (flags & PS2_FLAG_CMD && !cmdcnt) {
+        flags &= ~PS2_FLAG_CMD;
         command_gate->commandWakeup(&status);
-    }
-    
-    if (flags & PS2_FLAG_CMD) {
-        if (cmdcnt) {
-            cmdbuf[--cmdcnt] = byte;
-        }
-        
-        if (!cmdcnt) {
-            flags &= ~PS2_FLAG_CMD;
-            command_gate->commandWakeup(&status);
-        }
     }
 }
 
@@ -455,17 +462,13 @@ int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
         for (i = 0; i < receive;i++)
             cmdbuf[(receive - 1) - i] = param[i];
     
-    /* Signal that we are sending the command byte */
-    flags |= PS2_FLAG_ACK_CMD;
-    
+    /* Sending command byte */
     rc = ps2DoSendbyteGated(command & 0xff, timeout);
     if (rc) {
         goto out_reset_flags;
     }
         
     /* Now we are sending command parameters, if any */
-    flags &= ~PS2_FLAG_ACK_CMD;
-    
     for (i = 0; i < send; i++) {
         rc = ps2DoSendbyteGated(param[i], timeout);
         if (rc) {
@@ -475,17 +478,11 @@ int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
     
     timeout = command == PS2_CMD_RESET_BAT ? 4000 : 500;
     
-    flags |= PS2_FLAG_CMD1 | PS2_FLAG_CMD;
+    flags |= PS2_FLAG_CMD;
     clock_get_uptime(&currentTime);
     nanoseconds_to_absolutetime(timeout * MILLI_TO_NANO, &time);
     res = command_gate->commandSleep(&status, currentTime + time, THREAD_ABORTSAFE);
     status = 0;
-    
-    if (cmdcnt && !(flags & PS2_FLAG_CMD1)) {
-        clock_get_uptime(&currentTime);
-        res = command_gate->commandSleep(&status, currentTime + time, THREAD_ABORTSAFE);
-        status = 0;
-    }
     
     if (param)
         for (i = 0; i < receive; i++)

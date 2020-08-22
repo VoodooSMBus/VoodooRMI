@@ -14,9 +14,11 @@ OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 
 bool RMI2DSensor::init(OSDictionary *dictionary)
 {
+    if (!super::init())
+        return false;
+
     updateConfiguration(dictionary);
-    
-    return super::init();
+    return true;
 }
 
 bool RMI2DSensor::start(IOService *provider)

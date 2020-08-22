@@ -56,7 +56,6 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
 
 bool RMIBus::start(IOService *provider) {
     int retval;
-    OSIterator* iter = OSCollectionIterator::withCollection(functions);
     
     if (!super::start(provider))
         return false;
@@ -84,8 +83,7 @@ bool RMIBus::start(IOService *provider) {
     setProperty(RMIBusIdentifier, kOSBooleanTrue);
     if (!transport->open(this))
         return false;
-    
-    OSSafeReleaseNULL(iter);
+
     return true;
 err:
     IOLog("Could not start\n");

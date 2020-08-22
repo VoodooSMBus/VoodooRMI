@@ -246,7 +246,6 @@ void RMIBus::stop(IOService *provider) {
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         func->stop(this);
         func->detach(this);
-        func->release();
     }
     
     functions->flushCollection();
@@ -349,6 +348,7 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     }
     
     functions->setObject(function);
+    OSSafeReleaseNULL(function);
     return 0;
 }
 

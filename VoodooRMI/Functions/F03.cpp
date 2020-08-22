@@ -21,11 +21,8 @@ bool F03::init(OSDictionary *dictionary)
 {
     if (!super::init())
         return false;
-    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", DEFAULT_MULT);
-    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", DEFAULT_MULT);
-    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", DEFAULT_MULT);
-    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 1);
-    
+    updateConfiguration(dictionary);
+
     return true;
 }
 
@@ -224,6 +221,13 @@ void F03::handlePacket(u8 *packet)
     IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
 }
 
+void F03::updateConfiguration(OSDictionary *dictionary) {
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &trackstickMult);
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &trackstickScrollXMult);
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &trackstickScrollYMult);
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &trackstickDeadzone);
+}
+
 IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
 {
     
@@ -273,10 +277,8 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             timer->enable();
             break;
         case kHandleRMIProperties:
-            trackstickMult = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickMultiplier", trackstickMult);
-            trackstickScrollXMult = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickScrollMultiplierX", trackstickScrollXMult);
-            trackstickScrollYMult = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickScrollMultiplierY", trackstickScrollYMult);
-            trackstickDeadzone = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickDeadzone", trackstickDeadzone);
+            updateConfiguration(reinterpret_cast<OSDictionary *>(argument));
+            break;
     }
 
     return kIOReturnSuccess;

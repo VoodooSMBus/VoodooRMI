@@ -12,16 +12,9 @@
 OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 #define super IOService
 
-#define MilliToNano 1000000
-
 bool RMI2DSensor::init(OSDictionary *dictionary)
 {
-    disableWhileTypingTimeout =
-        Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", 500) * MilliToNano;
-    forceTouchMinPressure =
-        Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
-    forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
-    minYDiffGesture = Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", 200);
+    updateConfiguration(dictionary);
     
     return super::init();
 }
@@ -76,6 +69,19 @@ void RMI2DSensor::handleClose(IOService *forClient, IOOptionBits options)
     super::handleClose(forClient, options);
 }
 
+void RMI2DSensor::updateConfiguration(OSDictionary *dictionary) {
+    if (Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &disableWhileTypingTimeout)) {
+        setProperty("DisableWhileTypingTimeout", disableWhileTypingTimeout, 64);
+        disableWhileTypingTimeout *= MilliToNano;
+    }
+    if (Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &forceTouchMinPressure))
+        setProperty("ForceTouchMinPressure", forceTouchMinPressure, 32);
+    if (Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &forceTouchEmulation))
+        setProperty("ForceTouchEmulation", forceTouchEmulation);
+    if (Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &minYDiffGesture))
+        setProperty("MinYDiffThumbDetection", minYDiffGesture, 32);
+}
+
 IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 {
     switch (type)
@@ -93,12 +99,7 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
             break;
         case kHandleRMIProperties:
-            disableWhileTypingTimeout =
-                Configuration::loadUInt64Configuration(reinterpret_cast<OSDictionary *>(argument), "DisableWhileTypingTimeout", disableWhileTypingTimeout/MilliToNano) * MilliToNano;
-            forceTouchMinPressure =
-                Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "ForceTouchMinPressure", forceTouchMinPressure);
-            forceTouchEmulation = Configuration::loadBoolConfiguration(reinterpret_cast<OSDictionary *>(argument), "ForceTouchEmulation", forceTouchEmulation);
-            minYDiffGesture = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "MinYDiffThumbDetection", minYDiffGesture);
+            updateConfiguration(reinterpret_cast<OSDictionary *>(argument));
             break;
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:

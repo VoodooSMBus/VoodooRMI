@@ -139,10 +139,12 @@ private:
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};
     
-    unsigned int trackstickMult;
-    unsigned int trackstickScrollXMult;
-    unsigned int trackstickScrollYMult;
-    unsigned int trackstickDeadzone;
+    void updateConfiguration(OSDictionary *dictionary);
+
+    unsigned int trackstickMult {DEFAULT_MULT};
+    unsigned int trackstickScrollXMult {DEFAULT_MULT};
+    unsigned int trackstickScrollYMult {DEFAULT_MULT};
+    unsigned int trackstickDeadzone {1};
     
     bool isScrolling;
     bool middlePressed;

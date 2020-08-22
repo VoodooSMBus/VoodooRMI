@@ -17,6 +17,8 @@
 #include "VoodooInputMultitouch/VoodooInputTransducer.h"
 #include "VoodooInputMultitouch/VoodooInputMessages.h"
 
+#define MilliToNano 1000000
+
 enum rmi_2d_sensor_object_type {
     RMI_2D_OBJECT_NONE,
     RMI_2D_OBJECT_FINGER,
@@ -90,16 +92,19 @@ private:
     VoodooInputEvent inputEvent {};
     IOService *voodooInputInstance {nullptr};
     
+    void updateConfiguration(OSDictionary *dictionary);
+
     bool freeFingerTypes[kMT2FingerTypeCount];
     bool invalidFinger[10];
     bool clickpadState {false};
     bool pressureLock {false};
     bool touchpadEnable {true};
     bool forceTouchEmulation {true};
-    u8 forceTouchMinPressure {80};
+    uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
     
-    uint64_t disableWhileTypingTimeout, lastKeyboardTS;
+    uint64_t disableWhileTypingTimeout {500 * MilliToNano};
+    uint64_t lastKeyboardTS;
 
     MT2FingerType getFingerType();
     void setThumbFingerType(int fingers, RMI2DSensorReport *report);

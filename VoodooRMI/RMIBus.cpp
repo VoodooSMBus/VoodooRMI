@@ -357,8 +357,6 @@ IOReturn RMIBus::setProperties(OSObject *properties) {
 }
 
 void RMIBus::setPropertiesGated(OSObject* properties) {
-    OSIterator* iter = OSCollectionIterator::withCollection(functions);
-    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
-        messageClient(kHandleRMIProperties, func, reinterpret_cast<void *>(properties));
+    messageClients(kHandleRMIProperties, reinterpret_cast<void *>(properties));
     return;
 }

@@ -50,11 +50,9 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
             IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
     }
 
-    if (getHIDDescriptor() != kIOReturnSuccess) {
-        hdesc.wCommandRegister  = RMI_HID_COMMAND_REGISTER;
-        hdesc.wDataRegister     = RMI_HID_DATA_REGISTER;
-        hdesc.wOutputRegister   = RMI_HID_OUTPUT_REGISTER;
-        IOLog("%s::%s Using default HID register addresses\n", getName(), name);
+    if (getHIDDescriptor() != kIOReturnSuccess || hdesc.wVendorID != SYNAPTICS_VENDOR_ID) {
+        IOLog("%s::%s Could not get valid HID descriptor\n", getName(), name);
+        return NULL;
     }
 
     do {

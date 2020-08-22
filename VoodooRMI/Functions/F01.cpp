@@ -220,9 +220,9 @@ void F01::publishProps()
     setPropertyBoolean(propDict, "Has Adjustable Doze Holdoff", properties->has_adjustable_doze_holdoff);
     setPropertyString(propDict, "Date of Manufacture", properties->dom);
     setPropertyString(propDict, "Product ID", properties->product_id);
-    setPropertyNumber(propDict, "Product Info", properties->productinfo, 8);
-    setPropertyNumber(propDict, "Firmware ID", properties->firmware_id, 8);
-    setPropertyNumber(propDict, "Package ID", properties->package_id, 8);
+    setPropertyNumber(propDict, "Product Info", properties->productinfo, 16);
+    setPropertyNumber(propDict, "Firmware ID", properties->firmware_id, 32);
+    setPropertyNumber(propDict, "Package ID", properties->package_id, 32);
     setProperty("Device Properties", propDict);
     propDict->release();
 }

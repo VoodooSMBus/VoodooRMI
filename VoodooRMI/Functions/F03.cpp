@@ -110,7 +110,7 @@ bool F03::start(IOService *provider)
     timer->setTimeoutMS(100);
     timer->enable();
     
-    setProperty("VoodooTrackpointSupported", true);
+    setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
     registerService();
     
     IOLog("Start finished");

@@ -117,7 +117,7 @@ bool F11::getReport()
                               sensor->data_pkt, sensor->pkt_size);
     
     if (error < 0) {
-        IOLogError("Could not read F11 attention data: %d", error);
+        IOLogError("Could not read F11 attention data: %d\n", error);
         return false;
     }
     
@@ -126,7 +126,7 @@ bool F11::getReport()
     if (sensor->shouldDiscardReport(timestamp))
         return true;
     
-    IOLogDebug("F11 Packet");
+    IOLogDebug("F11 Packet\n");
     
     abs_size = sensor->nbr_fingers & RMI_F11_ABS_BYTES;
     
@@ -139,7 +139,7 @@ bool F11::getReport()
         u8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
         
         if (finger_state == F11_RESERVED) {
-            IOLogError("Invalid finger state[%d]: 0x%02x",
+            IOLogError("Invalid finger state[%d]: 0x%02x\n",
                        i, finger_state);
             continue;
         }
@@ -652,7 +652,7 @@ int F11::rmi_f11_initialize()
     
     rc = rmi_f11_get_query_parameters(&sens_query, query_offset);
     if (rc < 0) {
-        IOLogError("F11: Could not read Sensor Query");
+        IOLogError("F11: Could not read Sensor Query\n");
         return rc;
     }
     query_offset += rc;
@@ -666,7 +666,7 @@ int F11::rmi_f11_initialize()
     }
     
     if (!sens_query.has_abs) {
-        IOLogError("No absolute reporting support!");
+        IOLogError("No absolute reporting support!\n");
         return -ENODEV;
     }
     

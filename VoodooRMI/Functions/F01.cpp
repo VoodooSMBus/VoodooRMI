@@ -252,9 +252,8 @@ int F01::rmi_f01_config()
             return error;
         }
         
-        error = rmiBus->blockWrite(wakeup_threshold_addr,
-                                &device_control->wakeup_threshold,
-                                sizeof(u8));
+        error = rmiBus->write(wakeup_threshold_addr,
+                                &device_control->wakeup_threshold);
         if (error) {
             IOLogError("Failed to write wakeup threshold: %d\n",
                     error);

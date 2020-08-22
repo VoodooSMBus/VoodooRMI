@@ -15,10 +15,10 @@
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? (-x) : (x))
 
-#define IOLogError(arg...) IOLog("Error: " arg)
+#define IOLogError(arg...) do { IOLog("Error: " arg); } while(0)
 
 #ifdef DEBUG
-#define IOLogDebug(arg...) IOLog("Debug: " arg)
+#define IOLogDebug(arg...) do { IOLog("Debug: " arg); } while(0)
 #else
 #define IOLogDebug(arg...)
 #endif // DEBUG

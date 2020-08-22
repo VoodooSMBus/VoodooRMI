@@ -88,7 +88,7 @@ bool F12::attach(IOService *provider)
     
     ret = rmi_f12_read_sensor_tuning();
     if (ret) {
-        IOLogError("F12 - Failed sensor tuning");
+        IOLogError("F12 - Failed sensor tuning\n");
         return false;
     }
     
@@ -106,7 +106,7 @@ bool F12::attach(IOService *provider)
     item = rmi_get_register_desc_item(&data_reg_desc, 1);
     if (!item) {
         return false;
-        IOLogError("F12 - No Data1 Reg!");
+        IOLogError("F12 - No Data1 Reg!\n");
     }
     
     data1 = item;
@@ -139,7 +139,7 @@ bool F12::attach(IOService *provider)
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
     setProperty("Number of fingers", sensor->nbr_fingers, 8);
-    IOLogDebug("F12 - Number of fingers %u", sensor->nbr_fingers);
+    IOLogDebug("F12 - Number of fingers %u\n", sensor->nbr_fingers);
     
     
     return super::attach(provider);
@@ -268,7 +268,7 @@ int F12::rmi_f12_read_sensor_tuning()
         sensor->max_y = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
-        IOLogError("F12 - No size register");
+        IOLogError("F12 - No size register\n");
         return -EIO;
     }
     
@@ -277,7 +277,7 @@ int F12::rmi_f12_read_sensor_tuning()
         pitch_y = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
-        IOLogError("F12 - No pitch register");
+        IOLogError("F12 - No pitch register\n");
         return -EIO;
     }
     
@@ -296,7 +296,7 @@ int F12::rmi_f12_read_sensor_tuning()
         tx_receivers = buf[offset + 1];
         offset += 2;
     } else {
-        IOLogError("No rx/tx receiver register");
+        IOLogError("No rx/tx receiver register\n");
         return -EIO;
     }
     
@@ -329,10 +329,10 @@ void F12::getReport()
     if (sensor->shouldDiscardReport(timestamp))
         return;
     
-    IOLogDebug("F12 Packet");
+    IOLogDebug("F12 Packet\n");
 #if DEBUG
     if (sensor->nbr_fingers > 5) {
-        IOLogDebug("More than 5 fingers!");
+        IOLogDebug("More than 5 fingers!\n");
     }
 #endif // debug
     

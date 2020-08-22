@@ -14,6 +14,7 @@ bool Configuration::loadBoolConfiguration(OSDictionary *dict, const char* config
     
     OSBoolean* value = OSDynamicCast(OSBoolean, dict->getObject(configurationKey));
     if (value != nullptr) {
+        IOLog("RMI configuration %s loaded: %x", configurationKey, value->getValue());
         return value->getValue();
     }
     
@@ -25,6 +26,7 @@ UInt64 Configuration::loadUInt64Configuration(OSDictionary *dict, const char* co
     
     OSNumber* value = OSDynamicCast(OSNumber, dict->getObject(configurationKey));
     if (value != nullptr) {
+        IOLog("RMI configuration %s loaded: %llx", configurationKey, value->unsigned64BitValue());
         return value->unsigned64BitValue();
     }
     
@@ -36,6 +38,7 @@ UInt32 Configuration::loadUInt32Configuration(OSDictionary *dict, const char* co
     
     OSNumber* value = OSDynamicCast(OSNumber, dict->getObject(configurationKey));
     if (value != nullptr) {
+        IOLog("RMI configuration %s loaded: %x", configurationKey, value->unsigned32BitValue());
         return value->unsigned32BitValue();
     }
     

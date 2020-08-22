@@ -272,6 +272,11 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             timer->setTimeoutMS(3000);
             timer->enable();
             break;
+        case kHandleRMIProperties:
+            trackstickMult = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickMultiplier", trackstickMult);
+            trackstickScrollXMult = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickScrollMultiplierX", trackstickScrollXMult);
+            trackstickScrollYMult = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickScrollMultiplierY", trackstickScrollYMult);
+            trackstickDeadzone = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "TrackstickDeadzone", trackstickDeadzone);
     }
 
     return kIOReturnSuccess;

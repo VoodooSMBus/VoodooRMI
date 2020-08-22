@@ -98,6 +98,7 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
             break;
         case kHandleRMIClickpadSet:
         case kHandleRMITrackpoint:
+        case kHandleRMIProperties:
             return messageClient(type, sensor, argument);
     }
     

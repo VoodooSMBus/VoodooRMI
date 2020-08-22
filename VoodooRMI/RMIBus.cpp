@@ -60,7 +60,14 @@ bool RMIBus::start(IOService *provider) {
     
     if (!super::start(provider))
         return false;
-    
+
+    if (!(workLoop = IOWorkLoop::workLoop()) ||
+        !(commandGate = IOCommandGate::commandGate(this)) ||
+        (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
+        IOLog("%s Failed to add commandGate\n", getName());
+        return false;
+    }
+
     retval = rmi_init_functions(this, data);
     if (retval)
         goto err;
@@ -228,6 +235,10 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
 void RMIBus::stop(IOService *provider) {
     OSIterator *iter = OSCollectionIterator::withCollection(functions);
     
+    workLoop->removeEventSource(commandGate);
+    OSSafeReleaseNULL(commandGate);
+    OSSafeReleaseNULL(workLoop);
+
     PMstop();
     rmi_driver_clear_irq_bits(this);
     
@@ -338,4 +349,16 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     
     functions->setObject(function);
     return 0;
+}
+
+IOReturn RMIBus::setProperties(OSObject *properties) {
+    commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMIBus::setPropertiesGated), properties);
+    return kIOReturnSuccess;
+}
+
+void RMIBus::setPropertiesGated(OSObject* properties) {
+    OSIterator* iter = OSCollectionIterator::withCollection(functions);
+    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
+        messageClient(kHandleRMIProperties, func, reinterpret_cast<void *>(properties));
+    return;
 }

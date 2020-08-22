@@ -92,7 +92,14 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             clock_get_uptime(&timestamp);
             absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
             break;
-            
+        case kHandleRMIProperties:
+            disableWhileTypingTimeout =
+                Configuration::loadUInt64Configuration(reinterpret_cast<OSDictionary *>(argument), "DisableWhileTypingTimeout", disableWhileTypingTimeout/MilliToNano) * MilliToNano;
+            forceTouchMinPressure =
+                Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "ForceTouchMinPressure", forceTouchMinPressure);
+            forceTouchEmulation = Configuration::loadBoolConfiguration(reinterpret_cast<OSDictionary *>(argument), "ForceTouchEmulation", forceTouchEmulation);
+            minYDiffGesture = Configuration::loadUInt32Configuration(reinterpret_cast<OSDictionary *>(argument), "MinYDiffThumbDetection", minYDiffGesture);
+            break;
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:
             lastKeyboardTS = *((uint64_t*) argument);

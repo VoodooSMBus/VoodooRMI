@@ -50,7 +50,7 @@ struct f01_basic_properties {
     bool has_adjustable_doze;
     bool has_adjustable_doze_holdoff;
     char dom[11]; /* YYYY/MM/DD + '\0' */
-    u8 product_id[RMI_PRODUCT_ID_LENGTH + 1];
+    char product_id[RMI_PRODUCT_ID_LENGTH + 1];
     u16 productinfo;
     u32 firmware_id;
     u32 package_id;

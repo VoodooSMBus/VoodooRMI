@@ -307,12 +307,12 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         value = OSNumber::withNumber(sensor_query->abs_data_size, 8);
         absProps->setObject("Absolute Data Size", value);
         value->release();
-        absProps->setObject("Has Anchored Finger", sensor_query->has_anchored_finger ? kOSBooleanTrue : kOSBooleanFalse);
-        absProps->setObject("Has Adjustable Hyst", sensor_query->has_adj_hyst ? kOSBooleanTrue : kOSBooleanFalse);
-        absProps->setObject("Has Dribble", sensor_query->has_dribble ? kOSBooleanTrue : kOSBooleanFalse);
-        absProps->setObject("Has Bending Correction", sensor_query->has_bending_correction ? kOSBooleanTrue : kOSBooleanFalse);
-        absProps->setObject("Has Large Object Suppression", sensor_query->has_large_object_suppression ? kOSBooleanTrue : kOSBooleanFalse);
-        absProps->setObject("Has Jitter Filter", sensor_query->has_jitter_filter ? kOSBooleanTrue : kOSBooleanFalse);
+        setPropertyBoolean(absProps, "Has Anchored Finger", sensor_query->has_anchored_finger);
+        setPropertyBoolean(absProps, "Has Adjustable Hyst", sensor_query->has_adj_hyst);
+        setPropertyBoolean(absProps, "Has Dribble", sensor_query->has_dribble);
+        setPropertyBoolean(absProps, "Has Bending Correction", sensor_query->has_bending_correction);
+        setPropertyBoolean(absProps, "Has Large Object Suppression", sensor_query->has_large_object_suppression);
+        setPropertyBoolean(absProps, "Has Jitter Filter", sensor_query->has_jitter_filter);
         
         setProperty("Absolute Keys", absProps);
         absProps->release();
@@ -371,23 +371,23 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->query8_nonzero = !!(query_buf[1]);
         
         OSDictionary *gestProps = OSDictionary::withCapacity(16);
-        gestProps->setObject("Has Single Tap", sensor_query->has_single_tap ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Tap and Hold", sensor_query->has_tap_n_hold ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Double Tap", sensor_query->has_double_tap ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Early Tap", sensor_query->has_early_tap ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Flick", sensor_query->has_flick ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Press", sensor_query->has_press ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Pinch", sensor_query->has_pinch ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Chiral", sensor_query->has_chiral ? kOSBooleanTrue : kOSBooleanFalse);
-        
-        gestProps->setObject("Has Palm Detection", sensor_query->has_palm_det ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Rotate", sensor_query->has_rotate ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Touch Shapes", sensor_query->has_touch_shapes ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Scroll Zones", sensor_query->has_scroll_zones ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Individual Scroll Zones", sensor_query->has_individual_scroll_zones ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Multi-Finger Scroll", sensor_query->has_mf_scroll ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Multi-Finger Edge Motion", sensor_query->has_mf_edge_motion ? kOSBooleanTrue : kOSBooleanFalse);
-        gestProps->setObject("Has Multi-Finger Scroll Intertia", sensor_query->has_mf_scroll_inertia ? kOSBooleanTrue : kOSBooleanFalse);
+        setPropertyBoolean(gestProps, "Has Single Tap", sensor_query->has_single_tap);
+        setPropertyBoolean(gestProps, "Has Tap and Hold", sensor_query->has_tap_n_hold);
+        setPropertyBoolean(gestProps, "Has Double Tap", sensor_query->has_double_tap);
+        setPropertyBoolean(gestProps, "Has Early Tap", sensor_query->has_early_tap);
+        setPropertyBoolean(gestProps, "Has Flick", sensor_query->has_flick);
+        setPropertyBoolean(gestProps, "Has Press", sensor_query->has_press);
+        setPropertyBoolean(gestProps, "Has Pinch", sensor_query->has_pinch);
+        setPropertyBoolean(gestProps, "Has Chiral", sensor_query->has_chiral);
+ 
+        setPropertyBoolean(gestProps, "Has Palm Detection", sensor_query->has_palm_det);
+        setPropertyBoolean(gestProps, "Has Rotate", sensor_query->has_rotate);
+        setPropertyBoolean(gestProps, "Has Touch Shapes", sensor_query->has_touch_shapes);
+        setPropertyBoolean(gestProps, "Has Scroll Zones", sensor_query->has_scroll_zones);
+        setPropertyBoolean(gestProps, "Has Individual Scroll Zones", sensor_query->has_individual_scroll_zones);
+        setPropertyBoolean(gestProps, "Has Multi-Finger Scroll", sensor_query->has_mf_scroll);
+        setPropertyBoolean(gestProps, "Has Multi-Finger Edge Motion", sensor_query->has_mf_edge_motion);
+        setPropertyBoolean(gestProps, "Has Multi-Finger Scroll Intertia", sensor_query->has_mf_scroll_inertia);
         
         setProperty("Gestures", gestProps);
         gestProps->release();
@@ -417,14 +417,14 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
             !!(query_buf[0] & RMI_F11_HAS_PEN_FILTERS);
         
         OSDictionary *penProps = OSDictionary::withCapacity(8);
-        penProps->setObject("Has Pen", sensor_query->has_pen ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Proximity", sensor_query->has_proximity ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Palm Detection Sensitivity", sensor_query->has_palm_det_sensitivity ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Suppress on Palm Detect", sensor_query->has_suppress_on_palm_detect ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Two Pen Thresholds", sensor_query->has_two_pen_thresholds ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Contact Geometry", sensor_query->has_contact_geometry ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Pen Hover Discrimination", sensor_query->has_pen_hover_discrimination ? kOSBooleanTrue : kOSBooleanFalse);
-        penProps->setObject("Has Pen Filters", sensor_query->has_pen_filters ? kOSBooleanTrue : kOSBooleanFalse);
+        setPropertyBoolean(penProps, "Has Pen", sensor_query->has_pen);
+        setPropertyBoolean(penProps, "Has Proximity", sensor_query->has_proximity);
+        setPropertyBoolean(penProps, "Has Palm Detection Sensitivity", sensor_query->has_palm_det_sensitivity);
+        setPropertyBoolean(penProps, "Has Suppress on Palm Detect", sensor_query->has_suppress_on_palm_detect);
+        setPropertyBoolean(penProps, "Has Two Pen Thresholds", sensor_query->has_two_pen_thresholds);
+        setPropertyBoolean(penProps, "Has Contact Geometry", sensor_query->has_contact_geometry);
+        setPropertyBoolean(penProps, "Has Pen Hover Discrimination", sensor_query->has_pen_hover_discrimination);
+        setPropertyBoolean(penProps, "Has Pen Filters", sensor_query->has_pen_filters);
         
         setProperty("Pen", penProps);
         penProps->release();
@@ -470,14 +470,14 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         
         OSDictionary *tuningProps = OSDictionary::withCapacity(8);
 
-        tuningProps->setObject("Has Z Tuning", sensor_query->has_z_tuning ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has Algorithm Selection", sensor_query->has_algorithm_selection ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has Width Tuning", sensor_query->has_w_tuning ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has Pitch Info", sensor_query->has_pitch_info ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has Finger Size", sensor_query->has_finger_size ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has Segmentation Agressiveness", sensor_query->has_segmentation_aggressiveness ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has XY Clip", sensor_query->has_XY_clip ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps->setObject("Has Drumming Filter", sensor_query->has_drumming_filter ? kOSBooleanTrue : kOSBooleanFalse);
+        setPropertyBoolean(tuningProps, "Has Z Tuning", sensor_query->has_z_tuning);
+        setPropertyBoolean(tuningProps, "Has Algorithm Selection", sensor_query->has_algorithm_selection);
+        setPropertyBoolean(tuningProps, "Has Width Tuning", sensor_query->has_w_tuning);
+        setPropertyBoolean(tuningProps, "Has Pitch Info", sensor_query->has_pitch_info);
+        setPropertyBoolean(tuningProps, "Has Finger Size", sensor_query->has_finger_size);
+        setPropertyBoolean(tuningProps, "Has Segmentation Agressiveness", sensor_query->has_segmentation_aggressiveness);
+        setPropertyBoolean(tuningProps, "Has XY Clip", sensor_query->has_XY_clip);
+        setPropertyBoolean(tuningProps, "Has Drumming Filter", sensor_query->has_drumming_filter);
         setProperty("Tuning (Query 11)", tuningProps);
         tuningProps->release();
         query_size++;
@@ -507,14 +507,14 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         
         OSDictionary *tuningProps2 = OSDictionary::withCapacity(8);
 
-        tuningProps2->setObject("Has Gapless Finger", sensor_query->has_gapless_finger ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has Gapless Finger Tuning", sensor_query->has_gapless_finger_tuning ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has 8 Bit Width", sensor_query->has_8bit_w ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has Adjustable Mapping", sensor_query->has_adjustable_mapping ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has Info2 (Query 14 present)", sensor_query->has_info2 ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has Physical Properties", sensor_query->has_physical_props ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has Finger Limit", sensor_query->has_finger_limit ? kOSBooleanTrue : kOSBooleanFalse);
-        tuningProps2->setObject("Has Linear Coefficient 2", sensor_query->has_linear_coeff_2 ? kOSBooleanTrue : kOSBooleanFalse);
+        setPropertyBoolean(tuningProps2, "Has Gapless Finger", sensor_query->has_gapless_finger);
+        setPropertyBoolean(tuningProps2, "Has Gapless Finger Tuning", sensor_query->has_gapless_finger_tuning);
+        setPropertyBoolean(tuningProps2, "Has 8 Bit Width", sensor_query->has_8bit_w);
+        setPropertyBoolean(tuningProps2, "Has Adjustable Mapping", sensor_query->has_adjustable_mapping);
+        setPropertyBoolean(tuningProps2, "Has Info2 (Query 14 present)", sensor_query->has_info2);
+        setPropertyBoolean(tuningProps2, "Has Physical Properties", sensor_query->has_physical_props);
+        setPropertyBoolean(tuningProps2, "Has Finger Limit", sensor_query->has_finger_limit);
+        setPropertyBoolean(tuningProps2, "Has Linear Coefficient 2", sensor_query->has_linear_coeff_2);
         setProperty("Tuning (Query 12)", tuningProps2);
         tuningProps2->release();
         query_size++;
@@ -573,8 +573,8 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         value = OSNumber::withNumber(sensor_query->mouse_buttons, 8);
         miscProps->setObject("Mouse Buttons", value);
         value->release();
-        miscProps->setObject("Is Clear", sensor_query->is_clear ? kOSBooleanTrue : kOSBooleanFalse);
-        miscProps->setObject("Has Advanced Gestures", sensor_query->has_advanced_gestures ? kOSBooleanTrue : kOSBooleanFalse);
+        setPropertyBoolean(miscProps, "Is Clear", sensor_query->is_clear);
+        setPropertyBoolean(miscProps, "Has Advanced Gestures", sensor_query->has_advanced_gestures);
         setProperty("Misc", miscProps);
         miscProps->release();
         query_size++;

@@ -203,53 +203,26 @@ void F01::free()
 
 void F01::publishProps()
 {
+    OSObject *value;
     OSDictionary *deviceDict = OSDictionary::withCapacity(3);
     if (!deviceDict) return;
-    OSNumber *value;
-    value = OSNumber::withNumber(device_control->doze_interval, 8);
-    deviceDict->setObject("Doze Interval", value);
-    value->release();
-    value = OSNumber::withNumber(device_control->doze_holdoff, 8);
-    deviceDict->setObject("Doze Holdoff", value);
-    value->release();
-    value = OSNumber::withNumber(device_control->wakeup_threshold, 8);
-    deviceDict->setObject("Wakeup Threshold", value);
-    value->release();
-
+    setPropertyNumber(deviceDict, "Doze Interval", device_control->doze_interval, 8);
+    setPropertyNumber(deviceDict, "Doze Holdoff", device_control->doze_holdoff, 8);
+    setPropertyNumber(deviceDict, "Wakeup Threshold", device_control->wakeup_threshold, 8);
     setProperty("Power Properties", deviceDict);
     deviceDict->release();
 
     OSDictionary *propDict = OSDictionary::withCapacity(9);
     if (!propDict) return;
-    value = OSNumber::withNumber(properties->manufacturer_id, 8);
-    propDict->setObject("Manufacturer ID", value);
-    value->release();
-    propDict->setObject("Has LTS", properties->has_lts ? kOSBooleanTrue : kOSBooleanFalse);
-    propDict->setObject("Has Adjustable Doze", properties->has_adjustable_doze ? kOSBooleanTrue : kOSBooleanFalse);
-    propDict->setObject("Has Adjustable Doze Holdoff", properties->has_adjustable_doze_holdoff ? kOSBooleanTrue : kOSBooleanFalse);
-    
-    OSString* dom = OSString::withCString(properties->dom);
-    if (dom) {
-        propDict->setObject("Date of Manufacture", dom);
-        dom->release();
-    }
-
-    // It's null terminated and u8 is a byte, so I guess it's a string?
-    OSString* prodID = OSString::withCString(reinterpret_cast<const char*>(properties->product_id));
-    if (prodID) {
-        propDict->setObject("Product ID", prodID);
-        prodID->release();
-    }
-    value = OSNumber::withNumber(properties->productinfo, 8);
-    propDict->setObject("Product Info", value);
-    value->release();
-    value = OSNumber::withNumber(properties->firmware_id, 8);
-    propDict->setObject("Firmware ID", value);
-    value->release();
-    value = OSNumber::withNumber(properties->package_id, 8);
-    propDict->setObject("Package ID", value);
-    value->release();
-
+    setPropertyNumber(propDict, "Manufacturer ID", properties->manufacturer_id, 8);
+    setPropertyBoolean(propDict, "Has LTS", properties->has_lts);
+    setPropertyBoolean(propDict, "Has Adjustable Doze", properties->has_adjustable_doze);
+    setPropertyBoolean(propDict, "Has Adjustable Doze Holdoff", properties->has_adjustable_doze_holdoff);
+    setPropertyString(propDict, "Date of Manufacture", properties->dom);
+    setPropertyString(propDict, "Product ID", properties->product_id);
+    setPropertyNumber(propDict, "Product Info", properties->productinfo, 8);
+    setPropertyNumber(propDict, "Firmware ID", properties->firmware_id, 8);
+    setPropertyNumber(propDict, "Package ID", properties->package_id, 8);
     setProperty("Device Properties", propDict);
     propDict->release();
 }

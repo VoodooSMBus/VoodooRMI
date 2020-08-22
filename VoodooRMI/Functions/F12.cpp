@@ -16,14 +16,15 @@ bool F12::init(OSDictionary *dictionary)
 {
     if (!super::init())
         return false;
-    
-    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
-    if (!sensor)
+
+    OSObject *base = OSTypeAlloc(RMI2DSensor);
+    sensor = OSDynamicCast(RMI2DSensor, base);
+    base->release();
+
+    if (!sensor || !sensor->init())
         return false;
-    
-    if (!sensor->init(dictionary))
-        return false;
-    
+
+    sensor->conf = conf;
     return true;
 }
 
@@ -226,7 +227,6 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
             break;
         case kHandleRMIClickpadSet:
         case kHandleRMITrackpoint:
-        case kHandleRMIProperties:
             return messageClient(type, sensor, argument);
     }
     

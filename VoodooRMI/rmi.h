@@ -23,6 +23,9 @@
 #define IOLogDebug(arg...)
 #endif // DEBUG
 
+#define DEFAULT_MULT 20
+#define MilliToNano 1000000
+
 // Message types defined by ApplePS2Keyboard
 enum {
     // from keyboard to mouse/touchpad
@@ -39,8 +42,7 @@ enum {
     kHandleRMIResume = iokit_vendor_specific_msg(2049),
     kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
     kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051),
-    kHandleRMIInputReport = iokit_vendor_specific_msg(2052),
-    kHandleRMIProperties = iokit_vendor_specific_msg(2053),
+    kHandleRMIInputReport = iokit_vendor_specific_msg(2052)
 };
 
 /*
@@ -125,6 +127,19 @@ struct __kfifo {
     void        *data;
 };
 
+struct rmi_configuration {
+    // F03
+    uint32_t trackstickMult {DEFAULT_MULT};
+    uint32_t trackstickScrollXMult {DEFAULT_MULT};
+    uint32_t trackstickScrollYMult {DEFAULT_MULT};
+    uint32_t trackstickDeadzone {1};
+    // RMI2DSensor
+    bool forceTouchEmulation {true};
+    uint32_t forceTouchMinPressure {80};
+    uint32_t minYDiffGesture {200};
+    uint64_t disableWhileTypingTimeout {500 * MilliToNano};
+};
+
 /*
  *  Wrapper class for functions
  */
@@ -157,7 +172,9 @@ public:
             IOFree(this->fn_descriptor, sizeof(rmi_function_descriptor));
         return;
     }
-    
+
+    rmi_configuration *conf;
+
 private:
     unsigned long irq_mask;
     unsigned int irqPos;

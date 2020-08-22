@@ -12,13 +12,6 @@
 OSDefineMetaClassAndStructors(F30, RMIFunction)
 #define super IOService
 
-// Make sure Configuration values don't show up in IOReg
-// Doesn't change any sort of functionality otherwise
-bool F30::init(OSDictionary *dict)
-{
-    return super::init();
-}
-
 bool F30::attach(IOService *provider)
 {
     rmiBus = OSDynamicCast(RMIBus, provider);
@@ -246,7 +239,7 @@ int F30::rmi_f30_map_gpios()
     // Trackstick buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
     // Generally I've found it more common for them to come through PS2
     hasTrackstickButtons = trackstick_button != BTN_LEFT;
-    setProperty("Trackstick Buttons through F30", OSBoolean::withBoolean(hasTrackstickButtons));
+    setProperty("Trackstick Buttons through F30", hasTrackstickButtons ? kOSBooleanTrue : kOSBooleanFalse);
     setProperty("Clickpad", numButtons == 1 ? kOSBooleanTrue : kOSBooleanFalse);
     
     return 0;

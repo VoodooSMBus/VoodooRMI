@@ -21,13 +21,14 @@ bool F11::init(OSDictionary *dictionary)
     
     dev_controls_mutex = IOLockAlloc();
     
-    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
-    if (!sensor)
+    OSObject *base = OSTypeAlloc(RMI2DSensor);
+    sensor = OSDynamicCast(RMI2DSensor, base);
+    base->release();
+
+    if (!sensor || !sensor->init())
         return false;
-    
-    if (!sensor->init(dictionary))
-        return false;
-    
+
+    sensor->conf = conf;
     return dev_controls_mutex;
 }
 
@@ -98,7 +99,6 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
             break;
         case kHandleRMIClickpadSet:
         case kHandleRMITrackpoint:
-        case kHandleRMIProperties:
             return messageClient(type, sensor, argument);
     }
     
@@ -470,17 +470,18 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_drumming_filter =
             !!(query_buf[0] & RMI_F11_HAS_DRUMMING_FILTER);
         
-        tuningProps = OSDictionary::withCapacity(8);
-        tuningProps->setObject("Has Z Tuning", OSBoolean::withBoolean(sensor_query->has_z_tuning));
-        tuningProps->setObject("Has Algorithm Selection", OSBoolean::withBoolean(sensor_query->has_algorithm_selection));
-        tuningProps->setObject("Has Width Tuning", OSBoolean::withBoolean(sensor_query->has_w_tuning));
-        tuningProps->setObject("Has Pitch Info", OSBoolean::withBoolean(sensor_query->has_pitch_info));
-        tuningProps->setObject("Has Finger Size", OSBoolean::withBoolean(sensor_query->has_finger_size));
-        tuningProps->setObject("Has Segmentation Agressiveness", OSBoolean::withBoolean(sensor_query->has_segmentation_aggressiveness));
-        tuningProps->setObject("Has XY Clip", OSBoolean::withBoolean(sensor_query->has_XY_clip));
-        tuningProps->setObject("Has Drumming Filter", OSBoolean::withBoolean(sensor_query->has_drumming_filter));
+        OSDictionary *tuningProps = OSDictionary::withCapacity(8);
+
+        tuningProps->setObject("Has Z Tuning", sensor_query->has_z_tuning ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has Algorithm Selection", sensor_query->has_algorithm_selection ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has Width Tuning", sensor_query->has_w_tuning ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has Pitch Info", sensor_query->has_pitch_info ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has Finger Size", sensor_query->has_finger_size ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has Segmentation Agressiveness", sensor_query->has_segmentation_aggressiveness ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has XY Clip", sensor_query->has_XY_clip ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps->setObject("Has Drumming Filter", sensor_query->has_drumming_filter ? kOSBooleanTrue : kOSBooleanFalse);
         setProperty("Tuning (Query 11)", tuningProps);
-        
+        tuningProps->release();
         query_size++;
     }
     
@@ -506,20 +507,21 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_linear_coeff_2 =
             !!(query_buf[0] & RMI_F11_HAS_LINEAR_COEFF);
         
-        tuningProps2 = OSDictionary::withCapacity(8);
-        tuningProps2->setObject("Has Gapless Finger", OSBoolean::withBoolean(sensor_query->has_gapless_finger));
-        tuningProps2->setObject("Has Gapless Finger Tuning", OSBoolean::withBoolean(sensor_query->has_gapless_finger_tuning));
-        tuningProps2->setObject("Has 8 Bit Width", OSBoolean::withBoolean(sensor_query->has_8bit_w));
-        tuningProps2->setObject("Has Adjustable Mapping", OSBoolean::withBoolean(sensor_query->has_adjustable_mapping));
-        tuningProps2->setObject("Has Info2 (Query 14 present)", OSBoolean::withBoolean(sensor_query->has_info2));
-        tuningProps2->setObject("Has Physical Properties", OSBoolean::withBoolean(sensor_query->has_physical_props));
-        tuningProps2->setObject("Has Finger Limit", OSBoolean::withBoolean(sensor_query->has_finger_limit));
-        tuningProps2->setObject("Has Linear Coefficient 2", OSBoolean::withBoolean(sensor_query->has_linear_coeff_2));
+        OSDictionary *tuningProps2 = OSDictionary::withCapacity(8);
+
+        tuningProps2->setObject("Has Gapless Finger", sensor_query->has_gapless_finger ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has Gapless Finger Tuning", sensor_query->has_gapless_finger_tuning ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has 8 Bit Width", sensor_query->has_8bit_w ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has Adjustable Mapping", sensor_query->has_adjustable_mapping ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has Info2 (Query 14 present)", sensor_query->has_info2 ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has Physical Properties", sensor_query->has_physical_props ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has Finger Limit", sensor_query->has_finger_limit ? kOSBooleanTrue : kOSBooleanFalse);
+        tuningProps2->setObject("Has Linear Coefficient 2", sensor_query->has_linear_coeff_2 ? kOSBooleanTrue : kOSBooleanFalse);
         setProperty("Tuning (Query 12)", tuningProps2);
-        
+        tuningProps2->release();
         query_size++;
     }
-    
+    OSNumber *value;
     if (sensor_query->has_jitter_filter) {
         rc = rmiBus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
@@ -531,11 +533,16 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
                                             RMI_F11_JITTER_FILTER_MASK) >>
                                             RMI_F11_JITTER_FILTER_SHIFT;
         
-        jitterProps = OSDictionary::withCapacity(2);
-        jitterProps->setObject("Jitter Window Size", OSNumber::withNumber(sensor_query->jitter_window_size, 8));
-        jitterProps->setObject("Jitter Filter Type", OSNumber::withNumber(sensor_query->jitter_filter_type, 8));
+        OSDictionary *jitterProps = OSDictionary::withCapacity(2);
+
+        value = OSNumber::withNumber(sensor_query->jitter_window_size, 8);
+        jitterProps->setObject("Jitter Window Size", value);
+        value->release();
+        value = OSNumber::withNumber(sensor_query->jitter_filter_type, 8);
+        jitterProps->setObject("Jitter Filter Type", value);
+        value->release();
         setProperty("Jitter", jitterProps);
-        
+        jitterProps->release();
         query_size++;
     }
     
@@ -557,14 +564,21 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_advanced_gestures =
             !!(query_buf[0] & RMI_F11_HAS_ADVANCED_GESTURES);
     
-        miscProps = OSDictionary::withCapacity(5);
-        miscProps->setObject("Light Control", OSNumber::withNumber(sensor_query->light_control, 8));
-        miscProps->setObject("Clickpad Properties", OSNumber::withNumber(sensor_query->clickpad_props, 8));
-        miscProps->setObject("Mouse Buttons", OSNumber::withNumber(sensor_query->mouse_buttons, 8));
-        miscProps->setObject("Is Clear", OSBoolean::withBoolean(sensor_query->is_clear));
-        miscProps->setObject("Has Advanced Gestures", OSBoolean::withBoolean(sensor_query->has_advanced_gestures));
+        OSDictionary *miscProps = OSDictionary::withCapacity(5);
+
+        value = OSNumber::withNumber(sensor_query->light_control, 8);
+        miscProps->setObject("Light Control", value);
+        value->release();
+        value = OSNumber::withNumber(sensor_query->clickpad_props, 8);
+        miscProps->setObject("Clickpad Properties", value);
+        value->release();
+        value = OSNumber::withNumber(sensor_query->mouse_buttons, 8);
+        miscProps->setObject("Mouse Buttons", value);
+        value->release();
+        miscProps->setObject("Is Clear", sensor_query->is_clear ? kOSBooleanTrue : kOSBooleanFalse);
+        miscProps->setObject("Has Advanced Gestures", sensor_query->has_advanced_gestures ? kOSBooleanTrue : kOSBooleanFalse);
         setProperty("Misc", miscProps);
-        
+        miscProps->release();
         query_size++;
     }
     
@@ -579,11 +593,16 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->y_sensor_size_mm =
             (query_buf[2] | (query_buf[3] << 8)) / 10;
         
-        sizeProps = OSDictionary::withCapacity(2);
-        sizeProps->setObject("X Sensor Size (mm)", OSNumber::withNumber(sensor_query->x_sensor_size_mm, 16));
-        sizeProps->setObject("Y Sensor Size (mm)", OSNumber::withNumber(sensor_query->y_sensor_size_mm, 16));
+        OSDictionary *sizeProps = OSDictionary::withCapacity(2);
+
+        value = OSNumber::withNumber(sensor_query->x_sensor_size_mm, 16);
+        sizeProps->setObject("X Sensor Size (mm)", value);
+        value->release();
+        value = OSNumber::withNumber(sensor_query->y_sensor_size_mm, 16);
+        sizeProps->setObject("Y Sensor Size (mm)", value);
+        value->release();
         setProperty("Size", sizeProps);
-        
+        sizeProps->release();
         /*
          * query 15 - 18 contain the size of the sensor
          * and query 19 - 26 contain bezel dimensions

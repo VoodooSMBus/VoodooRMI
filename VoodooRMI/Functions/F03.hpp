@@ -22,7 +22,6 @@
 #include <IOKit/IOTimerEventSource.h>
 
 #define PSMOUSE_CMD_ENABLE 0x00f4
-#define DEFAULT_MULT 20
 
 /*
  * These constants are from the TrackPoint System
@@ -119,13 +118,11 @@ class F03 : public RMIFunction {
     OSDeclareDefaultStructors(F03)
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
     void handleClose(IOService *forClient, IOOptionBits options) override;
-//    void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
@@ -138,13 +135,6 @@ private:
     IOTimerEventSource *timer {nullptr};
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};
-    
-    void updateConfiguration(OSDictionary *dictionary);
-
-    unsigned int trackstickMult {DEFAULT_MULT};
-    unsigned int trackstickScrollXMult {DEFAULT_MULT};
-    unsigned int trackstickScrollYMult {DEFAULT_MULT};
-    unsigned int trackstickDeadzone {1};
     
     bool isScrolling;
     bool middlePressed;

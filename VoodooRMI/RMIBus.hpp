@@ -70,9 +70,10 @@ public:
 private:
     IOWorkLoop *workLoop {nullptr};
     IOCommandGate *commandGate {nullptr};
-    virtual void setPropertiesGated(OSObject* properties);
 
-    OSDictionary *config;
+    void updateConfiguration(OSDictionary *dictionary);
+    rmi_configuration conf {};
+
     void handleHostNotify();
     void handleHostNotifyLegacy();
 };

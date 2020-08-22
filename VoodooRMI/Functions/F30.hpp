@@ -62,7 +62,6 @@ class F30 : public RMIFunction {
     OSDeclareDefaultStructors(F30)
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *providerr) override;

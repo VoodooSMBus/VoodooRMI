@@ -12,6 +12,9 @@ OSDefineMetaClassAndStructors(RMITransport, IOService)
 #define super IOService
 
 bool RMIBus::init(OSDictionary *dictionary) {
+    if (!super::init(dictionary))
+        return false;
+    
     data = reinterpret_cast<rmi_driver_data *>(IOMalloc(sizeof(rmi_driver_data)));
     memset(data, 0, sizeof(rmi_driver_data));
     
@@ -21,11 +24,9 @@ bool RMIBus::init(OSDictionary *dictionary) {
     
     data->irq_mutex = IOLockAlloc();
     data->enabled_mutex = IOLockAlloc();
-    
-    bool result = super::init(dictionary);
-    
-    config = OSDynamicCast(OSDictionary, getProperty("Configuration"));
-    return result;
+
+    updateConfiguration(OSDynamicCast(OSDictionary, getProperty("Configuration")));
+    return true;
 }
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
@@ -187,6 +188,7 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
                 if (OSDynamicCast(F11, func) || OSDynamicCast(F12, func)) {
                     IOLogDebug("Sending event %u to F11/F12: %u\n", type, argument);
                     messageClient(type, func, reinterpret_cast<void *>(argument));
+                    OSSafeReleaseNULL(iter);
                     return;
                 }
                 break;
@@ -198,6 +200,7 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
                 break;
         }
     }
+    OSSafeReleaseNULL(iter);
 }
 
 IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
@@ -243,7 +246,6 @@ void RMIBus::stop(IOService *provider) {
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         func->stop(this);
         func->detach(this);
-        func->release();
     }
     
     functions->flushCollection();
@@ -315,7 +317,7 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             IOLogError("Unknown function: %02X - Continuing to load\n", fn->fd.function_number);
             return 0;
     }
-    
+    function->conf = &conf;
     if (!function || !function->init(config)) {
 
         IOLogError("Could not initialize function: %02X\n", fn->fd.function_number);
@@ -350,11 +352,21 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
 }
 
 IOReturn RMIBus::setProperties(OSObject *properties) {
-    commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMIBus::setPropertiesGated), properties);
+    commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMIBus::updateConfiguration), OSDynamicCast(OSDictionary, properties));
     return kIOReturnSuccess;
 }
 
-void RMIBus::setPropertiesGated(OSObject* properties) {
-    messageClients(kHandleRMIProperties, reinterpret_cast<void *>(properties));
+void RMIBus::updateConfiguration(OSDictionary* dictionary) {
+    if (!dictionary)
+        return;
+
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &conf.trackstickMult);
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &conf.trackstickScrollXMult);
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &conf.trackstickScrollYMult);
+    Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &conf.trackstickDeadzone);
+    Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &conf.disableWhileTypingTimeout);
+    Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
+    Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
+    Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
     return;
 }

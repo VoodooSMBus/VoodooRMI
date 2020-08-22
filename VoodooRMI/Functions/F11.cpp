@@ -19,17 +19,12 @@ bool F11::init(OSDictionary *dictionary)
     if (!super::init())
         return false;
     
-    dev_controls_mutex = IOLockAlloc();
-    
-    OSObject *base = OSTypeAlloc(RMI2DSensor);
-    sensor = OSDynamicCast(RMI2DSensor, base);
-    base->release();
-
+    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
     if (!sensor || !sensor->init())
         return false;
 
     sensor->conf = conf;
-    return dev_controls_mutex;
+    return true;
 }
 
 bool F11::attach(IOService *provider)
@@ -85,7 +80,6 @@ void F11::stop(IOService *provider)
 void F11::free()
 {
     clearDesc();
-    IOLockFree(dev_controls_mutex);
     OSSafeReleaseNULL(sensor);
     super::free();
 }

@@ -17,14 +17,16 @@
 #include "VoodooI2CDeviceNub.hpp"
 #include <IOKit/IOTimerEventSource.h>
 
-#define RMI_MOUSE_REPORT_ID        0x01 /* Mouse emulation Report */
-#define RMI_WRITE_REPORT_ID        0x09 /* Output Report */
-#define RMI_READ_ADDR_REPORT_ID        0x0a /* Output Report */
-#define RMI_READ_DATA_REPORT_ID        0x0b /* Input Report */
-#define RMI_ATTN_REPORT_ID        0x0c /* Input Report */
-#define RMI_SET_RMI_MODE_REPORT_ID    0x0f /* Feature Report */
+#define SYNAPTICS_VENDOR_ID         0x6cb
 
-#define RMI_PAGE_SELECT_REGISTER 0xff
+#define RMI_MOUSE_REPORT_ID         0x01 /* Mouse emulation Report */
+#define RMI_WRITE_REPORT_ID         0x09 /* Output Report */
+#define RMI_READ_ADDR_REPORT_ID     0x0a /* Output Report */
+#define RMI_READ_DATA_REPORT_ID     0x0b /* Input Report */
+#define RMI_ATTN_REPORT_ID          0x0c /* Input Report */
+#define RMI_SET_RMI_MODE_REPORT_ID  0x0f /* Feature Report */
+
+#define RMI_PAGE_SELECT_REGISTER    0xff
 #define RMI_I2C_PAGE(addr) (((addr) >> 8) & 0xff)
 
 // fallback when HID descriptor is not available

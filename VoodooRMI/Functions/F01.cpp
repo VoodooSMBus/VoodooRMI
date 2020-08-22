@@ -203,34 +203,55 @@ void F01::free()
 
 void F01::publishProps()
 {
-    deviceDict = OSDictionary::withCapacity(3);
+    OSDictionary *deviceDict = OSDictionary::withCapacity(3);
     if (!deviceDict) return;
-    deviceDict->setObject("Doze Interval", OSNumber::withNumber(device_control->doze_interval, 8));
-    deviceDict->setObject("Doze Holdoff", OSNumber::withNumber(device_control->doze_holdoff, 8));
-    deviceDict->setObject("Wakeup Threshold", OSNumber::withNumber(device_control->wakeup_threshold, 8));
+    OSNumber *value;
+    value = OSNumber::withNumber(device_control->doze_interval, 8);
+    deviceDict->setObject("Doze Interval", value);
+    value->release();
+    value = OSNumber::withNumber(device_control->doze_holdoff, 8);
+    deviceDict->setObject("Doze Holdoff", value);
+    value->release();
+    value = OSNumber::withNumber(device_control->wakeup_threshold, 8);
+    deviceDict->setObject("Wakeup Threshold", value);
+    value->release();
 
     setProperty("Power Properties", deviceDict);
+    deviceDict->release();
 
-    propDict = OSDictionary::withCapacity(9);
+    OSDictionary *propDict = OSDictionary::withCapacity(9);
     if (!propDict) return;
-    propDict->setObject("Manufacturer ID", OSNumber::withNumber(properties->manufacturer_id, 8));
-    propDict->setObject("Has LTS", OSBoolean::withBoolean(properties->has_lts));
-    propDict->setObject("Has Adjustable Doze", OSBoolean::withBoolean(properties->has_adjustable_doze));
-    propDict->setObject("Has Adjustable Doze Holdoff", OSBoolean::withBoolean(properties->has_adjustable_doze_holdoff));
+    value = OSNumber::withNumber(properties->manufacturer_id, 8);
+    propDict->setObject("Manufacturer ID", value);
+    value->release();
+    propDict->setObject("Has LTS", properties->has_lts ? kOSBooleanTrue : kOSBooleanFalse);
+    propDict->setObject("Has Adjustable Doze", properties->has_adjustable_doze ? kOSBooleanTrue : kOSBooleanFalse);
+    propDict->setObject("Has Adjustable Doze Holdoff", properties->has_adjustable_doze_holdoff ? kOSBooleanTrue : kOSBooleanFalse);
     
     OSString* dom = OSString::withCString(properties->dom);
-    if (dom)
+    if (dom) {
         propDict->setObject("Date of Manufacture", dom);
+        dom->release();
+    }
 
     // It's null terminated and u8 is a byte, so I guess it's a string?
     OSString* prodID = OSString::withCString(reinterpret_cast<const char*>(properties->product_id));
-    if (prodID)
+    if (prodID) {
         propDict->setObject("Product ID", prodID);
-    propDict->setObject("Product Info", OSNumber::withNumber(properties->productinfo, 16));
-    propDict->setObject("Firmware ID", OSNumber::withNumber(properties->firmware_id, 32));
-    propDict->setObject("Package ID", OSNumber::withNumber(properties->package_id, 32));
+        prodID->release();
+    }
+    value = OSNumber::withNumber(properties->productinfo, 8);
+    propDict->setObject("Product Info", value);
+    value->release();
+    value = OSNumber::withNumber(properties->firmware_id, 8);
+    propDict->setObject("Firmware ID", value);
+    value->release();
+    value = OSNumber::withNumber(properties->package_id, 8);
+    propDict->setObject("Package ID", value);
+    value->release();
 
     setProperty("Device Properties", propDict);
+    propDict->release();
 }
 
 int F01::rmi_f01_config()

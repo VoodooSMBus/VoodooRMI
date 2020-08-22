@@ -280,23 +280,22 @@ int RMIBus::reset()
 }
 
 int RMIBus::rmi_register_function(rmi_function *fn) {
-    RMIFunction * function;
-    
+    OSObject *base = nullptr;
     switch(fn->fd.function_number) {
         case 0x01: /* device control */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F01));
+            base = OSTypeAlloc(F01);
             break;
         case 0x03: /* PS/2 pass-through */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F03));
+            base = OSTypeAlloc(F03);
             break;
         case 0x11: /* multifinger pointing */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
+            base = OSTypeAlloc(F11);
             break;
         case 0x12: /* multifinger pointing */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
+            base = OSTypeAlloc(F12);
             break;
         case 0x30: /* GPIO and LED controls */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
+            base = OSTypeAlloc(F30);
             break;
 //        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */
@@ -317,11 +316,13 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             IOLogError("Unknown function: %02X - Continuing to load\n", fn->fd.function_number);
             return 0;
     }
-    function->conf = &conf;
-    if (!function || !function->init(config)) {
 
+    RMIFunction *function = OSDynamicCast(RMIFunction, base);
+    OSSafeReleaseNULL(base);
+
+    function->conf = &conf;
+    if (!function || !function->init()) {
         IOLogError("Could not initialize function: %02X\n", fn->fd.function_number);
-        OSSafeReleaseNULL(function);
         return -ENODEV;
     }
     
@@ -343,7 +344,6 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     
     if (!function->attach(this)) {
         IOLogError("Function %02X could not attach\n", fn->fd.function_number);
-        OSSafeReleaseNULL(function);
         return -ENODEV;
     }
     

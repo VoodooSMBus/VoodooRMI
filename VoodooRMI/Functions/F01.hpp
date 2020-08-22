@@ -157,8 +157,6 @@ private:
     int rmi_f01_suspend();
     int rmi_f01_resume();
     void rmi_f01_attention();
-    
-    OSDictionary *deviceDict, *propDict;
 };
 
 #endif /* F01_hpp */

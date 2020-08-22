@@ -509,14 +509,6 @@ public:
     
 private:
     RMIBus *rmiBus;
-    OSDictionary *absProps;
-    OSDictionary *gestProps;
-    OSDictionary *penProps;
-    OSDictionary *tuningProps;
-    OSDictionary *tuningProps2;
-    OSDictionary *jitterProps;
-    OSDictionary *miscProps;
-    OSDictionary *sizeProps;
     
     RMI2DSensorReport report {};
     

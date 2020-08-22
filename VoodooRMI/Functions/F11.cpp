@@ -303,17 +303,13 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         query_size++;
         
         OSDictionary *absProps = OSDictionary::withCapacity(7);
-
-        value = OSNumber::withNumber(sensor_query->abs_data_size, 8);
-        absProps->setObject("Absolute Data Size", value);
-        value->release();
+        setPropertyNumber(absProps, "Absolute Data Size", sensor_query->abs_data_size, 8);
         setPropertyBoolean(absProps, "Has Anchored Finger", sensor_query->has_anchored_finger);
         setPropertyBoolean(absProps, "Has Adjustable Hyst", sensor_query->has_adj_hyst);
         setPropertyBoolean(absProps, "Has Dribble", sensor_query->has_dribble);
         setPropertyBoolean(absProps, "Has Bending Correction", sensor_query->has_bending_correction);
         setPropertyBoolean(absProps, "Has Large Object Suppression", sensor_query->has_large_object_suppression);
         setPropertyBoolean(absProps, "Has Jitter Filter", sensor_query->has_jitter_filter);
-        
         setProperty("Absolute Keys", absProps);
         absProps->release();
     }
@@ -379,7 +375,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         setPropertyBoolean(gestProps, "Has Press", sensor_query->has_press);
         setPropertyBoolean(gestProps, "Has Pinch", sensor_query->has_pinch);
         setPropertyBoolean(gestProps, "Has Chiral", sensor_query->has_chiral);
- 
+
         setPropertyBoolean(gestProps, "Has Palm Detection", sensor_query->has_palm_det);
         setPropertyBoolean(gestProps, "Has Rotate", sensor_query->has_rotate);
         setPropertyBoolean(gestProps, "Has Touch Shapes", sensor_query->has_touch_shapes);
@@ -425,7 +421,6 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         setPropertyBoolean(penProps, "Has Contact Geometry", sensor_query->has_contact_geometry);
         setPropertyBoolean(penProps, "Has Pen Hover Discrimination", sensor_query->has_pen_hover_discrimination);
         setPropertyBoolean(penProps, "Has Pen Filters", sensor_query->has_pen_filters);
-        
         setProperty("Pen", penProps);
         penProps->release();
         
@@ -469,7 +464,6 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
             !!(query_buf[0] & RMI_F11_HAS_DRUMMING_FILTER);
         
         OSDictionary *tuningProps = OSDictionary::withCapacity(8);
-
         setPropertyBoolean(tuningProps, "Has Z Tuning", sensor_query->has_z_tuning);
         setPropertyBoolean(tuningProps, "Has Algorithm Selection", sensor_query->has_algorithm_selection);
         setPropertyBoolean(tuningProps, "Has Width Tuning", sensor_query->has_w_tuning);
@@ -506,7 +500,6 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
             !!(query_buf[0] & RMI_F11_HAS_LINEAR_COEFF);
         
         OSDictionary *tuningProps2 = OSDictionary::withCapacity(8);
-
         setPropertyBoolean(tuningProps2, "Has Gapless Finger", sensor_query->has_gapless_finger);
         setPropertyBoolean(tuningProps2, "Has Gapless Finger Tuning", sensor_query->has_gapless_finger_tuning);
         setPropertyBoolean(tuningProps2, "Has 8 Bit Width", sensor_query->has_8bit_w);
@@ -532,13 +525,8 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
                                             RMI_F11_JITTER_FILTER_SHIFT;
         
         OSDictionary *jitterProps = OSDictionary::withCapacity(2);
-
-        value = OSNumber::withNumber(sensor_query->jitter_window_size, 8);
-        jitterProps->setObject("Jitter Window Size", value);
-        value->release();
-        value = OSNumber::withNumber(sensor_query->jitter_filter_type, 8);
-        jitterProps->setObject("Jitter Filter Type", value);
-        value->release();
+        setPropertyNumber(jitterProps, "Jitter Window Size", sensor_query->jitter_window_size, 8);
+        setPropertyNumber(jitterProps, "Jitter Filter Type", sensor_query->jitter_filter_type, 8);
         setProperty("Jitter", jitterProps);
         jitterProps->release();
         query_size++;
@@ -563,16 +551,9 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
             !!(query_buf[0] & RMI_F11_HAS_ADVANCED_GESTURES);
     
         OSDictionary *miscProps = OSDictionary::withCapacity(5);
-
-        value = OSNumber::withNumber(sensor_query->light_control, 8);
-        miscProps->setObject("Light Control", value);
-        value->release();
-        value = OSNumber::withNumber(sensor_query->clickpad_props, 8);
-        miscProps->setObject("Clickpad Properties", value);
-        value->release();
-        value = OSNumber::withNumber(sensor_query->mouse_buttons, 8);
-        miscProps->setObject("Mouse Buttons", value);
-        value->release();
+        setPropertyNumber(miscProps, "Light Control", sensor_query->light_control, 8);
+        setPropertyNumber(miscProps, "Clickpad Properties", sensor_query->clickpad_props, 8);
+        setPropertyNumber(miscProps, "Mouse Buttons", sensor_query->mouse_buttons, 8);
         setPropertyBoolean(miscProps, "Is Clear", sensor_query->is_clear);
         setPropertyBoolean(miscProps, "Has Advanced Gestures", sensor_query->has_advanced_gestures);
         setProperty("Misc", miscProps);
@@ -592,13 +573,8 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
             (query_buf[2] | (query_buf[3] << 8)) / 10;
         
         OSDictionary *sizeProps = OSDictionary::withCapacity(2);
-
-        value = OSNumber::withNumber(sensor_query->x_sensor_size_mm, 16);
-        sizeProps->setObject("X Sensor Size (mm)", value);
-        value->release();
-        value = OSNumber::withNumber(sensor_query->y_sensor_size_mm, 16);
-        sizeProps->setObject("Y Sensor Size (mm)", value);
-        value->release();
+        setPropertyNumber(sizeProps, "X Sensor Size (mm)", sensor_query->x_sensor_size_mm, 16);
+        setPropertyNumber(sizeProps, "Y Sensor Size (mm)", sensor_query->y_sensor_size_mm, 16);
         setProperty("Size", sizeProps);
         sizeProps->release();
         /*

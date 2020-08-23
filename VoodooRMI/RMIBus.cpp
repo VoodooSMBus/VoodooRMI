@@ -284,19 +284,19 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
 
     switch(fn->fd.function_number) {
         case 0x01: /* device control */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F01));
+            function = OSTypeAlloc(F01);
             break;
         case 0x03: /* PS/2 pass-through */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F03));
+            function = OSTypeAlloc(F03);
             break;
         case 0x11: /* multifinger pointing */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
+            function = OSTypeAlloc(F11);
             break;
         case 0x12: /* multifinger pointing */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
+            function = OSTypeAlloc(F12);
             break;
         case 0x30: /* GPIO and LED controls */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
+            function = OSTypeAlloc(F30);
             break;
 //        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */

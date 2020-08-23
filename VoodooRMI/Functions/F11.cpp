@@ -19,7 +19,7 @@ bool F11::init(OSDictionary *dictionary)
     if (!super::init())
         return false;
     
-    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
+    sensor = OSTypeAlloc(RMI2DSensor);
     if (!sensor || !sensor->init())
         return false;
 

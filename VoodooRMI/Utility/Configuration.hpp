@@ -12,10 +12,27 @@
 #include <IOKit/IOService.h>
 #include <IOKit/IOLib.h>
 
-#define setPropertyBoolean(dict, name, boolean) dict->setObject(name, boolean ? kOSBooleanTrue : kOSBooleanFalse)
+#define setPropertyBoolean(dict, name, boolean) \
+    do { dict->setObject(name, boolean ? kOSBooleanTrue : kOSBooleanFalse); } while (0)
+
 // define a OSNumber(OSObject) *value before use
-#define setPropertyNumber(dict, name, number, bits) value = OSNumber::withNumber(number, bits); if (value != nullptr) {dict->setObject(name, value); value->release();}
-#define setPropertyString(dict, name, str) value = OSString::withCString(str); if (value != nullptr) {dict->setObject(name, value); value->release();}
+#define setPropertyNumber(dict, name, number, bits) \
+    do { \
+        value = OSNumber::withNumber(number, bits); \
+        if (value != nullptr) { \
+            dict->setObject(name, value); \
+            value->release(); \
+        } \
+    } while (0)
+
+#define setPropertyString(dict, name, str) \
+    do { \
+        value = OSString::withCString(str); \
+        if (value != nullptr) { \
+            dict->setObject(name, value); \
+            value->release(); \
+        } \
+    } while (0)
 
 class Configuration {
     

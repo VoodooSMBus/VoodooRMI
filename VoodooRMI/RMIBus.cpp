@@ -318,13 +318,14 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             return 0;
     }
 
-    function->conf = &conf;
     if (!function || !function->init()) {
         IOLogError("Could not initialize function: %02X\n", fn->fd.function_number);
         OSSafeReleaseNULL(function);
         return -ENODEV;
     }
-    
+
+    function->conf = &conf;
+
     // Duplicate to store in function
     rmi_function_descriptor* desc =
         reinterpret_cast<rmi_function_descriptor*>(IOMalloc(sizeof(rmi_function_descriptor)));

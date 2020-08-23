@@ -21,7 +21,6 @@ bool F12::init(OSDictionary *dictionary)
     if (!sensor || !sensor->init())
         return false;
 
-    sensor->conf = conf;
     return true;
 }
 
@@ -32,7 +31,9 @@ bool F12::attach(IOService *provider)
     u16 query_addr = fn_descriptor->query_base_addr;
     const rmi_register_desc_item *item;
     u16 data_offset = 0;
-    
+
+    sensor->conf = conf;
+
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
         IOLogError("F12: Provider is not RMIBus\n");

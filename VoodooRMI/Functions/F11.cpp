@@ -23,14 +23,15 @@ bool F11::init(OSDictionary *dictionary)
     if (!sensor || !sensor->init())
         return false;
 
-    sensor->conf = conf;
     return true;
 }
 
 bool F11::attach(IOService *provider)
 {
     int error;
-    
+
+    sensor->conf = conf;
+
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
         IOLogError("F11: Provider is not RMIBus\n");

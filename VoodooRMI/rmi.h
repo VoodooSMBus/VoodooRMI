@@ -15,14 +15,6 @@
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? (-x) : (x))
 
-#define IOLogError(arg...) do { IOLog("Error: " arg); } while(0)
-
-#ifdef DEBUG
-#define IOLogDebug(arg...) do { IOLog("Debug: " arg); } while(0)
-#else
-#define IOLogDebug(arg...)
-#endif // DEBUG
-
 #define DEFAULT_MULT 20
 #define MILLI_TO_NANO 1000000
 

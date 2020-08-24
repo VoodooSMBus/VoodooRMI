@@ -359,33 +359,31 @@ IOReturn RMIBus::setProperties(OSObject *properties) {
 }
 
 void RMIBus::updateConfiguration(OSDictionary* dictionary) {
-    IOLogDebug("Updating Configuration");
     if (!dictionary)
         return;
 
-    Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &conf.trackstickMult);
-    Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &conf.trackstickScrollXMult);
-    Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &conf.trackstickScrollYMult);
-    Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &conf.trackstickDeadzone);
-    Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &conf.disableWhileTypingTimeout);
-    Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
-    Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
-    Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
-    
-    OSDictionary *currentConfig = OSDynamicCast(OSDictionary, getProperty("Configuration"));
-    if (!currentConfig)
-        return;
-    
-    OSDictionary *newConfig = OSDictionary::withDictionary(currentConfig);
-    if (!newConfig)
-        return;
-    
-    if (!newConfig->merge(dictionary)) {
-        IOLogError("Failed to merge dictionary");
+    bool update = false;
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &conf.trackstickMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &conf.trackstickScrollXMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &conf.trackstickScrollYMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &conf.trackstickDeadzone);
+    update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &conf.disableWhileTypingTimeout);
+    update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
+    update |= Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
+    update |= Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
+
+    if (update) {
+        IOLogDebug("Updating Configuration\n");
+        OSDictionary *currentConfig = nullptr;
+        OSDictionary *newConfig = nullptr;
+        if ((currentConfig = OSDynamicCast(OSDictionary, getProperty("Configuration"))) &&
+            (newConfig = OSDictionary::withDictionary(currentConfig)) &&
+            (newConfig->merge(dictionary)))
+            setProperty("Configuration", newConfig);
+        else
+            IOLogError("Failed to merge dictionary\n");
         OSSafeReleaseNULL(newConfig);
-        return;
+    } else {
+        IOLogError("Invalid Configuration\n");
     }
-    
-    setProperty("Configuration", newConfig);
-    OSSafeReleaseNULL(newConfig);
 }

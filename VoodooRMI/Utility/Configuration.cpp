@@ -10,40 +10,31 @@
 
 
 bool Configuration::loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool *defaultValue) {
-    if (!dict) return false;
-    
-    OSBoolean* value = OSDynamicCast(OSBoolean, dict->getObject(configurationKey));
-    if (value != nullptr) {
-        IOLog("RMI configuration %s loaded: %x", configurationKey, value->getValue());
-        *defaultValue = value->getValue();
-        return true;
-    }
-    
-    return false;
+    OSBoolean* value;
+    if (!dict || nullptr == (value = OSDynamicCast(OSBoolean, dict->getObject(configurationKey))))
+        return false;
+
+    IOLogDebug("RMI configuration %s loaded: %x -> %x\n", configurationKey, *defaultValue, value->getValue());
+    *defaultValue = value->getValue();
+    return true;
 }
 
 bool Configuration::loadUInt64Configuration(OSDictionary *dict, const char* configurationKey, UInt64 *defaultValue) {
-    if (!dict) return false;
-    
-    OSNumber* value = OSDynamicCast(OSNumber, dict->getObject(configurationKey));
-    if (value != nullptr) {
-        IOLog("RMI configuration %s loaded: %llx", configurationKey, value->unsigned64BitValue());
-        *defaultValue = value->unsigned64BitValue();
-        return true;
-    }
-    
-    return false;
+    OSNumber* value;
+    if (!dict || nullptr == (value = OSDynamicCast(OSNumber, dict->getObject(configurationKey))))
+        return false;
+
+    IOLogDebug("RMI configuration %s loaded: %llx -> %llx\n", configurationKey, *defaultValue, value->unsigned64BitValue());
+    *defaultValue = value->unsigned64BitValue();
+    return true;
 }
 
 bool Configuration::loadUInt32Configuration(OSDictionary *dict, const char* configurationKey, UInt32 *defaultValue) {
-    if (!dict) return false;
-    
-    OSNumber* value = OSDynamicCast(OSNumber, dict->getObject(configurationKey));
-    if (value != nullptr) {
-        IOLog("RMI configuration %s loaded: %x", configurationKey, value->unsigned32BitValue());
-        *defaultValue = value->unsigned32BitValue();
-        return true;
-    }
-    
-    return false;
+    OSNumber* value;
+    if (!dict || nullptr == (value = OSDynamicCast(OSNumber, dict->getObject(configurationKey))))
+        return false;
+
+    IOLogDebug("RMI configuration %s loaded: %x -> %x\n", configurationKey, *defaultValue, value->unsigned32BitValue());
+    *defaultValue = value->unsigned32BitValue();
+    return true;
 }

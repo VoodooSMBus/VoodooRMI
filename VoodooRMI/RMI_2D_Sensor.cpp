@@ -98,7 +98,7 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
     return  !touchpadEnable ||
-            (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MilliToNano;
+            (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO;
 }
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)

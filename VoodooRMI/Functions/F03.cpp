@@ -15,8 +15,6 @@
 OSDefineMetaClassAndStructors(F03, RMIFunction)
 #define super IOService
 
-#define MILLI_TO_NANO 1000000
-
 bool F03::attach(IOService *provider)
 {
     u8 bytes_per_device, query1;

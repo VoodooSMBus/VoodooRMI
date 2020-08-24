@@ -24,7 +24,7 @@
 #endif // DEBUG
 
 #define DEFAULT_MULT 20
-#define MilliToNano 1000000
+#define MILLI_TO_NANO 1000000
 
 // Message types defined by ApplePS2Keyboard
 enum {
@@ -128,16 +128,17 @@ struct __kfifo {
 };
 
 struct rmi_configuration {
-    // F03
+    /* F03 */
     uint32_t trackstickMult {DEFAULT_MULT};
     uint32_t trackstickScrollXMult {DEFAULT_MULT};
     uint32_t trackstickScrollYMult {DEFAULT_MULT};
     uint32_t trackstickDeadzone {1};
-    // RMI2DSensor
+    /* RMI2DSensor */
     bool forceTouchEmulation {true};
     uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
-    uint64_t disableWhileTypingTimeout {500 * MilliToNano};
+    // Time units are in milliseconds
+    uint64_t disableWhileTypingTimeout {500};
 };
 
 /*

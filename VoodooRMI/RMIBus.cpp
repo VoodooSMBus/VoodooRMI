@@ -359,6 +359,7 @@ IOReturn RMIBus::setProperties(OSObject *properties) {
 }
 
 void RMIBus::updateConfiguration(OSDictionary* dictionary) {
+    IOLogDebug("Updating Configuration");
     if (!dictionary)
         return;
 
@@ -370,5 +371,21 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
     Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
     Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
     Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
-    return;
+    
+    OSDictionary *currentConfig = OSDynamicCast(OSDictionary, getProperty("Configuration"));
+    if (!currentConfig)
+        return;
+    
+    OSDictionary *newConfig = OSDictionary::withDictionary(currentConfig);
+    if (!newConfig)
+        return;
+    
+    if (!newConfig->merge(dictionary)) {
+        IOLogError("Failed to merge dictionary");
+        OSSafeReleaseNULL(newConfig);
+        return;
+    }
+    
+    setProperty("Configuration", newConfig);
+    OSSafeReleaseNULL(newConfig);
 }

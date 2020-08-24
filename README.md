@@ -103,6 +103,9 @@ The values below can be edited under Info.plist within the kext itself - these c
 | `TrackstickDeadzone` | 1 | Minimum value at which trackstick reports will be accepted. This is subtracted from the input of the trackstick, so setting this extremely high will reduce trackstick resolution |
 | `MinYDiffThumbDetection` | 200 | Minimum distance between the second lowest and lowest finger in which Minimum Y logic is used to detect the thumb rather than using the z value from the trackpad. Setting this higher means that the thumb must be farther from the other fingers before the y coordinate is used to detect the thumb, rather than using finger area. Keeping this smaller is preferable as finger area logic seems to only be useful when all 4 fingers are grouped together closely, where the thumb is more likely to be pressing down more |
 
+Note that you can use Rehabman's ioio to set properties temporarily (until the next reboot).  
+`ioio -s RMIBus ForceTouchEmulation false`
+
 ## Building
 1) `git submodule update --init --recursive`
 2) Build within XCode

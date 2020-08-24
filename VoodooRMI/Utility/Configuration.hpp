@@ -12,12 +12,34 @@
 #include <IOKit/IOService.h>
 #include <IOKit/IOLib.h>
 
+#define setPropertyBoolean(dict, name, boolean) \
+    do { dict->setObject(name, boolean ? kOSBooleanTrue : kOSBooleanFalse); } while (0)
+
+// define a OSNumber(OSObject) *value before use
+#define setPropertyNumber(dict, name, number, bits) \
+    do { \
+        value = OSNumber::withNumber(number, bits); \
+        if (value != nullptr) { \
+            dict->setObject(name, value); \
+            value->release(); \
+        } \
+    } while (0)
+
+#define setPropertyString(dict, name, str) \
+    do { \
+        value = OSString::withCString(str); \
+        if (value != nullptr) { \
+            dict->setObject(name, value); \
+            value->release(); \
+        } \
+    } while (0)
+
 class Configuration {
     
 public:
-    static bool loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool defaultValue);
-    static UInt32 loadUInt32Configuration(OSDictionary *dict, const char *configurationKey, UInt32 defaultValue);
-    static UInt64 loadUInt64Configuration(OSDictionary *dict, const char* configurationKey, UInt64 defaultValue);
+    static bool loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool *defaultValue);
+    static bool loadUInt32Configuration(OSDictionary *dict, const char *configurationKey, UInt32 *defaultValue);
+    static bool loadUInt64Configuration(OSDictionary *dict, const char* configurationKey, UInt64 *defaultValue);
     
 private:
     Configuration() {}

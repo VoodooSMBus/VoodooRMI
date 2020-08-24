@@ -76,7 +76,8 @@ public:
     
     u8 nbr_fingers;
     
-    bool init(OSDictionary *dictionary) override;
+    rmi_configuration *conf;
+
     bool start(IOService *provider) override;
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
     void handleClose(IOService *forClient, IOOptionBits options) override;
@@ -95,11 +96,8 @@ private:
     bool clickpadState {false};
     bool pressureLock {false};
     bool touchpadEnable {true};
-    bool forceTouchEmulation {true};
-    u8 forceTouchMinPressure {80};
-    uint32_t minYDiffGesture {200};
-    
-    uint64_t disableWhileTypingTimeout, lastKeyboardTS;
+
+    uint64_t lastKeyboardTS;
 
     MT2FingerType getFingerType();
     void setThumbFingerType(int fingers, RMI2DSensorReport *report);

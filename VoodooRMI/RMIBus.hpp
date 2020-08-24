@@ -13,6 +13,7 @@ class RMIFunction;
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
 #include <IOKit/IOMessage.h>
+#include <IOKit/IOCommandGate.h>
 #include "LinuxCompat.h"
 #include "RMITransport.hpp"
 #include "rmi.h"
@@ -37,8 +38,9 @@ public:
     virtual void free() override;
     IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
     
-    inline IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-    
+    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    IOReturn setProperties(OSObject* properties) override;
+
     rmi_driver_data *data;
     RMITransport *transport;
     bool awake {true};
@@ -66,7 +68,12 @@ public:
     int rmi_register_function(rmi_function* fn);
     int reset();
 private:
-    OSDictionary *config;
+    IOWorkLoop *workLoop {nullptr};
+    IOCommandGate *commandGate {nullptr};
+
+    void updateConfiguration(OSDictionary *dictionary);
+    rmi_configuration conf {};
+
     void handleHostNotify();
     void handleHostNotifyLegacy();
 };

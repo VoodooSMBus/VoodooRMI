@@ -65,14 +65,7 @@ private:
     RMIBus *rmiBus;
     IOService *voodooInputInstance {nullptr};
     
-    bool pressureLock {false};
-    bool touchpadEnable {true};
-    bool forceTouchEmulation {true};
-    u8 forceTouchMinPressure {80};
-    
     RMI2DSensorReport report {};
-    
-    uint64_t disableWhileTypingTimeout, lastKeyboardTS;
     
     static rmi_register_desc_item *rmi_get_register_desc_item(rmi_register_descriptor *rdesc, u16 reg);
     static size_t rmi_register_desc_calc_size(rmi_register_descriptor *rdesc);

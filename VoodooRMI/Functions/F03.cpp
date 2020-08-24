@@ -17,18 +17,6 @@ OSDefineMetaClassAndStructors(F03, RMIFunction)
 
 #define MILLI_TO_NANO 1000000
 
-bool F03::init(OSDictionary *dictionary)
-{
-    if (!super::init())
-        return false;
-    trackstickMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", DEFAULT_MULT);
-    trackstickScrollXMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", DEFAULT_MULT);
-    trackstickScrollYMult = Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", DEFAULT_MULT);
-    trackstickDeadzone = Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", 1);
-    
-    return true;
-}
-
 bool F03::attach(IOService *provider)
 {
     u8 bytes_per_device, query1;
@@ -173,8 +161,8 @@ void F03::handlePacket(u8 *packet)
     // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
     
-    dx -= signum(dx) * min(abs(dx), trackstickDeadzone);
-    dy -= signum(dy) * min(abs(dy), trackstickDeadzone);
+    dx -= signum(dx) * min(abs(dx), conf->trackstickDeadzone);
+    dy -= signum(dy) * min(abs(dy), conf->trackstickDeadzone);
     
     // For middle button, we do not actually tell macOS it's been pressed until it's been released and we didn't scroll
     // We first say that it's been pressed internally - but if we scroll at all, then instead we say we scroll
@@ -202,16 +190,16 @@ void F03::handlePacket(u8 *packet)
     
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {
-        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * trackstickScrollYMult / DEFAULT_MULT);
-        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * trackstickScrollXMult / DEFAULT_MULT);
+        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackstickScrollYMult / DEFAULT_MULT);
+        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackstickScrollXMult / DEFAULT_MULT);
         scrollEvent.deltaAxis3 = 0;
         scrollEvent.timestamp = timestamp;
         
         messageClient(kIOMessageVoodooTrackpointScrollWheel, voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
     } else {
         relativeEvent.buttons = buttons;
-        relativeEvent.dx = (SInt32)((SInt64)dx * trackstickMult / DEFAULT_MULT);
-        relativeEvent.dy = (SInt32)((SInt64)dy * trackstickMult / DEFAULT_MULT);
+        relativeEvent.dx = (SInt32)((SInt64)dx * conf->trackstickMult / DEFAULT_MULT);
+        relativeEvent.dy = (SInt32)((SInt64)dy * conf->trackstickMult / DEFAULT_MULT);
         relativeEvent.timestamp = timestamp;
         
         messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
@@ -317,11 +305,11 @@ void F03::initPS2()
     
     IOLog("Got [%x, %x]\n", param[0], param[1]);
     if (param[0] < TP_VARIANT_IBM || param[0] > TP_VARIANT_NXP) {
-        setProperty("Vendor", OSString::withCString("Invalid Vendor"));
-        setProperty("Firmware ID", OSString::withCString("Invalid Firmware ID"));
+        setProperty("Vendor", "Invalid Vendor");
+        setProperty("Firmware ID", "Invalid Firmware ID");
     } else {
         vendor = param[0];
-        setProperty("Vendor", OSString::withCString(trackpoint_variants[param[0]]));
+        setProperty("Vendor", trackpoint_variants[param[0]]);
         setProperty("Firmware ID", param[1], 8);
     }
     

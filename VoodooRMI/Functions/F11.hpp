@@ -509,14 +509,6 @@ public:
     
 private:
     RMIBus *rmiBus;
-    OSDictionary *absProps;
-    OSDictionary *gestProps;
-    OSDictionary *penProps;
-    OSDictionary *tuningProps;
-    OSDictionary *tuningProps2;
-    OSDictionary *jitterProps;
-    OSDictionary *miscProps;
-    OSDictionary *sizeProps;
     
     RMI2DSensorReport report {};
     
@@ -539,7 +531,6 @@ private:
     bool has_query28;
     bool has_acm;
     struct f11_2d_ctrl dev_controls;
-    IOLock *dev_controls_mutex;
     u16 rezero_wait_ms;
     RMI2DSensor *sensor;
     struct f11_2d_sensor_queries sens_query;

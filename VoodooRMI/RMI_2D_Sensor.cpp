@@ -12,20 +12,6 @@
 OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 #define super IOService
 
-#define MilliToNano 1000000
-
-bool RMI2DSensor::init(OSDictionary *dictionary)
-{
-    disableWhileTypingTimeout =
-        Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", 500) * MilliToNano;
-    forceTouchMinPressure =
-        Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
-    forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
-    minYDiffGesture = Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", 200);
-    
-    return super::init();
-}
-
 bool RMI2DSensor::start(IOService *provider)
 {
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, max_x, 16);
@@ -92,7 +78,6 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             clock_get_uptime(&timestamp);
             absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
             break;
-            
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:
             lastKeyboardTS = *((uint64_t*) argument);
@@ -113,7 +98,7 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
     return  !touchpadEnable ||
-            (timestamp - lastKeyboardTS) < disableWhileTypingTimeout;
+            (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MilliToNano;
 }
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
@@ -156,7 +141,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                 transducer.currentCoordinates = transducer.previousCoordinates;
             }
             
-            if (clickpadState && forceTouchEmulation && obj.z > forceTouchMinPressure)
+            if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
@@ -238,7 +223,7 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
         }
     }
     
-    if (minY - secondLowest < minYDiffGesture || greatestFingerIndex == -1) {
+    if (minY - secondLowest < conf->minYDiffGesture || greatestFingerIndex == -1) {
 //        IOLogDebug("Second Lowest: %u Lowest: %u\n", secondLowest, minY);
         
         lowestFingerIndex = greatestFingerIndex;

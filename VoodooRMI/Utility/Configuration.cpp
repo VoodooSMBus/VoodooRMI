@@ -9,35 +9,41 @@
 #include "Configuration.hpp"
 
 
-bool Configuration::loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool defaultValue) {
-    if (!dict) return defaultValue;
+bool Configuration::loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool *defaultValue) {
+    if (!dict) return false;
     
     OSBoolean* value = OSDynamicCast(OSBoolean, dict->getObject(configurationKey));
     if (value != nullptr) {
-        return value->getValue();
+        IOLog("RMI configuration %s loaded: %x", configurationKey, value->getValue());
+        *defaultValue = value->getValue();
+        return true;
     }
     
-    return defaultValue;
+    return false;
 }
 
-UInt64 Configuration::loadUInt64Configuration(OSDictionary *dict, const char* configurationKey, UInt64 defaultValue) {
-    if (!dict) return defaultValue;
+bool Configuration::loadUInt64Configuration(OSDictionary *dict, const char* configurationKey, UInt64 *defaultValue) {
+    if (!dict) return false;
     
     OSNumber* value = OSDynamicCast(OSNumber, dict->getObject(configurationKey));
     if (value != nullptr) {
-        return value->unsigned64BitValue();
+        IOLog("RMI configuration %s loaded: %llx", configurationKey, value->unsigned64BitValue());
+        *defaultValue = value->unsigned64BitValue();
+        return true;
     }
     
-    return defaultValue;
+    return false;
 }
 
-UInt32 Configuration::loadUInt32Configuration(OSDictionary *dict, const char* configurationKey, UInt32 defaultValue) {
-    if (!dict) return defaultValue;
+bool Configuration::loadUInt32Configuration(OSDictionary *dict, const char* configurationKey, UInt32 *defaultValue) {
+    if (!dict) return false;
     
     OSNumber* value = OSDynamicCast(OSNumber, dict->getObject(configurationKey));
     if (value != nullptr) {
-        return value->unsigned32BitValue();
+        IOLog("RMI configuration %s loaded: %x", configurationKey, value->unsigned32BitValue());
+        *defaultValue = value->unsigned32BitValue();
+        return true;
     }
     
-    return defaultValue;
+    return false;
 }

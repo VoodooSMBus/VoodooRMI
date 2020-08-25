@@ -12,13 +12,6 @@
 OSDefineMetaClassAndStructors(F30, RMIFunction)
 #define super IOService
 
-// Make sure Configuration values don't show up in IOReg
-// Doesn't change any sort of functionality otherwise
-bool F30::init(OSDictionary *dict)
-{
-    return super::init();
-}
-
 bool F30::attach(IOService *provider)
 {
     rmiBus = OSDynamicCast(RMIBus, provider);
@@ -120,21 +113,17 @@ int F30::rmi_f30_initialize()
     gpioled_count = buf[1] & RMI_F30_GPIO_LED_COUNT;
     
     register_count = DIV_ROUND_UP(gpioled_count, 8);
-    
+    OSNumber *value;
     OSDictionary * attribute = OSDictionary::withCapacity(9);
-    attribute->setObject("extended_pattern", has_extended_pattern ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("mappable_buttons", has_mappable_buttons ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("led", has_led ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("gpio", has_gpio ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("haptic", has_haptic ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("gpio_driver_control", has_gpio_driver_control ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("mech_mouse_btns", has_mech_mouse_btns ? kOSBooleanTrue : kOSBooleanFalse);
-    OSNumber *count = OSNumber::withNumber(gpioled_count, 8);
-    attribute->setObject("gpioled_count", count);
-    OSSafeReleaseNULL(count);
-    count = OSNumber::withNumber(register_count, 8);
-    attribute->setObject("register_count", count);
-    OSSafeReleaseNULL(count);
+    setPropertyBoolean(attribute, "extended_pattern", has_extended_pattern);
+    setPropertyBoolean(attribute, "mappable_buttons", has_mappable_buttons);
+    setPropertyBoolean(attribute, "led", has_led);
+    setPropertyBoolean(attribute, "gpio", has_gpio);
+    setPropertyBoolean(attribute, "haptic", has_haptic);
+    setPropertyBoolean(attribute, "gpio_driver_control", has_gpio_driver_control);
+    setPropertyBoolean(attribute, "mech_mouse_btns", has_mech_mouse_btns);
+    setPropertyNumber(attribute, "gpioled_count", gpioled_count, 8);
+    setPropertyNumber(attribute, "register_count", register_count, 8);
     setProperty("Attibute", attribute);
     OSSafeReleaseNULL(attribute);
 
@@ -246,8 +235,8 @@ int F30::rmi_f30_map_gpios()
     // Trackstick buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
     // Generally I've found it more common for them to come through PS2
     hasTrackstickButtons = trackstick_button != BTN_LEFT;
-    setProperty("Trackstick Buttons through F30", OSBoolean::withBoolean(hasTrackstickButtons));
-    setProperty("Clickpad", numButtons == 1 ? kOSBooleanTrue : kOSBooleanFalse);
+    setProperty("Trackstick Buttons through F30", hasTrackstickButtons);
+    setProperty("Clickpad", numButtons == 1);
     
     return 0;
 }
@@ -304,7 +293,7 @@ void F30::rmi_f30_report_button()
             continue;
         }
         
-        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+        IOLogDebug("Key %u is %s\n", key_code, key_down ? "Down": "Up");
         
         if (i >= TRACKSTICK_RANGE_START &&
             i <= TRACKSTICK_RANGE_END) {

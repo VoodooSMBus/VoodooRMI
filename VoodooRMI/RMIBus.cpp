@@ -12,6 +12,9 @@ OSDefineMetaClassAndStructors(RMITransport, IOService)
 #define super IOService
 
 bool RMIBus::init(OSDictionary *dictionary) {
+    if (!super::init(dictionary))
+        return false;
+    
     data = reinterpret_cast<rmi_driver_data *>(IOMalloc(sizeof(rmi_driver_data)));
     memset(data, 0, sizeof(rmi_driver_data));
     
@@ -21,18 +24,16 @@ bool RMIBus::init(OSDictionary *dictionary) {
     
     data->irq_mutex = IOLockAlloc();
     data->enabled_mutex = IOLockAlloc();
-    
-    bool result = super::init(dictionary);
-    
-    config = OSDynamicCast(OSDictionary, getProperty("Configuration"));
-    return result;
+
+    updateConfiguration(OSDynamicCast(OSDictionary, getProperty("Configuration")));
+    return true;
 }
 
 RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
 #if DEBUG
-    IOLog("RMI Bus (DEBUG) Starting up!");
+    IOLog("RMI Bus (DEBUG) Starting up!\n");
 #else
-    IOLog("RMI Bus (RELEASE) Starting up!");
+    IOLog("RMI Bus (RELEASE) Starting up!\n");
 #endif // DEBUG
     
     if (!super::probe(provider, score)) {
@@ -47,7 +48,7 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
     }
 
     if (rmi_driver_probe(this)) {
-        IOLogError("Could not probe");
+        IOLogError("Could not probe\n");
         return NULL;
     }
     
@@ -55,10 +56,18 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
 }
 
 bool RMIBus::start(IOService *provider) {
-    if (!super::start(provider))
-        return false;
     int retval;
     
+    if (!super::start(provider))
+        return false;
+
+    if (!(workLoop = IOWorkLoop::workLoop()) ||
+        !(commandGate = IOCommandGate::commandGate(this)) ||
+        (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
+        IOLog("%s Failed to add commandGate\n", getName());
+        return false;
+    }
+
     retval = rmi_init_functions(this, data);
     if (retval)
         goto err;
@@ -75,10 +84,10 @@ bool RMIBus::start(IOService *provider) {
     setProperty(RMIBusIdentifier, kOSBooleanTrue);
     if (!transport->open(this))
         return false;
-    
+
     return true;
 err:
-    IOLog("Could not start");
+    IOLog("Could not start\n");
     return false;
 }
 
@@ -177,19 +186,21 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
             case kHandleRMIClickpadSet:
             case kHandleRMITrackpoint:
                 if (OSDynamicCast(F11, func) || OSDynamicCast(F12, func)) {
-                    IOLogDebug("Sending event %u to F11/F12: %u", type, argument);
+                    IOLogDebug("Sending event %u to F11/F12: %u\n", type, argument);
                     messageClient(type, func, reinterpret_cast<void *>(argument));
+                    OSSafeReleaseNULL(iter);
                     return;
                 }
                 break;
             case kHandleRMITrackpointButton:
                 if (OSDynamicCast(F03, func)) {
-                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
+                    IOLogDebug("Sending trackpoint button to F03: %u\n", argument);
                     messageClient(type, func, reinterpret_cast<void *>(argument));
                 }
                 break;
         }
     }
+    OSSafeReleaseNULL(iter);
 }
 
 IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
@@ -197,13 +208,13 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
         return kIOPMAckImplied;
     
     if (whichState == 0 && awake) {
-        IOLogDebug("Sleep");
+        IOLogDebug("Sleep\n");
         messageClients(kHandleRMISuspend);
         rmi_driver_clear_irq_bits(this);
         awake = false;
     } else if (!awake) {
         IOSleep(1000);
-        IOLogDebug("Wakeup");
+        IOLogDebug("Wakeup\n");
         if (reset() < 0)
             IOLogError("Could not get SMBus Version on wakeup\n");
         // c++ lambdas are wack
@@ -225,13 +236,16 @@ IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) 
 void RMIBus::stop(IOService *provider) {
     OSIterator *iter = OSCollectionIterator::withCollection(functions);
     
+    workLoop->removeEventSource(commandGate);
+    OSSafeReleaseNULL(commandGate);
+    OSSafeReleaseNULL(workLoop);
+
     PMstop();
     rmi_driver_clear_irq_bits(this);
     
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         func->stop(this);
         func->detach(this);
-        func->release();
     }
     
     functions->flushCollection();
@@ -267,22 +281,22 @@ int RMIBus::reset()
 
 int RMIBus::rmi_register_function(rmi_function *fn) {
     RMIFunction * function;
-    
+
     switch(fn->fd.function_number) {
         case 0x01: /* device control */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F01));
+            function = OSTypeAlloc(F01);
             break;
         case 0x03: /* PS/2 pass-through */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F03));
+            function = OSTypeAlloc(F03);
             break;
         case 0x11: /* multifinger pointing */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F11));
+            function = OSTypeAlloc(F11);
             break;
         case 0x12: /* multifinger pointing */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F12));
+            function = OSTypeAlloc(F12);
             break;
         case 0x30: /* GPIO and LED controls */
-            function = OSDynamicCast(RMIFunction, OSTypeAlloc(F30));
+            function = OSTypeAlloc(F30);
             break;
 //        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */
@@ -303,14 +317,15 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             IOLogError("Unknown function: %02X - Continuing to load\n", fn->fd.function_number);
             return 0;
     }
-    
-    if (!function || !function->init(config)) {
 
+    if (!function || !function->init()) {
         IOLogError("Could not initialize function: %02X\n", fn->fd.function_number);
         OSSafeReleaseNULL(function);
         return -ENODEV;
     }
-    
+
+    function->conf = &conf;
+
     // Duplicate to store in function
     rmi_function_descriptor* desc =
         reinterpret_cast<rmi_function_descriptor*>(IOMalloc(sizeof(rmi_function_descriptor)));
@@ -334,5 +349,42 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
     }
     
     functions->setObject(function);
+    OSSafeReleaseNULL(function);
     return 0;
+}
+
+IOReturn RMIBus::setProperties(OSObject *properties) {
+    commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMIBus::updateConfiguration), OSDynamicCast(OSDictionary, properties));
+    return kIOReturnSuccess;
+}
+
+void RMIBus::updateConfiguration(OSDictionary* dictionary) {
+    if (!dictionary)
+        return;
+
+    bool update = false;
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &conf.trackstickMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &conf.trackstickScrollXMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &conf.trackstickScrollYMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &conf.trackstickDeadzone);
+    update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &conf.disableWhileTypingTimeout);
+    update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTrackpointTimeout", &conf.disableWhileTrackpointTimeout);
+    update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
+    update |= Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
+    update |= Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
+
+    if (update) {
+        IOLogDebug("Updating Configuration\n");
+        OSDictionary *currentConfig = nullptr;
+        OSDictionary *newConfig = nullptr;
+        if ((currentConfig = OSDynamicCast(OSDictionary, getProperty("Configuration"))) &&
+            (newConfig = OSDictionary::withDictionary(currentConfig)) &&
+            (newConfig->merge(dictionary)))
+            setProperty("Configuration", newConfig);
+        else
+            IOLogError("Failed to merge dictionary\n");
+        OSSafeReleaseNULL(newConfig);
+    } else {
+        IOLogError("Invalid Configuration\n");
+    }
 }

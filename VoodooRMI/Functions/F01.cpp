@@ -203,34 +203,28 @@ void F01::free()
 
 void F01::publishProps()
 {
-    deviceDict = OSDictionary::withCapacity(3);
+    OSObject *value;
+    OSDictionary *deviceDict = OSDictionary::withCapacity(3);
     if (!deviceDict) return;
-    deviceDict->setObject("Doze Interval", OSNumber::withNumber(device_control->doze_interval, 8));
-    deviceDict->setObject("Doze Holdoff", OSNumber::withNumber(device_control->doze_holdoff, 8));
-    deviceDict->setObject("Wakeup Threshold", OSNumber::withNumber(device_control->wakeup_threshold, 8));
-
+    setPropertyNumber(deviceDict, "Doze Interval", device_control->doze_interval, 8);
+    setPropertyNumber(deviceDict, "Doze Holdoff", device_control->doze_holdoff, 8);
+    setPropertyNumber(deviceDict, "Wakeup Threshold", device_control->wakeup_threshold, 8);
     setProperty("Power Properties", deviceDict);
+    deviceDict->release();
 
-    propDict = OSDictionary::withCapacity(9);
+    OSDictionary *propDict = OSDictionary::withCapacity(9);
     if (!propDict) return;
-    propDict->setObject("Manufacturer ID", OSNumber::withNumber(properties->manufacturer_id, 8));
-    propDict->setObject("Has LTS", OSBoolean::withBoolean(properties->has_lts));
-    propDict->setObject("Has Adjustable Doze", OSBoolean::withBoolean(properties->has_adjustable_doze));
-    propDict->setObject("Has Adjustable Doze Holdoff", OSBoolean::withBoolean(properties->has_adjustable_doze_holdoff));
-    
-    OSString* dom = OSString::withCString(properties->dom);
-    if (dom)
-        propDict->setObject("Date of Manufacture", dom);
-
-    // It's null terminated and u8 is a byte, so I guess it's a string?
-    OSString* prodID = OSString::withCString(reinterpret_cast<const char*>(properties->product_id));
-    if (prodID)
-        propDict->setObject("Product ID", prodID);
-    propDict->setObject("Product Info", OSNumber::withNumber(properties->productinfo, 16));
-    propDict->setObject("Firmware ID", OSNumber::withNumber(properties->firmware_id, 32));
-    propDict->setObject("Package ID", OSNumber::withNumber(properties->package_id, 32));
-
+    setPropertyNumber(propDict, "Manufacturer ID", properties->manufacturer_id, 8);
+    setPropertyBoolean(propDict, "Has LTS", properties->has_lts);
+    setPropertyBoolean(propDict, "Has Adjustable Doze", properties->has_adjustable_doze);
+    setPropertyBoolean(propDict, "Has Adjustable Doze Holdoff", properties->has_adjustable_doze_holdoff);
+    setPropertyString(propDict, "Date of Manufacture", properties->dom);
+    setPropertyString(propDict, "Product ID", properties->product_id);
+    setPropertyNumber(propDict, "Product Info", properties->productinfo, 16);
+    setPropertyNumber(propDict, "Firmware ID", properties->firmware_id, 32);
+    setPropertyNumber(propDict, "Package ID", properties->package_id, 32);
     setProperty("Device Properties", propDict);
+    propDict->release();
 }
 
 int F01::rmi_f01_config()
@@ -252,9 +246,8 @@ int F01::rmi_f01_config()
             return error;
         }
         
-        error = rmiBus->blockWrite(wakeup_threshold_addr,
-                                &device_control->wakeup_threshold,
-                                sizeof(u8));
+        error = rmiBus->write(wakeup_threshold_addr,
+                                &device_control->wakeup_threshold);
         if (error) {
             IOLogError("Failed to write wakeup threshold: %d\n",
                     error);

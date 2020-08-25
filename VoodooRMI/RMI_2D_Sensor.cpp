@@ -12,22 +12,6 @@
 OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 #define super IOService
 
-#define MilliToNano 1000000
-
-bool RMI2DSensor::init(OSDictionary *dictionary)
-{
-    disableWhileTypingTimeout =
-        Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", 500) * MilliToNano;
-    disableWhileTrackpointTimeout =
-        Configuration::loadUInt64Configuration(dictionary, "DisableWhileTrackpointTimeout", 500) * MilliToNano;
-    forceTouchMinPressure =
-        Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", 80);
-    forceTouchEmulation = Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", true);
-    minYDiffGesture = Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", 200);
-    
-    return super::init();
-}
-
 bool RMI2DSensor::start(IOService *provider)
 {
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, max_x, 16);
@@ -61,14 +45,15 @@ void RMI2DSensor::free()
 
 bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
+        && super::handleOpen(forClient, options, arg)) {
         voodooInputInstance = forClient;
         voodooInputInstance->retain();
         
         return true;
     }
     
-    return super::handleOpen(forClient, options, arg);
+    return false;
 }
 
 void RMI2DSensor::handleClose(IOService *forClient, IOOptionBits options)
@@ -92,7 +77,6 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             clock_get_uptime(&timestamp);
             absolutetime_to_nanoseconds(timestamp, &lastTrackpointTS);
             break;
-            
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:
             lastKeyboardTS = *((uint64_t*) argument);
@@ -113,8 +97,8 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
     return  !touchpadEnable
-        || (timestamp - lastKeyboardTS) < disableWhileTypingTimeout
-        || (timestamp - lastTrackpointTS) < disableWhileTrackpointTimeout;
+        || (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO
+        || (timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
 }
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
@@ -157,13 +141,13 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                 transducer.currentCoordinates = transducer.previousCoordinates;
             }
             
-            if (clickpadState && forceTouchEmulation && obj.z > forceTouchMinPressure)
+            if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
             transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
-            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
+            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]\n",
                        i, obj.x, obj.y, obj.z, obj.wx, obj.wy,
                        transducer.fingerType,
                        transducer.currentCoordinates.pressure,
@@ -239,14 +223,14 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
         }
     }
     
-    if (minY - secondLowest < minYDiffGesture || greatestFingerIndex == -1) {
+    if (minY - secondLowest < conf->minYDiffGesture || greatestFingerIndex == -1) {
 //        IOLogDebug("Second Lowest: %u Lowest: %u\n", secondLowest, minY);
         
         lowestFingerIndex = greatestFingerIndex;
     }
     
     if (lowestFingerIndex == -1) {
-        IOLogError("LowestFingerIndex = -1 When there are 4+ fingers");
+        IOLogError("LowestFingerIndex = -1 When there are 4+ fingers\n");
         return;
     }
     

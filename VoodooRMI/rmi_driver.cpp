@@ -459,7 +459,7 @@ void rmi_free_function_list(RMIBus *rmi_dev)
     IOLogDebug("Freeing function list\n");
     
     if (data->f01_container)
-        IOFree(data->f01_container, sizeof(rmi_function));
+        IOFree(data->f01_container, data->f01_container->size);
     data->f01_container = NULL;
 }
 

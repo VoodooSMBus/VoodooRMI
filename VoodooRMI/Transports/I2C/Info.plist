@@ -25,16 +25,8 @@
 			<key>IOPropertyMatch</key>
 			<array>
 				<dict>
-					<key>name</key>
-					<string>SYNA0000</string>
-				</dict>
-				<dict>
-					<key>name</key>
-					<string>SYNA2B31</string>
-				</dict>
-				<dict>
-					<key>name</key>
-					<string>SYNA2B33</string>
+					<key>compatible</key>
+					<string>PNP0C50</string>
 				</dict>
 			</array>
 			<key>IOProbeScore</key>
@@ -65,6 +57,8 @@
 		<string>18.5</string>
 		<key>com.apple.iokit.IOHIDFamily</key>
 		<string>2.0</string>
+		<key>com.apple.iokit.IOACPIFamily</key>
+		<string>1.4</string>
 	</dict>
 </dict>
 </plist>

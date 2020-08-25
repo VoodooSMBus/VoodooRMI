@@ -15,13 +15,8 @@
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? (-x) : (x))
 
-#define IOLogError(arg...) IOLog("Error: " arg)
-
-#ifdef DEBUG
-#define IOLogDebug(arg...) IOLog("Debug: " arg)
-#else
-#define IOLogDebug(arg...)
-#endif // DEBUG
+#define DEFAULT_MULT 10
+#define MILLI_TO_NANO 1000000
 
 // Message types defined by ApplePS2Keyboard
 enum {
@@ -124,6 +119,21 @@ struct __kfifo {
     void        *data;
 };
 
+struct rmi_configuration {
+    /* F03 */
+    uint32_t trackstickMult {DEFAULT_MULT};
+    uint32_t trackstickScrollXMult {DEFAULT_MULT};
+    uint32_t trackstickScrollYMult {DEFAULT_MULT};
+    uint32_t trackstickDeadzone {1};
+    /* RMI2DSensor */
+    bool forceTouchEmulation {true};
+    uint32_t forceTouchMinPressure {80};
+    uint32_t minYDiffGesture {200};
+    // Time units are in milliseconds
+    uint64_t disableWhileTypingTimeout {500};
+    uint64_t disableWhileTrackpointTimeout {500};
+};
+
 /*
  *  Wrapper class for functions
  */
@@ -156,7 +166,9 @@ public:
             IOFree(this->fn_descriptor, sizeof(rmi_function_descriptor));
         return;
     }
-    
+
+    rmi_configuration *conf;
+
 private:
     unsigned long irq_mask;
     unsigned int irqPos;

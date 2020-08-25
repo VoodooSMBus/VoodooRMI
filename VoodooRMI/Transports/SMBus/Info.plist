@@ -42,7 +42,7 @@
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>de.leo-labs.VoodooSMBus</key>
-		<string>2.1</string>
+		<string>3.0</string>
 		<key>com.1Revenger1.VoodooRMI</key>
 		<string>1.0</string>
 		<key>com.apple.kpi.iokit</key>

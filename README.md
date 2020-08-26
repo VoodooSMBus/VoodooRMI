@@ -15,7 +15,7 @@ This driver communicates over SMBus or I2C.
 
 ## How do I know if my device is compatible?
 
-VoodooRMI is not likely to work on devices which have Ivy Bridge CPUs or older. Refer to [issue #33](https://github.com/VoodooSMBus/VoodooRMI/issues/33#issuecomment-667596831)
+VoodooRMI may not work on devices which have Ivy Bridge CPUs or older. Refer to [issue #33](https://github.com/VoodooSMBus/VoodooRMI/issues/33#issuecomment-667596831). Not a lot is known about them, but it may be possible?
 
 **SMBus**  
 

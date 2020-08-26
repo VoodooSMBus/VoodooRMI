@@ -96,8 +96,7 @@ private:
     bool clickpadState {false};
     bool pressureLock {false};
     bool touchpadEnable {true};
-
-    uint64_t lastKeyboardTS;
+    uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
     MT2FingerType getFingerType();
     void setThumbFingerType(int fingers, RMI2DSensorReport *report);

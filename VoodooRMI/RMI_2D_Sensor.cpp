@@ -73,10 +73,9 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             clickpadState = !!(argument);
             break;
         case kHandleRMITrackpoint:
-            // Re-use keyboard var as it's the same thin
             uint64_t timestamp;
             clock_get_uptime(&timestamp);
-            absolutetime_to_nanoseconds(timestamp, &lastKeyboardTS);
+            absolutetime_to_nanoseconds(timestamp, &lastTrackpointTS);
             break;
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:
@@ -97,8 +96,9 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return  !touchpadEnable ||
-            (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO;
+    return  !touchpadEnable
+        || (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO
+        || (timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
 }
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)

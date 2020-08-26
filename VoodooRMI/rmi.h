@@ -15,7 +15,7 @@
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? (-x) : (x))
 
-#define DEFAULT_MULT 20
+#define DEFAULT_MULT 10
 #define MILLI_TO_NANO 1000000
 
 // Message types defined by ApplePS2Keyboard
@@ -131,6 +131,7 @@ struct rmi_configuration {
     uint32_t minYDiffGesture {200};
     // Time units are in milliseconds
     uint64_t disableWhileTypingTimeout {500};
+    uint64_t disableWhileTrackpointTimeout {500};
 };
 
 /*

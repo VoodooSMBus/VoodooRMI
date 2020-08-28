@@ -5,7 +5,7 @@ A port for macOS of Synaptic's RMI code from Linux. It is for touchscreens, trac
 This driver communicates over SMBus or I2C.
 
 ## Supported Features
-* Force Touch emulation for clickpads (press down clickpad and increase the touched area)
+* Force Touch emulation for clickpads (press down clickpad and increase touched area)
 * Up to four finger gestures (Though it can track up to 5 fingers)
 * Buttons
 * Trackpoint

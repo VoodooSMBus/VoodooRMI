@@ -95,7 +95,7 @@ private:
     bool invalidFinger[10];
     bool clickpadState {false};
     bool pressureLock {false};
-    bool touchpadEnable {true};
+    bool trackpadEnable {true};
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
     MT2FingerType getFingerType();

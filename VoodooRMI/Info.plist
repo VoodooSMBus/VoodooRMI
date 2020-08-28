@@ -36,13 +36,13 @@
 				<integer>100</integer>
 				<key>DisableWhileTrackpointTimeout </key>
 				<integer>100</integer>
-				<key>TrackstickMultiplier</key>
+				<key>TrackpointMultiplier</key>
 				<integer>10</integer>
-				<key>TrackstickScrollMultiplierX</key>
+				<key>TrackpointScrollMultiplierX</key>
 				<integer>30</integer>
-				<key>TrackstickScrollMultiplierY</key>
+				<key>TrackpointScrollMultiplierY</key>
 				<integer>30</integer>
-				<key>TrackstickDeadzone</key>
+				<key>TrackpointDeadzone</key>
 				<integer>1</integer>
 			</dict>
 			<key>IOProbeScore</key>

@@ -34,7 +34,7 @@ bool F30::start(IOService *provider)
 {
     if (!super::start(provider))
         return false;
-    // TODO: Either find F03 for trackstick button
+    // TODO: Either find F03 for trackpoint button
     // or just send buttons in attention
     
     int error = rmiBus->blockWrite(fn_descriptor->control_base_addr,
@@ -210,7 +210,7 @@ int F30::rmi_f30_is_valid_button(int button)
 int F30::rmi_f30_map_gpios()
 {
     unsigned int button = BTN_LEFT;
-    unsigned int trackstick_button = BTN_LEFT;
+    unsigned int trackpoint_button = BTN_LEFT;
     int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
     setProperty("Button Count", buttonArrLen, 32);
     
@@ -222,8 +222,8 @@ int F30::rmi_f30_map_gpios()
             continue;
         
         if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
-            IOLogDebug("F30: Found Trackstick button %d\n", button);
-            gpioled_key_map[i] = trackstick_button++;
+            IOLogDebug("F30: Found Trackpoint button %d\n", button);
+            gpioled_key_map[i] = trackpoint_button++;
         } else {
             IOLogDebug("F30: Found Button %d\n", button);
             gpioled_key_map[i] = button++;
@@ -232,10 +232,10 @@ int F30::rmi_f30_map_gpios()
         }
     }
     
-    // Trackstick buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
+    // Trackpoint buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
     // Generally I've found it more common for them to come through PS2
-    hasTrackstickButtons = trackstick_button != BTN_LEFT;
-    setProperty("Trackstick Buttons through F30", hasTrackstickButtons);
+    hasTrackpointButtons = trackpoint_button != BTN_LEFT;
+    setProperty("Trackpoint Buttons through F30", hasTrackpointButtons);
     setProperty("Clickpad", numButtons == 1);
     
     return 0;
@@ -269,7 +269,7 @@ int F30::rmi_f30_read_control_parameters()
 void F30::rmi_f30_report_button()
 {
     int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
-    unsigned int mask, trackstickBtns = 0, btns = 0;
+    unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
     u16 key_code;
     bool key_down;
@@ -297,7 +297,7 @@ void F30::rmi_f30_report_button()
         
         if (i >= TRACKSTICK_RANGE_START &&
             i <= TRACKSTICK_RANGE_END) {
-            trackstickBtns |= mask;
+            trackpointBtns |= mask;
         } else {
             btns |= mask;
         }
@@ -314,8 +314,8 @@ void F30::rmi_f30_report_button()
         messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
     }
     
-    if (hasTrackstickButtons)
-        rmiBus->notify(kHandleRMITrackpointButton, trackstickBtns);
+    if (hasTrackpointButtons)
+        rmiBus->notify(kHandleRMITrackpointButton, trackpointBtns);
 }
 
 bool F30::handleOpen(IOService *forClient, IOOptionBits options, void *arg)

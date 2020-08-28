@@ -101,7 +101,7 @@ private:
     
     struct input_dev *input;
     
-    bool hasTrackstickButtons;
+    bool hasTrackpointButtons;
     
     int rmi_f30_initialize();
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,

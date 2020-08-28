@@ -363,10 +363,10 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
         return;
 
     bool update = false;
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &conf.trackstickMult);
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &conf.trackstickScrollXMult);
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &conf.trackstickScrollYMult);
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &conf.trackstickDeadzone);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointMultiplier", &conf.trackpointMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointScrollMultiplierX", &conf.trackpointScrollXMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointScrollMultiplierY", &conf.trackpointScrollYMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointDeadzone", &conf.trackpointDeadzone);
     update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &conf.disableWhileTypingTimeout);
     update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTrackpointTimeout", &conf.disableWhileTrackpointTimeout);
     update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);

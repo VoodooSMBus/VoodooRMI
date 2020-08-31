@@ -1,6 +1,6 @@
 # VoodooRMI
 
-A port for macOS of Synaptic's RMI code from Linux. It is for touchscreens, touchpads, and other sensors. Many PS2 trackpads and sensors support other buses like I2C or SMBus, though SMBus is advantageous for macOS due to not requiring ACPI edits.
+A port for macOS of Synaptic's RMI code from Linux. RMI4 is used for touchscreens, touchpads, and other sensors - though this implementation only has code for trackpads/trackpoints. Many PS2 trackpads and sensors support other buses like I2C or SMBus, though SMBus is advantageous for macOS due to not requiring ACPI edits.
 
 This driver communicates over SMBus or I2C.
 

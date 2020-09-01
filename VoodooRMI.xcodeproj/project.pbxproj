@@ -93,6 +93,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2826E66D24FEE22E008F04F4 /* Logging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Logging.h; sourceTree = "<group>"; };
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
 		2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooTrackpoint.xcodeproj; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint.xcodeproj; sourceTree = "<group>"; };
 		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
@@ -203,6 +204,7 @@
 				A41323E62492077C00907B0D /* Configuration.cpp */,
 				A4560EDD247F2A660009CBE0 /* LinuxCompat.h */,
 				2850FFBC24904435000FA6BC /* PS2.hpp */,
+				2826E66D24FEE22E008F04F4 /* Logging.h */,
 			);
 			path = Utility;
 			sourceTree = "<group>";

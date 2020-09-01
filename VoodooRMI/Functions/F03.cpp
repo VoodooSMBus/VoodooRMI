@@ -31,7 +31,7 @@ bool F03::attach(IOService *provider)
     int error = rmiBus->read(fn_descriptor->query_base_addr, &query1);
     
     if (error < 0) {
-        IOLogError("F03: Failed to read query register: %02X\n", error);
+        IOLogError("F03: Failed to read query register: %02X", error);
         return false;
     }
     
@@ -52,7 +52,7 @@ bool F03::attach(IOService *provider)
         error = rmiBus->readBlock(fn_descriptor->query_base_addr + 1,
                                   query2, query2_len);
         if (error) {
-            IOLogError("Failed to read second set of query registers (%d).\n",
+            IOLogError("Failed to read second set of query registers (%d)",
                        error);
             return error;
         }
@@ -73,13 +73,13 @@ bool F03::start(IOService *provider)
     
     work_loop = reinterpret_cast<IOWorkLoop*>(getWorkLoop());
     if (!work_loop) {
-        IOLogError("F03 - Could not get work loop\n");
+        IOLogError("F03 - Could not get work loop");
         return false;
     }
     
     command_gate = IOCommandGate::commandGate(this);
     if (!command_gate || (work_loop->addEventSource(command_gate) != kIOReturnSuccess)) {
-        IOLog("%s Could not open command gate\n", getName());
+        IOLogError("%s Could not open command gate", getName());
         if (command_gate) command_gate->release();
         OSSafeReleaseNULL(work_loop);
         return false;
@@ -94,13 +94,13 @@ bool F03::start(IOService *provider)
     int error = rmiBus->readBlock(fn_descriptor->data_base_addr + RMI_F03_OB_OFFSET,
                                   obs, ob_len);
     if (!error)
-        IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest\n",
+        IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest",
                    ob_len, obs, ob_len);
     
     // Create a timer to give time for Interrupts to be enabled before initializing PS2
     timer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &F03::initPS2Interrupt));
     if (!timer) {
-        IOLogError("F03 - Could not create TimerEventSource\n");
+        IOLogError("F03 - Could not create TimerEventSource");
         return false;
     }
     
@@ -111,7 +111,6 @@ bool F03::start(IOService *provider)
     setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
     registerService();
     
-    IOLog("Start finished");
     return super::start(provider);
 }
 
@@ -137,7 +136,7 @@ int F03::rmi_f03_pt_write(unsigned char val)
 {
     int error = rmiBus->write(fn_descriptor->data_base_addr, &val);
     if (error) {
-        IOLogError("F03 - Failed to write to F03 TX register (%d).\n", error);
+        IOLogError("F03 - Failed to write to F03 TX register (%d)", error);
     }
     
     return error;
@@ -145,6 +144,20 @@ int F03::rmi_f03_pt_write(unsigned char val)
 
 void F03::handlePacket(u8 *packet)
 {
+    // Trackpoint isn't initialized!
+    if (packet[0] == 0xaa &&
+        packet[1] == 0x00 &&
+        packet[2] == 0xaa) {
+        
+        if (reinit >= maxReinit) {
+            return;
+        }
+        
+        IOLogError("F03 - Detected uninitialized trackpoint, reinitializing! Try %d/%d", ++reinit, maxReinit);
+        timer->setTimeoutMS(100);
+        timer->enable();
+    }
+    
     UInt32 buttons = (packet[0] & 0x7) | overwrite_buttons;
     SInt32 dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
     SInt32 dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
@@ -221,7 +234,7 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             
             int error = rmiBus->readBlock(data_addr, obs, ob_len);
             if (error) {
-                IOLogError("F03 - Failed to read output buffers: %d\n", error);
+                IOLogError("F03 - Failed to read output buffers: %d", error);
                 return kIOReturnError;
             }
             
@@ -291,7 +304,7 @@ void F03::initPS2()
     
     error = ps2Command(NULL, PS2_CMD_RESET_BAT);
     if (error) {
-        IOLogError("Failed to reset PS2 trackpoint\n");
+        IOLogError("Failed to reset PS2 trackpoint");
         return;
     }
     
@@ -301,7 +314,6 @@ void F03::initPS2()
         return;
     }
     
-    IOLog("Got [%x, %x]\n", param[0], param[1]);
     if (param[0] < TP_VARIANT_IBM || param[0] > TP_VARIANT_NXP) {
         setProperty("Vendor", "Invalid Vendor");
         setProperty("Firmware ID", "Invalid Firmware ID");
@@ -315,7 +327,7 @@ void F03::initPS2()
 
     error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
     if (param1[0] != 0xAA || param1[1] != 0x00) {
-        IOLogError("Got [%x, %x], should be [0xAA, 0x00]\n", param1[0], param1[1]);
+        IOLogError("Got [%x, %x], should be [0xAA, 0x00]", param1[0], param1[1]);
         return;
     }
 
@@ -324,18 +336,18 @@ void F03::initPS2()
     
     error = ps2Command(&params[4], PS2_CMD_SETRES);
     if (error)
-        IOLogError("Failed to set resolution: %d\n", error);
+        IOLogError("Failed to set resolution: %d", error);
     
     error = ps2Command(NULL, PS2_CMD_SETSCALE21);
 //    error = ps2Command(NULL, PS2_CMD_SETSCALE11);
     if (error)
-        IOLogError("Failed to set scale: %d\n", error);
+        IOLogError("Failed to set scale: %d", error);
     
     // TODO: Actually set this - my trackpoint does not respond to this ~ 1Rev
     u8 rate[1] = {100};
     error = ps2Command(rate, PS2_CMD_SETRATE);
     if (error)
-        IOLogError("Failed to set resolution: %d\n", error);
+        IOLogError("Failed to set resolution: %d", error);
     
     memset(databuf, 0, sizeof(databuf));
     memset(emptyPkt, 0, sizeof(databuf));
@@ -345,8 +357,8 @@ void F03::initPS2()
     if (error)
         IOLogError("Failed to send PS2 Enable: %d", error);
     
-    IOLog("Finish PS2 init");
-    
+    IOLogInfo("Finish PS2 init");
+    reinit = 0;
     return;
 }
 
@@ -415,11 +427,11 @@ int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
     }
     
     if (error) {
-        IOLogError("Failed to write to F03 device: %d\n", error);
+        IOLogError("Failed to write to F03 device: %d", error);
     }
     
     if (result) {
-        IOLogError("Failed to get a response from F03 device: %s\n", stringFromReturn(result));
+        IOLogError("Failed to get a response from F03 device: %s", stringFromReturn(result));
         error = result;
     }
     
@@ -435,7 +447,7 @@ int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
     unsigned int send = (command >> 12) & 0xf;
     unsigned int receive = (command >> 8) & 0xf;
     
-    IOLogDebug("F03 - PS2 Command [Send: %d Receive: %d cmd: %x]\n", send, receive, command & 0xff);
+    IOLogDebug("F03 - PS2 Command [Send: %d Receive: %d cmd: %x]", send, receive, command & 0xff);
     
     AbsoluteTime time, currentTime;
     int rc, i;

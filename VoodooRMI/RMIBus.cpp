@@ -46,15 +46,6 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
         IOLogError("Could not get transport instance");
         return NULL;
     }
-    
-    u8 version = 0;
-    
-    IOReturn res = this->read(0x200, &version);
-    if (res) {
-        IOLogError("Failed to read RMI version! Continuing in spite of this.");
-    } else {
-        IOLogInfo("RMI Version: %u.%u", (version >> 4) & 0xff, version & 0xff);
-    }
 
     if (rmi_driver_probe(this)) {
         IOLogError("Could not probe");

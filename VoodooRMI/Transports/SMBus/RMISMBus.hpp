@@ -40,6 +40,11 @@ public:
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
     
     inline int reset() override {
+        /* Discord mapping table */
+        IOLockLock(mapping_table_mutex);
+        memset(mapping_table, 0, sizeof(mapping_table));
+        IOLockUnlock(mapping_table_mutex);
+        
         /*
          * I don't think this does a full reset, as it still seems to retain memory
          * I believe a PS2 reset needs to be done to completely reset the sensor

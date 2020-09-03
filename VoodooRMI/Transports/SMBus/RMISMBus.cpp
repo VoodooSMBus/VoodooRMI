@@ -16,6 +16,7 @@ bool RMISMBus::init(OSDictionary *dictionary)
 {
     page_mutex = IOLockAlloc();
     mapping_table_mutex = IOLockAlloc();
+    memset(mapping_table, 0, sizeof(mapping_table));
     return super::init(dictionary);
 }
 

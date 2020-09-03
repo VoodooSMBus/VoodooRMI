@@ -26,6 +26,7 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    memset(invalidFinger, false, sizeof(invalidFinger));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
     memset(invalidFinger, false, 10);
@@ -96,9 +97,14 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return  !touchpadEnable
+    bool shouldDiscord = !touchpadEnable
         || (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO
         || (timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
+    
+    if (shouldDiscord)
+        memset(invalidFinger, true, sizeof(invalidFinger));
+    
+    return shouldDiscord;
 }
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
@@ -124,8 +130,8 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         if (isValid) {
             realFingerCount++;
             
-            // Dissallow large objects
-            transducer.isValid = obj.z < 120 && obj.wx < 7 && obj.wy < 7;
+            // Dissallow large objects and very small objects
+            transducer.isValid = obj.z > 10 && obj.z < 120 && obj.wx < conf->maxObjectSize && obj.wy < conf->maxObjectSize && !invalidFinger[i];
             transducer.previousCoordinates = transducer.currentCoordinates;
             transducer.currentCoordinates.width = obj.z / 1.5;
             transducer.timestamp = report->timestamp;
@@ -152,6 +158,8 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                        transducer.fingerType,
                        transducer.currentCoordinates.pressure,
                        transducer.isPhysicalButtonDown);
+        } else {
+            invalidFinger[i] = false;
         }
     }
     
@@ -164,18 +172,24 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         auto& trans = inputEvent.transducers[i];
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
+        bool isValid =  obj.type == RMI_2D_OBJECT_FINGER ||
+                        obj.type == RMI_2D_OBJECT_STYLUS;
+        
+        // Rudimentry palm detection
+        trans.isValid &= abs(obj.wx - obj.wy) <= conf->fingerMajorMinorMax || trans.fingerType == kMT2FingerTypeThumb;
+        
         if (trans.isValid) {
-            // Rudimentry palm detection
-            trans.isValid = trans.isValid && (abs(obj.wx - obj.wy) < 3 || trans.fingerType == kMT2FingerTypeThumb);
-            
             if (trans.fingerType == kMT2FingerTypeUndefined) {
                 trans.fingerType = getFingerType();
             }
         } else {
             // Free finger
-            if (trans.fingerType != kMT2FingerTypeUndefined)
-                freeFingerTypes[trans.fingerType] = true;
+            freeFingerTypes[trans.fingerType] = true;
             trans.fingerType = kMT2FingerTypeUndefined;
+        }
+        
+        if (isValid && !trans.isValid) {
+            invalidFinger[i] = true;
         }
     }
     

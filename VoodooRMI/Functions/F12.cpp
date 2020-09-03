@@ -36,19 +36,19 @@ bool F12::attach(IOService *provider)
 
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("F12: Provider is not RMIBus\n");
+        IOLogError("F12: Provider is not RMIBus");
         return false;
     }
     
     ret = rmiBus->read(query_addr, &buf);
     if (ret < 0) {
-        IOLogError("F12 - Failed to read general info register: %d\n", ret);
+        IOLogError("F12 - Failed to read general info register: %d", ret);
         return false;
     }
     ++query_addr;
     
     if (!(buf & BIT(0))) {
-        IOLogError("F12 - Behaviour without register descriptors is undefined.\n");
+        IOLogError("F12 - Behaviour without register descriptors is undefined.");
         return false;
     }
     
@@ -56,14 +56,14 @@ bool F12::attach(IOService *provider)
     
     ret = rmi_read_register_desc(query_addr, &query_reg_desc);
     if (ret) {
-        IOLogError ("F12 - Failed to read the Query Register Descriptor: %d\n", ret);
+        IOLogError ("F12 - Failed to read the Query Register Descriptor: %d", ret);
         return ret;
     }
     query_addr += 3;
     
     ret = rmi_read_register_desc(query_addr, &control_reg_desc);
     if (ret) {
-        IOLogError("F12 - Failed to read the Control Register Descriptor: %d\n",
+        IOLogError("F12 - Failed to read the Control Register Descriptor: %d",
                    ret);
         return ret;
     }
@@ -71,14 +71,14 @@ bool F12::attach(IOService *provider)
     
     ret = rmi_read_register_desc(query_addr, &data_reg_desc);
     if (ret) {
-        IOLogError("F12 - Failed to read the Data Register Descriptor: %d\n",
+        IOLogError("F12 - Failed to read the Data Register Descriptor: %d",
                    ret);
         return ret;
     }
     query_addr += 3;
     
     sensor->pkt_size = (int) rmi_register_desc_calc_size(&data_reg_desc);
-    IOLogDebug("F12 - Data packet size: %d\n", sensor->pkt_size);
+    IOLogDebug("F12 - Data packet size: %d", sensor->pkt_size);
     
     sensor->data_pkt = reinterpret_cast<u8 *>(IOMalloc(sensor->pkt_size));
     
@@ -87,7 +87,7 @@ bool F12::attach(IOService *provider)
     
     ret = rmi_f12_read_sensor_tuning();
     if (ret) {
-        IOLogError("F12 - Failed sensor tuning\n");
+        IOLogError("F12 - Failed sensor tuning");
         return false;
     }
     
@@ -105,7 +105,7 @@ bool F12::attach(IOService *provider)
     item = rmi_get_register_desc_item(&data_reg_desc, 1);
     if (!item) {
         return false;
-        IOLogError("F12 - No Data1 Reg!\n");
+        IOLogError("F12 - No Data1 Reg!");
     }
     
     data1 = item;
@@ -138,7 +138,7 @@ bool F12::attach(IOService *provider)
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
     setProperty("Number of fingers", sensor->nbr_fingers, 8);
-    IOLogDebug("F12 - Number of fingers %u\n", sensor->nbr_fingers);
+    IOLogDebug("F12 - Number of fingers %u", sensor->nbr_fingers);
     
     
     return super::attach(provider);
@@ -244,14 +244,14 @@ int F12::rmi_f12_read_sensor_tuning()
     
     item = rmi_get_register_desc_item(&control_reg_desc, 8);
     if (!item) {
-        IOLogError("F12 - No sensor tuning Control register\n");
+        IOLogError("F12 - No sensor tuning Control register");
         return -ENODEV;
     }
     
     offset = rmi_register_desc_calc_reg_offset(&control_reg_desc, 8);
     
     if (item->reg_size > sizeof(buf)) {
-        IOLogError("F12 - Control8 should be no bigger than %zd bytes, not: %ld\n",
+        IOLogError("F12 - Control8 should be no bigger than %zd bytes, not: %ld",
                    sizeof(buf), item->reg_size);
         return -ENODEV;
     }
@@ -267,7 +267,7 @@ int F12::rmi_f12_read_sensor_tuning()
         sensor->max_y = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
-        IOLogError("F12 - No size register\n");
+        IOLogError("F12 - No size register");
         return -EIO;
     }
     
@@ -276,7 +276,7 @@ int F12::rmi_f12_read_sensor_tuning()
         pitch_y = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
-        IOLogError("F12 - No pitch register\n");
+        IOLogError("F12 - No pitch register");
         return -EIO;
     }
     
@@ -295,7 +295,7 @@ int F12::rmi_f12_read_sensor_tuning()
         tx_receivers = buf[offset + 1];
         offset += 2;
     } else {
-        IOLogError("No rx/tx receiver register\n");
+        IOLogError("No rx/tx receiver register");
         return -EIO;
     }
     
@@ -320,7 +320,7 @@ void F12::getReport()
                                    sensor->pkt_size);
     
     if (retval < 0) {
-        IOLogError("F12 - Failed to read object data. Code: %d\n", retval);
+        IOLogError("F12 - Failed to read object data. Code: %d", retval);
         return;
     }
     
@@ -328,10 +328,10 @@ void F12::getReport()
     if (sensor->shouldDiscardReport(timestamp))
         return;
     
-    IOLogDebug("F12 Packet\n");
+    IOLogDebug("F12 Packet");
 #if DEBUG
     if (sensor->nbr_fingers > 5) {
-        IOLogDebug("More than 5 fingers!\n");
+        IOLogDebug("More than 5 fingers!");
     }
 #endif // debug
     
@@ -485,7 +485,7 @@ int F12::rmi_read_register_desc(u16 addr,
         item->num_subpackets = bitmap_weight(item->subpacket_map,
                                              RMI_REG_DESC_SUBPACKET_BITS);
         
-        IOLogDebug("F12 - reg: %d reg size: %ld subpackets: %d\n",
+        IOLogDebug("F12 - reg: %d reg size: %ld subpackets: %d",
                 item->reg, item->reg_size, item->num_subpackets);
         
         reg = find_next_bit(rdesc->presense_map,

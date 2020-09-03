@@ -146,6 +146,7 @@ private:
     unsigned int flags, cmdcnt;
     u8 cmdbuf[8];
     u8 status {0};
+    u8 reinit{0}, maxReinit{3};
     
     // Packet storage
     u8 emptyPkt[3];

@@ -1,10 +1,11 @@
-//
-//  RMISMBus.h
-//  VoodooRMI
-//
-//  Created by Sheika Slate on 7/16/20.
-//  Copyright © 2020 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_smbus.c
+ *
+ * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011 Unixphere
+ */
 
 #ifndef RMISMBus_h
 #define RMISMBus_h
@@ -39,6 +40,11 @@ public:
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
     
     inline int reset() override {
+        /* Discord mapping table */
+        IOLockLock(mapping_table_mutex);
+        memset(mapping_table, 0, sizeof(mapping_table));
+        IOLockUnlock(mapping_table_mutex);
+        
         /*
          * I don't think this does a full reset, as it still seems to retain memory
          * I believe a PS2 reset needs to be done to completely reset the sensor

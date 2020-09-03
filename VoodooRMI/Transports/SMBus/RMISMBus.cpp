@@ -16,6 +16,7 @@ bool RMISMBus::init(OSDictionary *dictionary)
 {
     page_mutex = IOLockAlloc();
     mapping_table_mutex = IOLockAlloc();
+    memset(mapping_table, 0, sizeof(mapping_table));
     return super::init(dictionary);
 }
 
@@ -23,13 +24,13 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 {
     int retval = 0, attempts = 0;
     if (!super::probe(provider, score)) {
-        IOLog("Failed probe");
+        IOLogError("Failed probe");
         return NULL;
     }
     
     device_nub = OSDynamicCast(VoodooSMBusDeviceNub, provider);
     if (!device_nub) {
-        IOLog("Could not cast nub\n");
+        IOLogError("Could not cast nub");
         return NULL;
     }
     
@@ -42,17 +43,17 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
     } while (retval < 0 && attempts++ < 5);
     
     if (retval < 0) {
-        IOLog("Error: Failed to read SMBus version. Code: 0x%02X", retval);
+        IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", retval);
         return NULL;
     }
     
     if (retval != 2 && retval != 3) {
-        IOLog("Unrecognized SMB Version %d\n", retval);
+        IOLogError("Unrecognized SMB Version %d", retval);
         return NULL;
     }
     
     setProperty("SMBus Version", retval, 32);
-    IOLog("SMBus version %u\n", retval);
+    IOLogInfo("SMBus version %u", retval);
     
     return this;
 }

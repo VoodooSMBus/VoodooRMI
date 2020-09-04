@@ -1,6 +1,10 @@
 # VoodooRMI
 
+<<<<<<< HEAD
 A port for macOS of Synaptic's RMI code from Linux. It is for touchscreens, trackpads, and other sensors. Many PS2 trackpads and sensors support other buses like I2C or SMBus, though SMBus is advantageous for macOS due to not requiring ACPI edits.
+=======
+A port for macOS of Synaptic's RMI code from Linux. RMI4 is used for touchscreens, touchpads, and other sensors - though this implementation only has code for trackpads/trackpoints. Many PS2 trackpads and sensors support other buses like I2C or SMBus, though SMBus is advantageous for macOS due to not requiring ACPI edits.
+>>>>>>> upstream/master
 
 This driver communicates over SMBus or I2C.
 
@@ -14,10 +18,6 @@ This driver communicates over SMBus or I2C.
 * I2C Communication
 
 ## Compatibility
-
->**NOTE:** VoodooRMI may not work on devices which have Ivy Bridge CPUs or older. Refer to [issue #33](https://github.com/VoodooSMBus/VoodooRMI/issues/33#issuecomment-667596831). Not a lot is known about them, but it may be possible.
-
-Compatibilty can be determined for each bus as follows.
 
 **SMBus**  
 
@@ -89,6 +89,8 @@ You generally only want **one** of the two below kexts
 * RMII2C is needed if using VoodooI2C for your trackpad
 * RMISMBus is needed if using VoodooSMBus for your trackpad
 
+There is no support for this kext being loaded into Library/Extensions or System/Library/Extensions. This likely won't break loading it, but test with injection first before sending in a bug report.
+
 ## Configuration
 
 The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling  
@@ -110,12 +112,36 @@ Note that you can use Rehabman's ioio to set properties temporarily (until the n
 
 ## Building
 1) `git submodule update --init --recursive`
-2) Build with XCode
+2) Build within XCode using the play button in the top left
+    * RMISMBus/RMII2C will automatically build when building VoodooRMI
 
-For loading, you may need to put RMII2C/RMISMBus's dependencies into the kextutil command (including VoodooRMI)
+
+## Loading/Unloading
+For loading, you may need to put RMII2C/RMISMBus's dependencies into the kextload command. Note that RMISMBus/RMII2C *depend* on VoodooRMI.
+
+The below examples assume VoodooSMBus/VoodooI2C are in the same folder as VoodooRMI. If they are not, you will need to give the path to those kexts.
+When manually loading from within macOS, keep in mind that csrutil needs to be partially disabled to allow unsigned kexts, and the kexts need to be owned by Root.
+
+#### Changing owner of kext
+```
+// Note that this changes the owner of every kext in the directory your in
+sudo chown -R root:wheel *.kext
+```
+#### Manually loading kext
+
+Example for SMBus:
 ```
 cd path/to/unziped-VoodooRMI_Debug
 sudo kextutil -vvvv -d VoodooRMI.kext -d VoodooSMBus.kext VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
+```
+Example for I2C:
+```
+sudo kextutil -vvvv -d VoodooRMI.kext -d VoodooI2C.kext VoodooRMI.kext/Contents/PlugIns/RMII2C.kext
+```
+
+For unloading, you can use the bundle ids. This should unload cleanly, though you may need to unload twice in a row to get it to cooperate.
+```
+sudo kextunload -vvvv -b com.1Revenger1.RMISMBus -b com.1Revenger1.VoodooRMI
 ```
 
 ## Troubleshooting
@@ -126,3 +152,6 @@ Couple things to keep in mind:
     * [VoodooI2C Troubleshooting](https://voodooi2c.github.io/#Troubleshooting/Troubleshooting)
 2) Make sure VoodooInput/VoodooTrackpoint are loading
 3) IORegistryExplorer is a good way to see which Functions are loading, and what is/isn't loading
+4) Getting logs is harder than it should be
+    * If loading within macOS, you can use `sudo log show --last 5m | grep VRMI`
+    * If injecting, you will want to add the boot arg `msgbuf=1048576` and use `sudo dmesg | grep VRMI`

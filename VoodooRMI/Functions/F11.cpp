@@ -34,7 +34,7 @@ bool F11::attach(IOService *provider)
 
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("F11: Provider is not RMIBus\n");
+        IOLogError("F11: Provider is not RMIBus");
         return false;
     }
     
@@ -113,7 +113,7 @@ bool F11::getReport()
                               sensor->data_pkt, sensor->pkt_size);
     
     if (error < 0) {
-        IOLogError("Could not read F11 attention data: %d\n", error);
+        IOLogError("Could not read F11 attention data: %d", error);
         return false;
     }
     
@@ -122,7 +122,7 @@ bool F11::getReport()
     if (sensor->shouldDiscardReport(timestamp))
         return true;
     
-    IOLogDebug("F11 Packet\n");
+    IOLogDebug("F11 Packet");
     
     abs_size = sensor->nbr_fingers & RMI_F11_ABS_BYTES;
     
@@ -135,7 +135,7 @@ bool F11::getReport()
         u8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
         
         if (finger_state == F11_RESERVED) {
-            IOLogError("Invalid finger state[%d]: 0x%02x\n",
+            IOLogError("Invalid finger state[%d]: 0x%02x",
                        i, finger_state);
             continue;
         }
@@ -164,7 +164,7 @@ int F11::f11_read_control_regs(f11_2d_ctrl *ctrl, u16 ctrl_base_addr)
     error = rmiBus->readBlock(ctrl_base_addr, ctrl->ctrl0_11,
                            RMI_F11_CTRL_REG_COUNT);
     if (error < 0) {
-        IOLogError("Failed to read ctrl0, code: %d.\n", error);
+        IOLogError("Failed to read ctrl0, code: %d.", error);
         return error;
     }
     
@@ -633,7 +633,7 @@ int F11::rmi_f11_initialize()
     
     rc = rmiBus->read(query_base_addr, &buf);
     if (rc < 0) {
-        IOLogError("F11: Could not read Query Base Addr\n");
+        IOLogError("F11: Could not read Query Base Addr");
         return rc;
     }
     
@@ -647,7 +647,7 @@ int F11::rmi_f11_initialize()
     
     rc = rmi_f11_get_query_parameters(&sens_query, query_offset);
     if (rc < 0) {
-        IOLogError("F11: Could not read Sensor Query\n");
+        IOLogError("F11: Could not read Sensor Query");
         return rc;
     }
     query_offset += rc;
@@ -656,26 +656,26 @@ int F11::rmi_f11_initialize()
         sensor->x_mm = sens_query.x_sensor_size_mm;
         sensor->y_mm = sens_query.y_sensor_size_mm;
     } else {
-        IOLogError("No size data from Device.\n");
+        IOLogError("No size data from Device.");
         return -ENODEV;
     }
     
     if (!sens_query.has_abs) {
-        IOLogError("No absolute reporting support!\n");
+        IOLogError("No absolute reporting support!");
         return -ENODEV;
     }
     
     rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_X_POS_OFFSET,
                            (u8 *)&max_x_pos, sizeof(max_x_pos));
     if (rc < 0) {
-        IOLogError("F11: Could not read max x\n");
+        IOLogError("F11: Could not read max x");
         return rc;
     }
     
     rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_Y_POS_OFFSET,
                            (u8 *)&max_y_pos, sizeof(max_y_pos));
     if (rc < 0) {
-        IOLogError("F11: Could not read max y\n");
+        IOLogError("F11: Could not read max y");
         return rc;
     }
         
@@ -684,7 +684,7 @@ int F11::rmi_f11_initialize()
     
     rc = f11_2d_construct_data();
     if (rc < 0) {
-        IOLogError("F11: Could not construct 2d Data\n");
+        IOLogError("F11: Could not construct 2d Data");
         return rc;
     }
     
@@ -694,7 +694,7 @@ int F11::rmi_f11_initialize()
     rc = f11_read_control_regs(&dev_controls,
                                control_base_addr);
     if (rc < 0) {
-        IOLogError("Failed to read F11 control params.\n");
+        IOLogError("Failed to read F11 control params.");
         return rc;
     }
     
@@ -711,7 +711,7 @@ int F11::rmi_f11_initialize()
     rc = f11_write_control_regs(&sens_query,
                                 &dev_controls, fn_descriptor->control_base_addr);
     if (rc)
-        IOLogError("F11: Failed to write control registers\n");
+        IOLogError("F11: Failed to write control registers");
     
     return 0;
 }

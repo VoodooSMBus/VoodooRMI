@@ -15,6 +15,7 @@ class RMIFunction;
 #include <IOKit/IOMessage.h>
 #include <IOKit/IOCommandGate.h>
 #include "LinuxCompat.h"
+#include "Logging.h"
 #include "RMITransport.hpp"
 #include "rmi.h"
 #include "rmi_driver.hpp"

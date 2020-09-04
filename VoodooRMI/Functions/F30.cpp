@@ -16,7 +16,7 @@ bool F30::attach(IOService *provider)
 {
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("F30: No provider.\n");
+        IOLogError("F30: No provider.");
         return false;
     }
     
@@ -41,7 +41,7 @@ bool F30::start(IOService *provider)
                                    ctrl_regs, ctrl_regs_size);
     
     if (error) {
-        IOLogError("%s: Could not write control registers at 0x%x: 0x%x\n",
+        IOLogError("%s: Could not write control registers at 0x%x: 0x%x",
                    __func__, fn_descriptor->control_base_addr, error);
         return false;;
     }
@@ -76,7 +76,7 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
                                           data_regs, register_count);
             
             if (error < 0) {
-                IOLogError("Could not read F30 data: 0x%x\n", error);
+                IOLogError("Could not read F30 data: 0x%x", error);
             }
             
             if (!has_gpio)
@@ -99,7 +99,7 @@ int F30::rmi_f30_initialize()
     error = rmiBus->readBlock(fn_descriptor->query_base_addr,
                               buf, RMI_F30_QUERY_SIZE);
     if (error) {
-        IOLogError("F30: Failed to read query register\n");
+        IOLogError("F30: Failed to read query register");
         return error;
     }
     
@@ -180,7 +180,7 @@ int F30::rmi_f30_initialize()
     
     error = rmi_f30_read_control_parameters();
     if (error) {
-        IOLogError("Failed to initialize F30 control params: %d\n",
+        IOLogError("Failed to initialize F30 control params: %d",
                    error);
         return error;
     }
@@ -211,7 +211,7 @@ int F30::rmi_f30_map_gpios()
 {
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
-    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
+    int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
     setProperty("Button Count", buttonArrLen, 32);
     
     gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(gpioled_key_map[0])));
@@ -221,11 +221,11 @@ int F30::rmi_f30_map_gpios()
         if (!rmi_f30_is_valid_button(i))
             continue;
         
-        if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
+        if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
             IOLogDebug("F30: Found Trackpoint button %d\n", button);
             gpioled_key_map[i] = trackpoint_button++;
         } else {
-            IOLogDebug("F30: Found Button %d\n", button);
+            IOLogDebug("F30: Found Button %d", button);
             gpioled_key_map[i] = button++;
             numButtons++;
             clickpad_index = i;
@@ -258,7 +258,7 @@ int F30::rmi_f30_read_control_parameters()
     error = rmiBus->readBlock(fn_descriptor->control_base_addr,
                               ctrl_regs, ctrl_regs_size);
     if (error) {
-        IOLogError("%s: Could not read control registers at 0x%x: %d\n",
+        IOLogError("%s: Could not read control registers at 0x%x: %d",
                    __func__, fn_descriptor->control_base_addr, error);
         return error;
     }
@@ -268,7 +268,7 @@ int F30::rmi_f30_read_control_parameters()
 
 void F30::rmi_f30_report_button()
 {
-    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
+    int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
     unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
     u16 key_code;
@@ -293,10 +293,10 @@ void F30::rmi_f30_report_button()
             continue;
         }
         
-        IOLogDebug("Key %u is %s\n", key_code, key_down ? "Down": "Up");
+        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
         
-        if (i >= TRACKSTICK_RANGE_START &&
-            i <= TRACKSTICK_RANGE_END) {
+        if (i >= TRACKPOINT_RANGE_START &&
+            i <= TRACKPOINT_RANGE_END) {
             trackpointBtns |= mask;
         } else {
             btns |= mask;

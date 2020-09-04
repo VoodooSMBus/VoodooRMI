@@ -11,14 +11,7 @@
 
 #include <IOKit/IOService.h>
 #include <IOKit/IOLib.h>
-
-#define IOLogError(arg...) do { IOLog("Error: " arg); } while(0)
-
-#ifdef DEBUG
-#define IOLogDebug(arg...) do { IOLog("Debug: " arg); } while(0)
-#else
-#define IOLogDebug(arg...)
-#endif // DEBUG
+#include "./Logging.h"
 
 #define setPropertyBoolean(dict, name, boolean) \
     do { dict->setObject(name, boolean ? kOSBooleanTrue : kOSBooleanFalse); } while (0)

@@ -298,7 +298,7 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             break;
 //        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */
-//        case 0x17: /* pointing sticks */
+//        case 0x17: /* trackpoints */
 //        case 0x19: /* capacitive buttons */
 //        case 0x1A: /* simple capacitive buttons */
 //        case 0x21: /* force sensing */
@@ -361,10 +361,10 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
         return;
 
     bool update = false;
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickMultiplier", &conf.trackstickMult);
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierX", &conf.trackstickScrollXMult);
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickScrollMultiplierY", &conf.trackstickScrollYMult);
-    update |= Configuration::loadUInt32Configuration(dictionary, "TrackstickDeadzone", &conf.trackstickDeadzone);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointMultiplier", &conf.trackpointMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointScrollMultiplierX", &conf.trackpointScrollXMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointScrollMultiplierY", &conf.trackpointScrollYMult);
+    update |= Configuration::loadUInt32Configuration(dictionary, "TrackpointDeadzone", &conf.trackpointDeadzone);
     update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTypingTimeout", &conf.disableWhileTypingTimeout);
     update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTrackpointTimeout", &conf.disableWhileTrackpointTimeout);
     update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);

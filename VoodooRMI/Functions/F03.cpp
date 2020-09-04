@@ -169,11 +169,11 @@ void F03::handlePacket(u8 *packet)
     if (!voodooTrackpointInstance)
         return;
     
-    // The highest dx/dy is lowered by subtracting by trackstickDeadzone.
+    // The highest dx/dy is lowered by subtracting by trackpointDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
     
-    dx -= signum(dx) * min(abs(dx), conf->trackstickDeadzone);
-    dy -= signum(dy) * min(abs(dy), conf->trackstickDeadzone);
+    dx -= signum(dx) * min(abs(dx), conf->trackpointDeadzone);
+    dy -= signum(dy) * min(abs(dy), conf->trackpointDeadzone);
     
     // For middle button, we do not actually tell macOS it's been pressed until it's been released and we didn't scroll
     // We first say that it's been pressed internally - but if we scroll at all, then instead we say we scroll
@@ -201,16 +201,16 @@ void F03::handlePacket(u8 *packet)
     
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {
-        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackstickScrollYMult / DEFAULT_MULT);
-        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackstickScrollXMult / DEFAULT_MULT);
+        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackpointScrollYMult / DEFAULT_MULT);
+        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackpointScrollXMult / DEFAULT_MULT);
         scrollEvent.deltaAxis3 = 0;
         scrollEvent.timestamp = timestamp;
         
         messageClient(kIOMessageVoodooTrackpointScrollWheel, voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
     } else {
         relativeEvent.buttons = buttons;
-        relativeEvent.dx = (SInt32)((SInt64)dx * conf->trackstickMult / DEFAULT_MULT);
-        relativeEvent.dy = (SInt32)((SInt64)dy * conf->trackstickMult / DEFAULT_MULT);
+        relativeEvent.dx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
+        relativeEvent.dy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
         relativeEvent.timestamp = timestamp;
         
         messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));

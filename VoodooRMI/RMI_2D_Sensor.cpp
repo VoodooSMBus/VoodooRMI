@@ -83,11 +83,11 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             break;
         case kKeyboardGetTouchStatus: {
             bool *result = (bool *) argument;
-            *result = touchpadEnable;
+            *result = trackpadEnable;
             break;
         }
         case kKeyboardSetTouchStatus:
-            touchpadEnable = *((bool *) argument);
+            trackpadEnable = *((bool *) argument);
             break;
     }
     
@@ -96,7 +96,7 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return  !touchpadEnable
+    return  !trackpadEnable
         || (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO
         || (timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
 }

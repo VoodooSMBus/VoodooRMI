@@ -49,8 +49,8 @@
     + 1                \
     + 1)
 
-#define TRACKSTICK_RANGE_START        3
-#define TRACKSTICK_RANGE_END        6
+#define TRACKPOINT_RANGE_START        3
+#define TRACKPOINT_RANGE_END        6
 
 struct rmi_f30_ctrl_data {
     int address;
@@ -101,7 +101,7 @@ private:
     
     struct input_dev *input;
     
-    bool hasTrackstickButtons;
+    bool hasTrackpointButtons;
     
     int rmi_f30_initialize();
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,

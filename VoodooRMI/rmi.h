@@ -20,9 +20,9 @@
 
 // Message types defined by ApplePS2Keyboard
 enum {
-    // from keyboard to mouse/touchpad
-    kKeyboardSetTouchStatus = iokit_vendor_specific_msg(100),   // set disable/enable touchpad (data is bool*)
-    kKeyboardGetTouchStatus = iokit_vendor_specific_msg(101),   // get disable/enable touchpad (data is bool*)
+    // from keyboard to mouse/trackpad
+    kKeyboardSetTouchStatus = iokit_vendor_specific_msg(100),   // set disable/enable trackpad (data is bool*)
+    kKeyboardGetTouchStatus = iokit_vendor_specific_msg(101),   // get disable/enable trackpad (data is bool*)
     kKeyboardKeyPressTime = iokit_vendor_specific_msg(110)      // notify of timestamp a non-modifier key was pressed (data is uint64_t*)
 };
 
@@ -121,10 +121,10 @@ struct __kfifo {
 
 struct rmi_configuration {
     /* F03 */
-    uint32_t trackstickMult {DEFAULT_MULT};
-    uint32_t trackstickScrollXMult {DEFAULT_MULT};
-    uint32_t trackstickScrollYMult {DEFAULT_MULT};
-    uint32_t trackstickDeadzone {1};
+    uint32_t trackpointMult {DEFAULT_MULT};
+    uint32_t trackpointScrollXMult {DEFAULT_MULT};
+    uint32_t trackpointScrollYMult {DEFAULT_MULT};
+    uint32_t trackpointDeadzone {1};
     /* RMI2DSensor */
     bool forceTouchEmulation {true};
     uint32_t forceTouchMinPressure {80};
@@ -215,13 +215,13 @@ struct rmi_2d_axis_alignment {
  * available.
  * @rmi_f11_sensor_touchscreen - treat the sensor as a touchscreen (direct
  * pointing).
- * @rmi_f11_sensor_touchpad - thread the sensor as a touchpad (indirect
+ * @rmi_f11_sensor_trackpad - thread the sensor as a trackpad (indirect
  * pointing).
  */
 enum rmi_sensor_type {
     rmi_sensor_default = 0,
     rmi_sensor_touchscreen,
-    rmi_sensor_touchpad
+    rmi_sensor_trackpad
 };
 
 #define RMI_F11_DISABLE_ABS_REPORT      BIT(0)
@@ -230,16 +230,16 @@ enum rmi_sensor_type {
  * struct rmi_2d_sensor_data - overrides defaults for a 2D sensor.
  * @axis_align - provides axis alignment overrides (see above).
  * @sensor_type - Forces the driver to treat the sensor as an indirect
- * pointing device (touchpad) rather than a direct pointing device
+ * pointing device (trackpad) rather than a direct pointing device
  * (touchscreen).  This is useful when F11_2D_QUERY14 register is not
  * available.
  * @disable_report_mask - Force data to not be reported even if it is supported
  * by the firware.
- * @topbuttonpad - Used with the "5 buttons touchpads" found on the Lenovo 40
+ * @topbuttonpad - Used with the "5 buttons trackpads" found on the Lenovo 40
  * series
  * @kernel_tracking - most moderns RMI f11 firmwares implement Multifinger
  * Type B protocol. However, there are some corner cases where the user
- * triggers some jumps by tapping with two fingers on the touchpad.
+ * triggers some jumps by tapping with two fingers on the trackpad.
  * Use this setting and dmax to filter out these jumps.
  * Also, when using an old sensor using MF Type A behavior, set to true to
  * report an actual MT protocol B.

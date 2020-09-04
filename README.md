@@ -4,16 +4,16 @@ A port for macOS of Synaptic's RMI code from Linux. RMI4 is used for touchscreen
 
 This driver communicates over SMBus or I2C.
 
-## Currently Working  
-* Force Touch emulation for clickpads (press down clickpad and increase area finger uses)
+## Supported Features
+* Force Touch emulation for clickpads (press down clickpad and increase touched area)
 * Up to four finger gestures (Though it can track up to 5 fingers)
 * Buttons
-* Trackstick
+* Trackpoint
 * Power Management
 * SMBus Communication
 * I2C Communication
 
-## How do I know if my device is compatible?
+## Compatibility
 
 **SMBus**  
 
@@ -47,18 +47,18 @@ Linux:
 
 **SMBus**
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
-  * Apple's SMBus **PCI** controller cannot load, as it interfers with VoodooSMBus.
-* VoodooPS2
+  * Apple's SMBus **PCI** controller cannot load, as it interferes with VoodooSMBus.
+* [VoodooPS2](https://github.com/acidanthera/VoodooPS2)
   * Needed for PS2 reset of the trackpad
-  * Generally users should only add VoodooPS2Controller and VoodooPS2Keyboard. Trackpad/Mouse will cause VoodooRMI to not attach.
-  * OpenCore users can just disable Mouse/Trackpad in their config.plist.
-  * Clover users - go inside the VoodooPS2 kext and remove Mouse/Trackpad from the PlugIns folder.
+  * Generally users should only add VoodooPS2Controller and VoodooPS2Keyboard. VoodooPS2Trackpad/VoodooPS2Mouse will cause VoodooRMI to not attach.
+  * OpenCore users can just disable VoodooPS2Trackpad/VoodooPS2Mouse in their `config.plist`.
+  * Clover users can go inside the VoodooPS2 kext and remove VoodooPS2Trackpad/VoodooPS2Mouse from PlugIns folder.
 
 **I2C**
 * [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C)
   * Follow their [Documentation](https://voodooi2c.github.io) to identify if you need GPIO pinning.
   * Polling mode should just work
-* If your device's ACPI name is not included below or marked as unknown, you may try manually add it and consider a PR/issue
+* If your device's ACPI name is not included below or marked as unknown, you may add it yourself and create a PR/issue
 
 | Name | Main function |
 |---|---|
@@ -76,7 +76,7 @@ Linux:
 
 ## Installation
 1) Add the required kexts to your bootloader
-2) Disable VoodooPS2Mouse, VoodooPS2Trackpad, and if applicable, VoodooInput from within the PS2 kext.
+2) Disable VoodooPS2Trackpad, VoodooPS2Mouse, and if applicable, VoodooInput from within the PS2 kext.
 3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C to your Config.plist.
     * RMISMBus/RMII2C should be after VoodooRMI
     * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
@@ -90,17 +90,17 @@ There is no support for this kext being loaded into Library/Extensions or System
 ## Configuration
 
 The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling  
-**Note** that using non-integer values causes undefined behaviour which may prevent the kext from loading
+**Note** that using non-integer value causes undefined behaviour which may prevent the kext from loading
 
 | Value | Default | Description |
 | ----- | ------- | ----------- |
 | `ForceTouchEmulation` | True | Allows Force Touch emulation on Clickpads |
 | `ForceTouchMinPressure` | 90 | Minimum z value to trigger Force touch when clickpad is clicked |
-| `DisableWhileTypingTimeout` | 100 | Milliseconds after typing in which to reject touchpad packets |
-| `TrackstickMultiplier` | 20 | Multiplier used on trackstick inputs (other than scrolling). This is divided by 20, so the default value of 20 will not change the output value at all |
-| `TrackstickScrollMultiplierX` | 20 | Multiplier used on the x access when middle button is held down for scrolling. This is divded by 20. |
-| `TrackstickScrollMultiplierY` | 20 | Same as the above, except applied to the Y axis |
-| `TrackstickDeadzone` | 1 | Minimum value at which trackstick reports will be accepted. This is subtracted from the input of the trackstick, so setting this extremely high will reduce trackstick resolution |
+| `DisableWhileTypingTimeout` | 100 | Milliseconds after typing in which to reject trackpad packets |
+| `TrackpointMultiplier` | 20 | Multiplier used on trackpoint inputs (other than scrolling). This is divided by 20, so the default value of 20 will not change the output value at all |
+| `TrackpointScrollMultiplierX` | 20 | Multiplier used on the x access when middle button is held down for scrolling. This is divded by 20. |
+| `TrackpointScrollMultiplierY` | 20 | Same as the above, except applied to the Y axis |
+| `TrackpointDeadzone` | 1 | Minimum value at which trackpoint reports will be accepted. This is subtracted from the input of the trackpoint, so setting this extremely high will reduce trackpoint resolution |
 | `MinYDiffThumbDetection` | 200 | Minimum distance between the second lowest and lowest finger in which Minimum Y logic is used to detect the thumb rather than using the z value from the trackpad. Setting this higher means that the thumb must be farther from the other fingers before the y coordinate is used to detect the thumb, rather than using finger area. Keeping this smaller is preferable as finger area logic seems to only be useful when all 4 fingers are grouped together closely, where the thumb is more likely to be pressing down more |
 
 Note that you can use Rehabman's ioio to set properties temporarily (until the next reboot).  

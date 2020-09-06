@@ -50,6 +50,7 @@ Linux:
 **SMBus**
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
   * Apple's SMBus **PCI** controller cannot load, as it interferes with VoodooSMBus.
+  * VoodooRMI releases (for now) include VoodooSMBus. If you are building VoodooSMBus yourself, build from the Dev branch of the VoodooSMBus git repo.
 * [VoodooPS2](https://github.com/acidanthera/VoodooPS2)
   * Needed for PS2 reset of the trackpad
   * Generally users should only add VoodooPS2Controller and VoodooPS2Keyboard. VoodooPS2Trackpad/VoodooPS2Mouse will cause VoodooRMI to not attach.

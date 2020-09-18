@@ -190,14 +190,16 @@ void F03::handlePacket(u8 *packet)
     // Otherwise just turn scrolling off and remove middle buttons from packet
     if (!(buttons & 0x04)) {
         if (middlePressed) {
-            buttons |= 0x04;
+            relativeEvent.buttons = 0x04;
+            relativeEvent.timestamp = timestamp;
+            messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
         }
         
         middlePressed = false;
         isScrolling = false;
-    } else {
-        buttons &= ~0x04;
     }
+
+    buttons &= ~0x04;
     
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {

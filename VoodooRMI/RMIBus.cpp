@@ -280,6 +280,15 @@ int RMIBus::reset()
 int RMIBus::rmi_register_function(rmi_function *fn) {
     RMIFunction * function;
 
+    IOLogDebug("Function F%X - IRQs: %u CMD Base: %u CTRL Base: %u DATA Base: %d QRY Base: %u VER: %u",
+               fn->fd.function_number,
+               fn->num_of_irqs,
+               fn->fd.command_base_addr,
+               fn->fd.control_base_addr,
+               fn->fd.data_base_addr,
+               fn->fd.query_base_addr,
+               fn->fd.function_version);
+    
     switch(fn->fd.function_number) {
         case 0x01: /* device control */
             function = OSTypeAlloc(F01);
@@ -296,6 +305,9 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
         case 0x30: /* GPIO and LED controls */
             function = OSTypeAlloc(F30);
             break;
+        case 0x3A: /* Buttons? */
+            function = OSTypeAlloc(F3A);
+            break;
 //        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */
 //        case 0x17: /* trackpoints */
@@ -305,7 +317,6 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
 //        case 0x32: /* timer */
         case 0x34: /* device reflash */
 //        case 0x36: /* auxiliary ADC */
-        case 0x3A:
 //        case 0x41: /* active pen pointing */
         case 0x54: /* analog data reporting */
         case 0x55: /* Sensor tuning */

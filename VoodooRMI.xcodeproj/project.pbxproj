@@ -43,6 +43,8 @@
 		A4560F0A247F38670009CBE0 /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560F06247F38670009CBE0 /* VoodooInputEvent.h */; };
 		A4560F102480757F0009CBE0 /* F03.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0E2480757F0009CBE0 /* F03.cpp */; };
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
+		A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A46D70D92517CB6800A60B75 /* F3A.cpp */; };
+		A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A46D70DA2517CB6800A60B75 /* F3A.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -134,6 +136,8 @@
 		A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMISMBus.cpp; sourceTree = "<group>"; };
 		A4560F0E2480757F0009CBE0 /* F03.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F03.cpp; sourceTree = "<group>"; };
 		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
+		A46D70D92517CB6800A60B75 /* F3A.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F3A.cpp; sourceTree = "<group>"; };
+		A46D70DA2517CB6800A60B75 /* F3A.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F3A.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +274,8 @@
 				A4560EF5247F32760009CBE0 /* F12.cpp */,
 				A4560EF3247F32760009CBE0 /* F30.hpp */,
 				A4560EF8247F32760009CBE0 /* F30.cpp */,
+				A46D70DA2517CB6800A60B75 /* F3A.hpp */,
+				A46D70D92517CB6800A60B75 /* F3A.cpp */,
 			);
 			path = Functions;
 			sourceTree = "<group>";
@@ -323,6 +329,7 @@
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
 				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
+				A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */,
 				A4560F07247F38670009CBE0 /* MultitouchHelpers.h in Headers */,
 				A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */,
 				A4560EE4247F2A660009CBE0 /* RMI_2D_Sensor.hpp in Headers */,
@@ -526,6 +533,7 @@
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
 				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,
+				A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */,
 				A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

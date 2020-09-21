@@ -11,6 +11,9 @@
 
 #include <RMIBus.hpp>
 
+#define F3A_QUERY_SIZE 5
+#define F3A_CTRL_SIZE 6
+
 class F3A : public RMIFunction {
     OSDeclareDefaultStructors(F3A)
     

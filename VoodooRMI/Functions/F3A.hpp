@@ -11,7 +11,7 @@
 
 #include <RMIBus.hpp>
 
-#define F3A_QUERY_SIZE 5
+#define F3A_QUERY_SIZE 4
 #define F3A_CTRL_SIZE 6
 
 class F3A : public RMIFunction {
@@ -21,13 +21,22 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
 //    void stop(IOService *providerr) override;
-//    void free() override;
-//    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-//    void handleClose(IOService *forClient, IOOptionBits options) override;
+    void free() override;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
 private:
     RMIBus *rmiBus;
+    IOService *voodooTrackpointInstance{nullptr};
+    RelativePointerEvent relativeEvent {};
+    
+    bool mapGpios(u8 *ctrlRegs);
+    u16 *gpioled_key_map;
+    u8 gpioCount {0};
+    u8 numButtons {0};
+    u8 clickpadIndex {0};
+    bool clickpadState{false};
 };
 
 #endif /* F3A_hpp */

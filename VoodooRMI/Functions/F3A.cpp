@@ -104,7 +104,7 @@ bool F3A::mapGpios(u8 *qryRegs)
     memset(gpioled_key_map, 0, gpioCount * sizeof(gpioled_key_map[0]));
     
     for (int i = 0; i < gpioCount; i++) {
-        if (BIT(i) & qryRegs[1])
+        if (!(BIT(i) & qryRegs[1]))
             continue;
         
         // I don't know if this logic holds true or not for trackpoint buttons, this is just from F3A

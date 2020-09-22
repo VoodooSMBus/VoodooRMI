@@ -136,7 +136,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
     switch (type) {
         case kHandleRMIAttention:
             // No point doing work
-            if (!voodooTrackpointInstance || numButtons == 1)
+            if (!voodooTrackpointInstance || numButtons != 1)
                 return kIOReturnIOError;
             
             error = rmiBus->readBlock(fn_descriptor->data_base_addr,

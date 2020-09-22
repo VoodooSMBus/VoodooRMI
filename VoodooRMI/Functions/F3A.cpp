@@ -77,6 +77,10 @@ bool F3A::attach(IOService *provider)
 
 bool F3A::start(IOService *provider)
 {
+    if (numButtons != 1) {
+        setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+    }
+    
     registerService();
     return super::start(provider);
 }
@@ -132,7 +136,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
     switch (type) {
         case kHandleRMIAttention:
             // No point doing work
-            if (!voodooTrackpointInstance)
+            if (!voodooTrackpointInstance || numButtons == 1)
                 return kIOReturnIOError;
             
             error = rmiBus->readBlock(fn_descriptor->data_base_addr,

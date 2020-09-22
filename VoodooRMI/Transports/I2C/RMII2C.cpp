@@ -313,6 +313,7 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     if (i2cInput[2] != RMI_READ_DATA_REPORT_ID) {
         IOLogError("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d", getName(), name, i2cInput[2]);
         retval = -1;
+        reset();
         goto exit;
     }
 

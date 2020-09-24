@@ -329,8 +329,7 @@ void F03::initPS2()
 
     error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
     if (param1[0] != 0xAA || param1[1] != 0x00) {
-        IOLogError("Got [%x, %x], should be [0xAA, 0x00]", param1[0], param1[1]);
-        return;
+        IOLogError("Got [%x, %x], should be [0xAA, 0x00]! Continuing...", param1[0], param1[1]);
     }
 
     // Resolutions from psmouse-base.c

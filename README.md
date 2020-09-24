@@ -10,6 +10,7 @@ This driver communicates over SMBus or I2C.
 * Force Touch emulation for clickpads (press down clickpad and increase touched area)
 * Up to four finger gestures (Though it can track up to 5 fingers)
 * Buttons
+  * F3A has partial support, it's only been tested on Clickpads which only have one button.
 * Trackpoint
 * Power Management
 * SMBus Communication

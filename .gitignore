@@ -1,7 +1,12 @@
-VoodooInput/
 **/.DS_STORE
 **/xcuserdata/
-**/*.kext
+
+# Build output
 build
 DerivedData
-.DS_Store
+**/*.kext
+
+# SDK/Dependencies
+MacKernelSDK/
+VoodooInput/
+

@@ -39,16 +39,8 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
         return NULL;
     }
 
-    acpi_device = (OSDynamicCast(IOACPIPlatformDevice, provider->getProperty("acpi-device")));
-    if (!acpi_device) {
-        IOLogInfo("%s::%s Could not find acpi device", getName(), name);
-    } else {
-        acpi_device->retain();
-        // Sometimes an I2C HID will have power state methods, lets turn it on in case
-        acpi_device->evaluateObject("_PS0");
-        if (getHIDDescriptorAddress() != kIOReturnSuccess)
-            IOLogInfo("%s::%s Could not get HID descriptor address", getName(), name);
-    }
+    if (getHIDDescriptorAddress() != kIOReturnSuccess)
+        IOLogInfo("%s::%s Could not get HID descriptor address\n", getName(), name);
 
     if (getHIDDescriptor() != kIOReturnSuccess || hdesc.wVendorID != SYNAPTICS_VENDOR_ID) {
         IOLogError("%s::%s Could not get valid HID descriptor", getName(), name);
@@ -143,10 +135,10 @@ void RMII2C::releaseResources() {
     IOLockFree(page_mutex);
 }
 
-void RMII2C::stop(IOService *device) {
+void RMII2C::stop(IOService *provider) {
     releaseResources();
     PMstop();
-    super::stop(device);
+    super::stop(provider);
 }
 
 int RMII2C::rmi_set_page(u8 page) {
@@ -174,36 +166,25 @@ int RMII2C::rmi_set_page(u8 page) {
 }
 
 IOReturn RMII2C::getHIDDescriptorAddress() {
-    uuid_t guid;
-    uuid_parse(I2C_DSM_HIDG, guid);
+    IOReturn ret;
+    OSObject *obj = nullptr;
 
-    // convert to mixed-endian
-    *(reinterpret_cast<uint32_t *>(guid)) = OSSwapInt32(*(reinterpret_cast<uint32_t *>(guid)));
-    *(reinterpret_cast<uint16_t *>(guid) + 2) = OSSwapInt16(*(reinterpret_cast<uint16_t *>(guid) + 2));
-    *(reinterpret_cast<uint16_t *>(guid) + 3) = OSSwapInt16(*(reinterpret_cast<uint16_t *>(guid) + 3));
-
-    UInt32 result;
-    OSObject *params[4] = {
-        OSData::withBytes(guid, 16),
-        OSNumber::withNumber(I2C_DSM_REVISION, 8),
-        OSNumber::withNumber(HIDG_DESC_INDEX, 8),
-        OSArray::withCapacity(1)
-    };
-
-    if (acpi_device->evaluateInteger("_DSM", &result, params, 4) != kIOReturnSuccess && acpi_device->evaluateInteger("XDSM", &result, params, 4) != kIOReturnSuccess) {
-        IOLogInfo("%s::%s Could not find suitable _DSM or XDSM method in ACPI tables", getName(), name);
-        return kIOReturnNotFound;
+    ret = device_nub->evaluateDSM(I2C_DSM_HIDG, HIDG_DESC_INDEX, &obj);
+    if (ret == kIOReturnSuccess) {
+        OSNumber *number = OSDynamicCast(OSNumber, obj);
+        if (number != nullptr) {
+            wHIDDescRegister = number->unsigned16BitValue();
+            setProperty("HIDDescriptorAddress", wHIDDescRegister, 16);
+        } else {
+            IOLogInfo("%s::%s HID descriptor address invalid\n", getName(), name);
+            ret = kIOReturnInvalid;
+        }
+    } else {
+        IOLogInfo("%s::%s unable to parse HID descriptor address\n", getName(), name);
+        ret = kIOReturnNotFound;
     }
-
-    setProperty("HIDDescriptorAddress", result, 32);
-    wHIDDescRegister = (UInt16) result;
-
-    params[0]->release();
-    params[1]->release();
-    params[2]->release();
-    params[3]->release();
-
-    return kIOReturnSuccess;
+    if (obj) obj->release();
+    return ret;
 }
 
 IOReturn RMII2C::getHIDDescriptor() {

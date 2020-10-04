@@ -46,7 +46,7 @@
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>com.alexandred.VoodooI2C</key>
-		<string>2.4.5</string>
+		<string>2.5</string>
 		<key>com.1Revenger1.VoodooRMI</key>
 		<string>1.0</string>
 		<key>com.apple.kpi.iokit</key>

@@ -59,7 +59,7 @@ Linux:
   * Clover users can go inside the VoodooPS2 kext and remove VoodooPS2Trackpad/VoodooPS2Mouse from PlugIns folder.
 
 **I2C**
-* [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C)
+* [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) 2.5 or newer is required
   * Follow their [Documentation](https://voodooi2c.github.io) to identify if you need GPIO pinning.
   * Polling mode should just work
 * If your device's ACPI name is not included below or marked as unknown, you may add it yourself and create a PR/issue

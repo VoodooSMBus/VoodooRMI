@@ -112,7 +112,7 @@ void RMIBus::handleHostNotify()
         IOLogError("Unable to read IRQ");
         if (error == RMIBusRequestReset) {
             awake = false;
-            setPowerState(2, this);
+            setPowerState(kIOPMPowerOn, this);
         }
         return;
     }

@@ -319,7 +319,7 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         IOLogDebug("%s", buf);
         delete [] buf;
         if (i2cInput[2] == RMI_MOUSE_REPORT_ID)
-            reset();
+            retval = RMIBusRequestReset;
         goto exit;
     }
 

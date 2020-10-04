@@ -21,6 +21,7 @@
 #define kIOMessageVoodooI2CLegacyHostNotify   iokit_vendor_specific_msg(422)
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
+#define RMIBusRequestReset -2
 
 // power management
 static IOPMPowerState RMIPowerStates[] = {

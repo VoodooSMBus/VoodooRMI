@@ -4,3 +4,4 @@ VoodooInput/
 **/*.kext
 build
 DerivedData
+.DS_Store

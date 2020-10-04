@@ -19,25 +19,22 @@ bool F11::init(OSDictionary *dictionary)
     if (!super::init())
         return false;
     
-    dev_controls_mutex = IOLockAlloc();
-    
-    sensor = OSDynamicCast(RMI2DSensor, OSTypeAlloc(RMI2DSensor));
-    if (!sensor)
+    sensor = OSTypeAlloc(RMI2DSensor);
+    if (!sensor || !sensor->init())
         return false;
-    
-    if (!sensor->init(dictionary))
-        return false;
-    
-    return dev_controls_mutex;
+
+    return true;
 }
 
 bool F11::attach(IOService *provider)
 {
     int error;
-    
+
+    sensor->conf = conf;
+
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("F11: Provider is not RMIBus\n");
+        IOLogError("F11: Provider is not RMIBus");
         return false;
     }
     
@@ -84,7 +81,6 @@ void F11::stop(IOService *provider)
 void F11::free()
 {
     clearDesc();
-    IOLockFree(dev_controls_mutex);
     OSSafeReleaseNULL(sensor);
     super::free();
 }
@@ -168,7 +164,7 @@ int F11::f11_read_control_regs(f11_2d_ctrl *ctrl, u16 ctrl_base_addr)
     error = rmiBus->readBlock(ctrl_base_addr, ctrl->ctrl0_11,
                            RMI_F11_CTRL_REG_COUNT);
     if (error < 0) {
-        IOLogError("Failed to read ctrl0, code: %d.\n", error);
+        IOLogError("Failed to read ctrl0, code: %d.", error);
         return error;
     }
     
@@ -274,18 +270,18 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     sensor_query->max_electrodes =
         query_buf[3] & RMI_F11_NR_ELECTRODES_MASK;
     
-    setProperty("Number Fingers", OSNumber::withNumber(sensor_query->nr_fingers, 8));
-    setProperty("Has Relative", OSBoolean::withBoolean(sensor_query->has_rel));
-    setProperty("Has Absolute", OSBoolean::withBoolean(sensor_query->has_abs));
-    setProperty("Has Gestures", OSBoolean::withBoolean(sensor_query->has_gestures));
-    setProperty("Has Sensitivity Adjust", OSBoolean::withBoolean(sensor_query->has_sensitivity_adjust));
-    setProperty("Configurable", OSBoolean::withBoolean(sensor_query->configurable));
-    setProperty("Number of X Electrodes", OSNumber::withNumber(sensor_query->nr_x_electrodes, 8));
-    setProperty("Number of Y Electrodes", OSNumber::withNumber(sensor_query->nr_y_electrodes, 8));
-    setProperty("Max Number of Electrodes", OSNumber::withNumber(sensor_query->max_electrodes, 8));
+    setProperty("Number Fingers", sensor_query->nr_fingers, 8);
+    setProperty("Has Relative", sensor_query->has_rel);
+    setProperty("Has Absolute", sensor_query->has_abs);
+    setProperty("Has Gestures", sensor_query->has_gestures);
+    setProperty("Has Sensitivity Adjust", sensor_query->has_sensitivity_adjust);
+    setProperty("Configurable", sensor_query->configurable);
+    setProperty("Number of X Electrodes", sensor_query->nr_x_electrodes, 8);
+    setProperty("Number of Y Electrodes", sensor_query->nr_y_electrodes, 8);
+    setProperty("Max Number of Electrodes", sensor_query->max_electrodes, 8);
     
     query_size = RMI_F11_QUERY_SIZE;
-    
+    OSNumber *value;
     if (sensor_query->has_abs) {
         rc = rmiBus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
@@ -307,17 +303,16 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
             !!(query_buf[0] & RMI_F11_HAS_JITTER_FILTER);
         query_size++;
         
-        absProps = OSDictionary::withCapacity(7);
-        
-        absProps->setObject("Absolute Data Size", OSNumber::withNumber(sensor_query->abs_data_size, 8));
-        absProps->setObject("Has Anchored Finger", OSBoolean::withBoolean(sensor_query->has_anchored_finger));
-        absProps->setObject("Has Adjustable Hyst", OSBoolean::withBoolean(sensor_query->has_adj_hyst));
-        absProps->setObject("Has Dribble", OSBoolean::withBoolean(sensor_query->has_dribble));
-        absProps->setObject("Has Bending Correction", OSBoolean::withBoolean(sensor_query->has_bending_correction));
-        absProps->setObject("Has Large Object Suppression", OSBoolean::withBoolean(sensor_query->has_large_object_suppression));
-        absProps->setObject("Has Jitter Filter", OSBoolean::withBoolean(sensor_query->has_jitter_filter));
-        
+        OSDictionary *absProps = OSDictionary::withCapacity(7);
+        setPropertyNumber(absProps, "Absolute Data Size", sensor_query->abs_data_size, 8);
+        setPropertyBoolean(absProps, "Has Anchored Finger", sensor_query->has_anchored_finger);
+        setPropertyBoolean(absProps, "Has Adjustable Hyst", sensor_query->has_adj_hyst);
+        setPropertyBoolean(absProps, "Has Dribble", sensor_query->has_dribble);
+        setPropertyBoolean(absProps, "Has Bending Correction", sensor_query->has_bending_correction);
+        setPropertyBoolean(absProps, "Has Large Object Suppression", sensor_query->has_large_object_suppression);
+        setPropertyBoolean(absProps, "Has Jitter Filter", sensor_query->has_jitter_filter);
         setProperty("Absolute Keys", absProps);
+        absProps->release();
     }
     
     if (sensor_query->has_rel) {
@@ -372,27 +367,27 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->query7_nonzero = !!(query_buf[0]);
         sensor_query->query8_nonzero = !!(query_buf[1]);
         
-        gestProps = OSDictionary::withCapacity(16);
-        gestProps->setObject("Has Single Tap", OSBoolean::withBoolean(sensor_query->has_single_tap));
-        gestProps->setObject("Has Tap and Hold", OSBoolean::withBoolean(sensor_query->has_tap_n_hold));
-        gestProps->setObject("Has Double Tap", OSBoolean::withBoolean(sensor_query->has_double_tap));
-        gestProps->setObject("Has Early Tap", OSBoolean::withBoolean(sensor_query->has_early_tap));
-        gestProps->setObject("Has Flick", OSBoolean::withBoolean(sensor_query->has_flick));
-        gestProps->setObject("Has Press", OSBoolean::withBoolean(sensor_query->has_press));
-        gestProps->setObject("Has Pinch", OSBoolean::withBoolean(sensor_query->has_pinch));
-        gestProps->setObject("Has Chiral", OSBoolean::withBoolean(sensor_query->has_chiral));
-        
-        gestProps->setObject("Has Palm Detection", OSBoolean::withBoolean(sensor_query->has_palm_det));
-        gestProps->setObject("Has Rotate", OSBoolean::withBoolean(sensor_query->has_rotate));
-        gestProps->setObject("Has Touch Shapes", OSBoolean::withBoolean(sensor_query->has_touch_shapes));
-        gestProps->setObject("Has Scroll Zones", OSBoolean::withBoolean(sensor_query->has_scroll_zones));
-        gestProps->setObject("Has Individual Scroll Zones", OSBoolean::withBoolean(sensor_query->has_individual_scroll_zones));
-        gestProps->setObject("Has Multi-Finger Scroll", OSBoolean::withBoolean(sensor_query->has_mf_scroll));
-        gestProps->setObject("Has Multi-Finger Edge Motion", OSBoolean::withBoolean(sensor_query->has_mf_edge_motion));
-        gestProps->setObject("Has Multi-Finger Scroll Intertia", OSBoolean::withBoolean(sensor_query->has_mf_scroll_inertia));
+        OSDictionary *gestProps = OSDictionary::withCapacity(16);
+        setPropertyBoolean(gestProps, "Has Single Tap", sensor_query->has_single_tap);
+        setPropertyBoolean(gestProps, "Has Tap and Hold", sensor_query->has_tap_n_hold);
+        setPropertyBoolean(gestProps, "Has Double Tap", sensor_query->has_double_tap);
+        setPropertyBoolean(gestProps, "Has Early Tap", sensor_query->has_early_tap);
+        setPropertyBoolean(gestProps, "Has Flick", sensor_query->has_flick);
+        setPropertyBoolean(gestProps, "Has Press", sensor_query->has_press);
+        setPropertyBoolean(gestProps, "Has Pinch", sensor_query->has_pinch);
+        setPropertyBoolean(gestProps, "Has Chiral", sensor_query->has_chiral);
+
+        setPropertyBoolean(gestProps, "Has Palm Detection", sensor_query->has_palm_det);
+        setPropertyBoolean(gestProps, "Has Rotate", sensor_query->has_rotate);
+        setPropertyBoolean(gestProps, "Has Touch Shapes", sensor_query->has_touch_shapes);
+        setPropertyBoolean(gestProps, "Has Scroll Zones", sensor_query->has_scroll_zones);
+        setPropertyBoolean(gestProps, "Has Individual Scroll Zones", sensor_query->has_individual_scroll_zones);
+        setPropertyBoolean(gestProps, "Has Multi-Finger Scroll", sensor_query->has_mf_scroll);
+        setPropertyBoolean(gestProps, "Has Multi-Finger Edge Motion", sensor_query->has_mf_edge_motion);
+        setPropertyBoolean(gestProps, "Has Multi-Finger Scroll Intertia", sensor_query->has_mf_scroll_inertia);
         
         setProperty("Gestures", gestProps);
-        
+        gestProps->release();
         query_size += 2;
     }
     
@@ -418,17 +413,17 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_pen_filters =
             !!(query_buf[0] & RMI_F11_HAS_PEN_FILTERS);
         
-        penProps = OSDictionary::withCapacity(8);
-        penProps->setObject("Has Pen", OSBoolean::withBoolean(sensor_query->has_pen));
-        penProps->setObject("Has Proximity", OSBoolean::withBoolean(sensor_query->has_proximity));
-        penProps->setObject("Has Palm Detection Sensitivity", OSBoolean::withBoolean(sensor_query->has_palm_det_sensitivity));
-        penProps->setObject("Has Suppress on Palm Detect", OSBoolean::withBoolean(sensor_query->has_suppress_on_palm_detect));
-        penProps->setObject("Has Two Pen Thresholds", OSBoolean::withBoolean(sensor_query->has_two_pen_thresholds));
-        penProps->setObject("Has Contact Geometry", OSBoolean::withBoolean(sensor_query->has_contact_geometry));
-        penProps->setObject("Has Pen Hover Discrimination", OSBoolean::withBoolean(sensor_query->has_pen_hover_discrimination));
-        penProps->setObject("Has Pen Filters", OSBoolean::withBoolean(sensor_query->has_pen_filters));
-        
+        OSDictionary *penProps = OSDictionary::withCapacity(8);
+        setPropertyBoolean(penProps, "Has Pen", sensor_query->has_pen);
+        setPropertyBoolean(penProps, "Has Proximity", sensor_query->has_proximity);
+        setPropertyBoolean(penProps, "Has Palm Detection Sensitivity", sensor_query->has_palm_det_sensitivity);
+        setPropertyBoolean(penProps, "Has Suppress on Palm Detect", sensor_query->has_suppress_on_palm_detect);
+        setPropertyBoolean(penProps, "Has Two Pen Thresholds", sensor_query->has_two_pen_thresholds);
+        setPropertyBoolean(penProps, "Has Contact Geometry", sensor_query->has_contact_geometry);
+        setPropertyBoolean(penProps, "Has Pen Hover Discrimination", sensor_query->has_pen_hover_discrimination);
+        setPropertyBoolean(penProps, "Has Pen Filters", sensor_query->has_pen_filters);
         setProperty("Pen", penProps);
+        penProps->release();
         
         query_size++;
     }
@@ -441,7 +436,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->nr_touch_shapes = query_buf[0] &
             RMI_F11_NR_TOUCH_SHAPES_MASK;
         
-        setProperty("Number of Touch Shapes", OSNumber::withNumber(sensor_query->nr_touch_shapes, 8));
+        setProperty("Number of Touch Shapes", sensor_query->nr_touch_shapes, 8);
         
         query_size++;
     }
@@ -469,17 +464,17 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_drumming_filter =
             !!(query_buf[0] & RMI_F11_HAS_DRUMMING_FILTER);
         
-        tuningProps = OSDictionary::withCapacity(8);
-        tuningProps->setObject("Has Z Tuning", OSBoolean::withBoolean(sensor_query->has_z_tuning));
-        tuningProps->setObject("Has Algorithm Selection", OSBoolean::withBoolean(sensor_query->has_algorithm_selection));
-        tuningProps->setObject("Has Width Tuning", OSBoolean::withBoolean(sensor_query->has_w_tuning));
-        tuningProps->setObject("Has Pitch Info", OSBoolean::withBoolean(sensor_query->has_pitch_info));
-        tuningProps->setObject("Has Finger Size", OSBoolean::withBoolean(sensor_query->has_finger_size));
-        tuningProps->setObject("Has Segmentation Agressiveness", OSBoolean::withBoolean(sensor_query->has_segmentation_aggressiveness));
-        tuningProps->setObject("Has XY Clip", OSBoolean::withBoolean(sensor_query->has_XY_clip));
-        tuningProps->setObject("Has Drumming Filter", OSBoolean::withBoolean(sensor_query->has_drumming_filter));
+        OSDictionary *tuningProps = OSDictionary::withCapacity(8);
+        setPropertyBoolean(tuningProps, "Has Z Tuning", sensor_query->has_z_tuning);
+        setPropertyBoolean(tuningProps, "Has Algorithm Selection", sensor_query->has_algorithm_selection);
+        setPropertyBoolean(tuningProps, "Has Width Tuning", sensor_query->has_w_tuning);
+        setPropertyBoolean(tuningProps, "Has Pitch Info", sensor_query->has_pitch_info);
+        setPropertyBoolean(tuningProps, "Has Finger Size", sensor_query->has_finger_size);
+        setPropertyBoolean(tuningProps, "Has Segmentation Agressiveness", sensor_query->has_segmentation_aggressiveness);
+        setPropertyBoolean(tuningProps, "Has XY Clip", sensor_query->has_XY_clip);
+        setPropertyBoolean(tuningProps, "Has Drumming Filter", sensor_query->has_drumming_filter);
         setProperty("Tuning (Query 11)", tuningProps);
-        
+        tuningProps->release();
         query_size++;
     }
     
@@ -505,20 +500,20 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_linear_coeff_2 =
             !!(query_buf[0] & RMI_F11_HAS_LINEAR_COEFF);
         
-        tuningProps2 = OSDictionary::withCapacity(8);
-        tuningProps2->setObject("Has Gapless Finger", OSBoolean::withBoolean(sensor_query->has_gapless_finger));
-        tuningProps2->setObject("Has Gapless Finger Tuning", OSBoolean::withBoolean(sensor_query->has_gapless_finger_tuning));
-        tuningProps2->setObject("Has 8 Bit Width", OSBoolean::withBoolean(sensor_query->has_8bit_w));
-        tuningProps2->setObject("Has Adjustable Mapping", OSBoolean::withBoolean(sensor_query->has_adjustable_mapping));
-        tuningProps2->setObject("Has Info2 (Query 14 present)", OSBoolean::withBoolean(sensor_query->has_info2));
-        tuningProps2->setObject("Has Physical Properties", OSBoolean::withBoolean(sensor_query->has_physical_props));
-        tuningProps2->setObject("Has Finger Limit", OSBoolean::withBoolean(sensor_query->has_finger_limit));
-        tuningProps2->setObject("Has Linear Coefficient 2", OSBoolean::withBoolean(sensor_query->has_linear_coeff_2));
+        OSDictionary *tuningProps2 = OSDictionary::withCapacity(8);
+        setPropertyBoolean(tuningProps2, "Has Gapless Finger", sensor_query->has_gapless_finger);
+        setPropertyBoolean(tuningProps2, "Has Gapless Finger Tuning", sensor_query->has_gapless_finger_tuning);
+        setPropertyBoolean(tuningProps2, "Has 8 Bit Width", sensor_query->has_8bit_w);
+        setPropertyBoolean(tuningProps2, "Has Adjustable Mapping", sensor_query->has_adjustable_mapping);
+        setPropertyBoolean(tuningProps2, "Has Info2 (Query 14 present)", sensor_query->has_info2);
+        setPropertyBoolean(tuningProps2, "Has Physical Properties", sensor_query->has_physical_props);
+        setPropertyBoolean(tuningProps2, "Has Finger Limit", sensor_query->has_finger_limit);
+        setPropertyBoolean(tuningProps2, "Has Linear Coefficient 2", sensor_query->has_linear_coeff_2);
         setProperty("Tuning (Query 12)", tuningProps2);
-        
+        tuningProps2->release();
         query_size++;
     }
-    
+
     if (sensor_query->has_jitter_filter) {
         rc = rmiBus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
@@ -530,11 +525,11 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
                                             RMI_F11_JITTER_FILTER_MASK) >>
                                             RMI_F11_JITTER_FILTER_SHIFT;
         
-        jitterProps = OSDictionary::withCapacity(2);
-        jitterProps->setObject("Jitter Window Size", OSNumber::withNumber(sensor_query->jitter_window_size, 8));
-        jitterProps->setObject("Jitter Filter Type", OSNumber::withNumber(sensor_query->jitter_filter_type, 8));
+        OSDictionary *jitterProps = OSDictionary::withCapacity(2);
+        setPropertyNumber(jitterProps, "Jitter Window Size", sensor_query->jitter_window_size, 8);
+        setPropertyNumber(jitterProps, "Jitter Filter Type", sensor_query->jitter_filter_type, 8);
         setProperty("Jitter", jitterProps);
-        
+        jitterProps->release();
         query_size++;
     }
     
@@ -556,14 +551,14 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->has_advanced_gestures =
             !!(query_buf[0] & RMI_F11_HAS_ADVANCED_GESTURES);
     
-        miscProps = OSDictionary::withCapacity(5);
-        miscProps->setObject("Light Control", OSNumber::withNumber(sensor_query->light_control, 8));
-        miscProps->setObject("Clickpad Properties", OSNumber::withNumber(sensor_query->clickpad_props, 8));
-        miscProps->setObject("Mouse Buttons", OSNumber::withNumber(sensor_query->mouse_buttons, 8));
-        miscProps->setObject("Is Clear", OSBoolean::withBoolean(sensor_query->is_clear));
-        miscProps->setObject("Has Advanced Gestures", OSBoolean::withBoolean(sensor_query->has_advanced_gestures));
+        OSDictionary *miscProps = OSDictionary::withCapacity(5);
+        setPropertyNumber(miscProps, "Light Control", sensor_query->light_control, 8);
+        setPropertyNumber(miscProps, "Clickpad Properties", sensor_query->clickpad_props, 8);
+        setPropertyNumber(miscProps, "Mouse Buttons", sensor_query->mouse_buttons, 8);
+        setPropertyBoolean(miscProps, "Is Clear", sensor_query->is_clear);
+        setPropertyBoolean(miscProps, "Has Advanced Gestures", sensor_query->has_advanced_gestures);
         setProperty("Misc", miscProps);
-        
+        miscProps->release();
         query_size++;
     }
     
@@ -578,11 +573,11 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
         sensor_query->y_sensor_size_mm =
             (query_buf[2] | (query_buf[3] << 8)) / 10;
         
-        sizeProps = OSDictionary::withCapacity(2);
-        sizeProps->setObject("X Sensor Size (mm)", OSNumber::withNumber(sensor_query->x_sensor_size_mm, 16));
-        sizeProps->setObject("Y Sensor Size (mm)", OSNumber::withNumber(sensor_query->y_sensor_size_mm, 16));
+        OSDictionary *sizeProps = OSDictionary::withCapacity(2);
+        setPropertyNumber(sizeProps, "X Sensor Size (mm)", sensor_query->x_sensor_size_mm, 16);
+        setPropertyNumber(sizeProps, "Y Sensor Size (mm)", sensor_query->y_sensor_size_mm, 16);
         setProperty("Size", sizeProps);
-        
+        sizeProps->release();
         /*
          * query 15 - 18 contain the size of the sensor
          * and query 19 - 26 contain bezel dimensions
@@ -638,7 +633,7 @@ int F11::rmi_f11_initialize()
     
     rc = rmiBus->read(query_base_addr, &buf);
     if (rc < 0) {
-        IOLogError("F11: Could not read Query Base Addr\n");
+        IOLogError("F11: Could not read Query Base Addr");
         return rc;
     }
     
@@ -661,7 +656,7 @@ int F11::rmi_f11_initialize()
         sensor->x_mm = sens_query.x_sensor_size_mm;
         sensor->y_mm = sens_query.y_sensor_size_mm;
     } else {
-        IOLogError("No size data from Device.\n");
+        IOLogError("No size data from Device.");
         return -ENODEV;
     }
     
@@ -673,14 +668,14 @@ int F11::rmi_f11_initialize()
     rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_X_POS_OFFSET,
                            (u8 *)&max_x_pos, sizeof(max_x_pos));
     if (rc < 0) {
-        IOLogError("F11: Could not read max x\n");
+        IOLogError("F11: Could not read max x");
         return rc;
     }
     
     rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_Y_POS_OFFSET,
                            (u8 *)&max_y_pos, sizeof(max_y_pos));
     if (rc < 0) {
-        IOLogError("F11: Could not read max y\n");
+        IOLogError("F11: Could not read max y");
         return rc;
     }
         
@@ -689,7 +684,7 @@ int F11::rmi_f11_initialize()
     
     rc = f11_2d_construct_data();
     if (rc < 0) {
-        IOLogError("F11: Could not construct 2d Data\n");
+        IOLogError("F11: Could not construct 2d Data");
         return rc;
     }
     
@@ -699,7 +694,7 @@ int F11::rmi_f11_initialize()
     rc = f11_read_control_regs(&dev_controls,
                                control_base_addr);
     if (rc < 0) {
-        IOLogError("Failed to read F11 control params.\n");
+        IOLogError("Failed to read F11 control params.");
         return rc;
     }
     
@@ -716,7 +711,7 @@ int F11::rmi_f11_initialize()
     rc = f11_write_control_regs(&sens_query,
                                 &dev_controls, fn_descriptor->control_base_addr);
     if (rc)
-        IOLogError("F11: Failed to write control registers\n");
+        IOLogError("F11: Failed to write control registers");
     
     return 0;
 }

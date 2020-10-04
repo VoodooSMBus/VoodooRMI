@@ -25,16 +25,8 @@
 			<key>IOPropertyMatch</key>
 			<array>
 				<dict>
-					<key>name</key>
-					<string>SYNA0000</string>
-				</dict>
-				<dict>
-					<key>name</key>
-					<string>SYNA2B31</string>
-				</dict>
-				<dict>
-					<key>name</key>
-					<string>SYNA2B33</string>
+					<key>compatible</key>
+					<string>PNP0C50</string>
 				</dict>
 			</array>
 			<key>IOProbeScore</key>

@@ -18,47 +18,43 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     int error = 0, attempts = 0;
 
     if (!super::probe(provider, score)) {
-        IOLog("%s Failed to probe provider\n", getName());
+        IOLogError("%s Failed to probe provider", getName());
         return NULL;
     }
 
     name = provider->getName();
-    IOLog("%s::%s probing\n", getName(), name);
+    IOLogDebug("%s::%s probing", getName(), name);
 
     OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
     if (isLegacy == nullptr) {
-        IOLog("%s::%s Legacy mode not set, default to false\n", getName(), name);
+        IOLogInfo("%s::%s Legacy mode not set, default to false", getName(), name);
     } else if (isLegacy->getValue()) {
         reportMode = RMI_MODE_ATTN_REPORTS;
-        IOLog("%s::%s running in legacy mode\n", getName(), name);
+        IOLogInfo("%s::%s running in legacy mode", getName(), name);
     }
 
     device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
     if (!device_nub) {
-        IOLog("%s::%s Could not cast nub\n", getName(), name);
+        IOLogError("%s::%s Could not cast nub", getName(), name);
         return NULL;
     }
 
     if (getHIDDescriptorAddress() != kIOReturnSuccess)
-        IOLog("%s::%s Could not get HID descriptor address\n", getName(), name);
+        IOLogInfo("%s::%s Could not get HID descriptor address\n", getName(), name);
 
-    if (getHIDDescriptor() != kIOReturnSuccess) {
-        hdesc.wCommandRegister  = RMI_HID_COMMAND_REGISTER;
-        hdesc.wDataRegister     = RMI_HID_DATA_REGISTER;
-        hdesc.wOutputRegister   = RMI_HID_OUTPUT_REGISTER;
-        IOLog("%s::%s Using default HID register addresses\n", getName(), name);
+    if (getHIDDescriptor() != kIOReturnSuccess || hdesc.wVendorID != SYNAPTICS_VENDOR_ID) {
+        IOLogError("%s::%s Could not get valid HID descriptor", getName(), name);
+        return NULL;
     }
 
     do {
-#if DEBUG
-        IOLog("%s::%s Trying to set mode, attempt %d\n", getName(), name, attempts);
-#endif //DEBUG
+        IOLogDebug("%s::%s Trying to set mode, attempt %d", getName(), name, attempts);
         error = rmi_set_mode(reportMode);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
 
     if (error < 0) {
-        IOLog("%s::%s Failed to set mode\n", getName(), name);
+        IOLogError("%s::%s Failed to set mode", getName(), name);
         return NULL;
     }
 
@@ -71,7 +67,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     error = rmi_set_page(0);
     IOLockUnlock(page_mutex);
     if (error) {
-        IOLog("%s::%s Failed to set page select to 0\n", getName(), name);
+        IOLogError("%s::%s Failed to set page select to 0", getName(), name);
         return NULL;
     }
     return this;
@@ -84,23 +80,23 @@ bool RMII2C::start(IOService *provider) {
     work_loop = getWorkLoop();
 
     if (!work_loop) {
-        IOLog("%s::%s Could not get work loop\n", getName(), name);
+        IOLogError("%s::%s Could not get work loop", getName(), name);
         goto exit;
     }
 
     command_gate = IOCommandGate::commandGate(this);
     if (!command_gate || (work_loop->addEventSource(command_gate) != kIOReturnSuccess)) {
-        IOLog("%s::%s Could not open command gate\n", getName(), name);
+        IOLogError("%s::%s Could not open command gate", getName(), name);
         goto exit;
     }
 
     /* Implementation of polling */
     interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
     if (!interrupt_source) {
-        IOLog("%s::%s Could not get interrupt event source, trying to fallback on polling\n", getName(), name);
+        IOLogInfo("%s::%s Could not get interrupt event source, falling back to polling", getName(), name);
         interrupt_simulator = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &RMII2C::simulateInterrupt));
         if (!interrupt_simulator) {
-            IOLog("%s::%s Could not get timer event source\n", getName(), name);
+            IOLogError("%s::%s Could not get timer event source", getName(), name);
             goto exit;
         }
     }
@@ -161,7 +157,7 @@ int RMII2C::rmi_set_page(u8 page) {
         page };
 
     if (device_nub->writeI2C(writeReport, sizeof(writeReport)) != kIOReturnSuccess) {
-        IOLog("%s::%s failed to write request output report\n", getName(), name);
+        IOLogError("%s::%s failed to write request output report", getName(), name);
         return -1;
     }
 
@@ -180,11 +176,11 @@ IOReturn RMII2C::getHIDDescriptorAddress() {
             wHIDDescRegister = number->unsigned16BitValue();
             setProperty("HIDDescriptorAddress", wHIDDescRegister, 16);
         } else {
-            IOLog("%s::%s HID descriptor address invalid\n", getName(), name);
+            IOLogInfo("%s::%s HID descriptor address invalid\n", getName(), name);
             ret = kIOReturnInvalid;
         }
     } else {
-        IOLog("%s::%s unable to parse HID descriptor address\n", getName(), name);
+        IOLogInfo("%s::%s unable to parse HID descriptor address\n", getName(), name);
         ret = kIOReturnNotFound;
     }
     if (obj) obj->release();
@@ -197,17 +193,17 @@ IOReturn RMII2C::getHIDDescriptor() {
         (u8) (wHIDDescRegister >> 8) };
 
     if (device_nub->writeReadI2C(command, sizeof(command), (UInt8 *)&hdesc, sizeof(i2c_hid_desc)) != kIOReturnSuccess) {
-        IOLog("%s::%s Read descriptor from 0x%02x failed\n", getName(), name, wHIDDescRegister);
+        IOLogError("%s::%s Read descriptor from 0x%02x failed", getName(), name, wHIDDescRegister);
         return kIOReturnError;
     }
 
     if (hdesc.bcdVersion != 0x0100) {
-        IOLog("%s::%s BCD version %d mismatch\n", getName(), name, hdesc.bcdVersion);
+        IOLogError("%s::%s BCD version %d mismatch", getName(), name, hdesc.bcdVersion);
         return kIOReturnInvalid;
     }
     
     if (hdesc.wHIDDescLength != sizeof(i2c_hid_desc)) {
-        IOLog("%s::%s descriptor length %d mismatch\n", getName(), name, hdesc.wHIDDescLength);
+        IOLogError("%s::%s descriptor length %d mismatch", getName(), name, hdesc.wHIDDescLength);
         return kIOReturnInvalid;
     }
 
@@ -236,7 +232,7 @@ int RMII2C::rmi_set_mode(u8 mode) {
     if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
 
-    IOLog("%s::%s reset completed\n", getName(), name);
+    IOLogInfo("%s::%s reset completed", getName(), name);
     return 1;
 }
 
@@ -290,13 +286,13 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
     }
 
     if (device_nub->writeReadI2C(writeReport, sizeof(writeReport), i2cInput, len+4) != kIOReturnSuccess) {
-        IOLog("%s::%s failed to read I2C input\n", getName(), name);
+        IOLogError("%s::%s failed to read I2C input", getName(), name);
         retval = -1;
         goto exit;
     }
 
     if (i2cInput[2] != RMI_READ_DATA_REPORT_ID) {
-        IOLog("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d\n", getName(), name, i2cInput[2]);
+        IOLogError("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d", getName(), name, i2cInput[2]);
         retval = -1;
         goto exit;
     }
@@ -343,7 +339,7 @@ int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
     memcpy(writeReport+8, buf, len);
 
     if (device_nub->writeI2C(writeReport, len+8) != kIOReturnSuccess) {
-        IOLog("%s::%s failed to write request output report\n", getName(), name);
+        IOLogError("%s::%s failed to write request output report", getName(), name);
         retval = -1;
         goto exit;
     }
@@ -372,7 +368,7 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
 }
 
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
-    IOLog("%s::%s powerState %ld : %s\n", getName(), name, powerState, powerState ? "on" : "off");
+    IOLogDebug("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
     if (!bus)
         return kIOPMAckImplied;
     if (whatDevice != this)

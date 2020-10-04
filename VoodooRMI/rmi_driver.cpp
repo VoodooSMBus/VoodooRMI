@@ -52,7 +52,7 @@ int rmi_driver_probe(RMIBus *dev)
     
     retval = rmi_scan_pdt(dev, NULL, rmi_initial_reset);
     if (retval < 0)
-        IOLog("RMI initial reset failed! Continuing in spite of this.\n");
+        IOLogError("RMI initial reset failed! Continuing in spite of this");
     
     retval = dev->read(PDT_PROPERTIES_LOCATION, &dev->data->pdt_props);
     if (retval < 0) {
@@ -60,7 +60,7 @@ int rmi_driver_probe(RMIBus *dev)
          * we'll print out a warning and continue since
          * failure to get the PDT properties is not a cause to fail
          */
-        IOLog("Could not read PDT properties from %#06x (code %d). Assuming 0x00.\n",
+        IOLogError("Could not read PDT properties from %#06x (code %d). Assuming 0x00.",
                  PDT_PROPERTIES_LOCATION, retval);
     }
     
@@ -82,7 +82,7 @@ static int rmi_read_pdt_entry(RMIBus *rmi_dev,
     
     error = rmi_dev->readBlock(pdt_address, buf, RMI_PDT_ENTRY_SIZE);
     if (error) {
-        IOLogError("Read PDT entry at %#06x failed, code: %d.\n", pdt_address, error);
+        IOLogError("Read PDT entry at %#06x failed, code: %d", pdt_address, error);
         return error;
     }
     
@@ -187,7 +187,7 @@ static int rmi_check_bootloader_mode(RMIBus *rmi_dev,
     if (pdt->function_number == 0x34 && pdt->function_version > 1) {
         ret = rmi_dev->read(pdt->data_base_addr, &status);
         if (ret) {
-            IOLogError("Failed to read F34 status: %d\n", ret);
+            IOLogError("Failed to read F34 status: %d", ret);
             return ret;
         }
         
@@ -196,7 +196,7 @@ static int rmi_check_bootloader_mode(RMIBus *rmi_dev,
     } else if (pdt->function_number == 0x01) {
         ret = rmi_dev->read(pdt->data_base_addr, &status);
         if (ret) {
-            IOLogError("Failed to read F01 status: %d.\n", ret);
+            IOLogError("Failed to read F01 status: %d", ret);
             return ret;
         }
         
@@ -233,21 +233,21 @@ int rmi_probe_interrupts(RMIBus *rmi_dev, rmi_driver_data *data)
      * function can trigger events that result in the IRQ related storage
      * being accessed.
      */
-    IOLogDebug("%s: Counting IRQs.\n", __func__);
+    IOLogDebug("%s: Counting IRQs", __func__);
     data->bootloader_mode = false;
     
     retval = rmi_scan_pdt(rmi_dev, &irq_count, rmi_count_irqs);
     if (retval < 0) {
-        IOLogError("IRQ counting failed with code %d.\n", retval);
+        IOLogError("IRQ counting failed with code %d", retval);
         return retval;
     }
     
     if (data->bootloader_mode)
-        IOLogDebug("Device in bootloader mode.\n");
+        IOLogDebug("Device in bootloader mode");
     
     data->irq_count = irq_count;
     data->num_of_irq_regs = (data->irq_count + 7) / 8;
-    IOLogDebug("IRQ Count: %d\n", data->irq_count);
+    IOLogDebug("IRQ Count: %d", data->irq_count);
     
     data->irq_status        = 0;
     data->fn_irq_bits       = 0;
@@ -278,7 +278,7 @@ static int rmi_create_function(RMIBus *rmi_dev,
     int i;
     int error;
     
-    IOLog("Initializing F%02X.\n", pdt->function_number);
+    IOLogInfo("Initializing F%02X.", pdt->function_number);
     
     int size = sizeof(rmi_function)
         + BITS_TO_LONGS(data->irq_count) * sizeof(unsigned long);
@@ -289,7 +289,7 @@ static int rmi_create_function(RMIBus *rmi_dev,
     fn->size = size;
     
     if (!fn) {
-        IOLogError("Failed to allocate memory for F%02X\n", pdt->function_number);
+        IOLogError("Failed to allocate memory for F%02X", pdt->function_number);
         return -ENOMEM;
     }
     
@@ -321,7 +321,7 @@ static int rmi_driver_process_config_requests(RMIBus *rmi_dev)
     OSIterator* iter = rmi_dev->getClientIterator();
     while ((func = OSDynamicCast(RMIFunction, iter->getNextObject()))) {
         if (func && !func->start(rmi_dev))
-            IOLogError("Could not start function %s\n", func->getName());
+            IOLogError("Could not start function %s", func->getName());
 
     }
     
@@ -428,15 +428,15 @@ int rmi_init_functions(RMIBus *rmi_dev, rmi_driver_data *data)
     int irq_count = 0;
     int retval;
     
-    IOLogDebug("%s: Creating functions.\n", __func__);
+    IOLogDebug("%s: Creating functions", __func__);
     retval = rmi_scan_pdt(rmi_dev, &irq_count, rmi_create_function);
     if (retval < 0) {
-        IOLogError("Function creation failed with code %d.\n", retval);
+        IOLogError("Function creation failed with code %d", retval);
         return retval;
     }
     
     if (!data->f01_container) {
-        IOLogError("Missing F01 container!\n");
+        IOLogError("Missing F01 container!");
         return -EINVAL;
     }
     
@@ -445,7 +445,7 @@ int rmi_init_functions(RMIBus *rmi_dev, rmi_driver_data *data)
                             reinterpret_cast<u8 *>(&data->current_irq_mask), data->num_of_irq_regs);
     
     if (retval < 0) {
-        IOLogError("%s: Failed to read current IRQ mask.\n", __func__);
+        IOLogError("%s: Failed to read current IRQ mask", __func__);
         return retval;
     }
     
@@ -456,7 +456,7 @@ void rmi_free_function_list(RMIBus *rmi_dev)
 {
     struct rmi_driver_data *data = rmi_dev->data;
     
-    IOLogDebug("Freeing function list\n");
+    IOLogDebug("Freeing function list");
     
     if (data->f01_container)
         IOFree(data->f01_container, data->f01_container->size);

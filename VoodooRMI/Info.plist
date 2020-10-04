@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.1</string>
+	<string>1.1</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.1</string>
+	<string>1.1</string>
 	<key>OSBundleCompatibleVersion</key>
 	<string>1.0.0</string>
 	<key>IOKitPersonalities</key>
@@ -34,13 +34,15 @@
 				<integer>90</integer>
 				<key>DisableWhileTypingTimeout</key>
 				<integer>100</integer>
-				<key>TrackstickMultiplier</key>
-				<integer>20</integer>
-				<key>TrackstickScrollMultiplierX</key>
-				<integer>20</integer>
-				<key>TrackstickScrollMultiplierY</key>
-				<integer>20</integer>
-				<key>TrackstickDeadzone</key>
+				<key>DisableWhileTrackpointTimeout </key>
+				<integer>100</integer>
+				<key>TrackpointMultiplier</key>
+				<integer>10</integer>
+				<key>TrackpointScrollMultiplierX</key>
+				<integer>30</integer>
+				<key>TrackpointScrollMultiplierY</key>
+				<integer>30</integer>
+				<key>TrackpointDeadzone</key>
 				<integer>1</integer>
 			</dict>
 			<key>IOProbeScore</key>

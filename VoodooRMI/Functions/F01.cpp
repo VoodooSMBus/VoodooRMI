@@ -39,7 +39,7 @@ bool F01::attach(IOService *provider)
 
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("%s Could not get RMIBus instance\n", getName());
+        IOLogError("%s Could not get RMIBus instance", getName());
         return NULL;
     }
     
@@ -53,7 +53,7 @@ bool F01::attach(IOService *provider)
     error = rmiBus->read(fn_descriptor->control_base_addr,
                          &device_control->ctrl0);
     if (error) {
-        IOLogError("Failed to read F01 control: %d\n", error);
+        IOLogError("Failed to read F01 control: %d", error);
         return false;
     }
     
@@ -77,7 +77,7 @@ bool F01::attach(IOService *provider)
      */
     if ((device_control->ctrl0 & RMI_F01_CTRL0_SLEEP_MODE_MASK) !=
         RMI_SLEEP_MODE_NORMAL) {
-        IOLogDebug("WARNING: Non-zero sleep mode found. Clearing...\n");
+        IOLogDebug("WARNING: Non-zero sleep mode found. Clearing...");
         device_control->ctrl0 &= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
     }
     
@@ -86,24 +86,24 @@ bool F01::attach(IOService *provider)
     error = rmiBus->write(fn_descriptor->control_base_addr,
                           &device_control->ctrl0);
     if (error) {
-        IOLogError("Failed to write F01 control: %d\n", error);
+        IOLogError("Failed to write F01 control: %d", error);
         return NULL;
     }
     
     /* Dummy read in order to clear irqs */
     error = rmiBus->read(fn_descriptor->data_base_addr + 1, &temp);
     if (error < 0) {
-        IOLogError("Failed to read Interrupt Status.\n");
+        IOLogError("Failed to read Interrupt Status.");
         return false;
     }
     
     error = rmi_f01_read_properties();
     if (error < 0) {
-        IOLogError("Failed to read F01 properties.\n");
+        IOLogError("Failed to read F01 properties.");
         return false;
     }
     
-    IOLog("Found RMI device, manufacturer: %s, product: %s, fw id: %d\n",
+    IOLogInfo("Found RMI4 device, manufacturer: %s, product: %s, fw id: %d",
              properties->manufacturer_id == 1 ? "Synaptics" : "unknown",
              properties->product_id, properties->firmware_id);
 
@@ -119,7 +119,7 @@ bool F01::attach(IOService *provider)
         error = rmiBus->read(doze_interval_addr,
                              &device_control->doze_interval);
         if (error) {
-            IOLogError("Failed to read F01 doze interval register: %d\n",
+            IOLogError("Failed to read F01 doze interval register: %d",
                     error);
             return false;
         }
@@ -130,7 +130,7 @@ bool F01::attach(IOService *provider)
         error = rmiBus->read(wakeup_threshold_addr,
                              &device_control->wakeup_threshold);
         if (error < 0) {
-            IOLogError("Failed to read F01 wakeup threshold register: %d\n",
+            IOLogError("Failed to read F01 wakeup threshold register: %d",
                     error);
             return false;
         }
@@ -146,7 +146,7 @@ bool F01::attach(IOService *provider)
         error = rmiBus->read(doze_holdoff_addr,
                              &device_control->doze_holdoff);
         if (error) {
-            IOLogError("Failed to read F01 doze holdoff register: %d\n",
+            IOLogError("Failed to read F01 doze holdoff register: %d",
                     error);
             return false;
         }
@@ -154,12 +154,12 @@ bool F01::attach(IOService *provider)
     
     error = rmiBus->read(fn_descriptor->data_base_addr, &device_status);
     if (error < 0) {
-        IOLogError("Failed to read device status: %d\n", error);
+        IOLogError("Failed to read device status: %d", error);
         return false;
     }
     
     if (RMI_F01_STATUS_UNCONFIGURED(device_status)) {
-        IOLogError("Device was reset during configuration process, status: %#02x!\n",
+        IOLogError("Device was reset during configuration process, status: %#02x!",
                 RMI_F01_STATUS_CODE(device_status));
         return false;
     }
@@ -178,7 +178,7 @@ bool F01::start(IOService* provider)
     
     retval = rmi_f01_config();
     if (retval < 0) {
-        IOLogError("Failed to config F01\n");
+        IOLogError("Failed to config F01");
         return false;
     }
     
@@ -203,34 +203,28 @@ void F01::free()
 
 void F01::publishProps()
 {
-    deviceDict = OSDictionary::withCapacity(3);
+    OSObject *value;
+    OSDictionary *deviceDict = OSDictionary::withCapacity(3);
     if (!deviceDict) return;
-    deviceDict->setObject("Doze Interval", OSNumber::withNumber(device_control->doze_interval, 8));
-    deviceDict->setObject("Doze Holdoff", OSNumber::withNumber(device_control->doze_holdoff, 8));
-    deviceDict->setObject("Wakeup Threshold", OSNumber::withNumber(device_control->wakeup_threshold, 8));
-
+    setPropertyNumber(deviceDict, "Doze Interval", device_control->doze_interval, 8);
+    setPropertyNumber(deviceDict, "Doze Holdoff", device_control->doze_holdoff, 8);
+    setPropertyNumber(deviceDict, "Wakeup Threshold", device_control->wakeup_threshold, 8);
     setProperty("Power Properties", deviceDict);
+    deviceDict->release();
 
-    propDict = OSDictionary::withCapacity(9);
+    OSDictionary *propDict = OSDictionary::withCapacity(9);
     if (!propDict) return;
-    propDict->setObject("Manufacturer ID", OSNumber::withNumber(properties->manufacturer_id, 8));
-    propDict->setObject("Has LTS", OSBoolean::withBoolean(properties->has_lts));
-    propDict->setObject("Has Adjustable Doze", OSBoolean::withBoolean(properties->has_adjustable_doze));
-    propDict->setObject("Has Adjustable Doze Holdoff", OSBoolean::withBoolean(properties->has_adjustable_doze_holdoff));
-    
-    OSString* dom = OSString::withCString(properties->dom);
-    if (dom)
-        propDict->setObject("Date of Manufacture", dom);
-
-    // It's null terminated and u8 is a byte, so I guess it's a string?
-    OSString* prodID = OSString::withCString(reinterpret_cast<const char*>(properties->product_id));
-    if (prodID)
-        propDict->setObject("Product ID", prodID);
-    propDict->setObject("Product Info", OSNumber::withNumber(properties->productinfo, 16));
-    propDict->setObject("Firmware ID", OSNumber::withNumber(properties->firmware_id, 32));
-    propDict->setObject("Package ID", OSNumber::withNumber(properties->package_id, 32));
-
+    setPropertyNumber(propDict, "Manufacturer ID", properties->manufacturer_id, 8);
+    setPropertyBoolean(propDict, "Has LTS", properties->has_lts);
+    setPropertyBoolean(propDict, "Has Adjustable Doze", properties->has_adjustable_doze);
+    setPropertyBoolean(propDict, "Has Adjustable Doze Holdoff", properties->has_adjustable_doze_holdoff);
+    setPropertyString(propDict, "Date of Manufacture", properties->dom);
+    setPropertyString(propDict, "Product ID", properties->product_id);
+    setPropertyNumber(propDict, "Product Info", properties->productinfo, 16);
+    setPropertyNumber(propDict, "Firmware ID", properties->firmware_id, 32);
+    setPropertyNumber(propDict, "Package ID", properties->package_id, 32);
     setProperty("Device Properties", propDict);
+    propDict->release();
 }
 
 int F01::rmi_f01_config()
@@ -240,7 +234,7 @@ int F01::rmi_f01_config()
     error = rmiBus->write(fn_descriptor->control_base_addr,
                           &device_control->ctrl0);
     if (error) {
-        IOLogError("Failed to write device_control register: %d\n", error);
+        IOLogError("Failed to write device_control register: %d", error);
         return error;
     }
     
@@ -248,14 +242,14 @@ int F01::rmi_f01_config()
         error = rmiBus->write(doze_interval_addr,
                               &device_control->doze_interval);
         if (error) {
-            IOLogError("Failed to write doze interval: %d\n", error);
+            IOLogError("Failed to write doze interval: %d", error);
             return error;
         }
         
         error = rmiBus->write(wakeup_threshold_addr,
                                 &device_control->wakeup_threshold);
         if (error) {
-            IOLogError("Failed to write wakeup threshold: %d\n",
+            IOLogError("Failed to write wakeup threshold: %d",
                     error);
             return error;
         }
@@ -265,7 +259,7 @@ int F01::rmi_f01_config()
         error = rmiBus->write(doze_holdoff_addr,
                               &device_control->doze_holdoff);
         if (error) {
-            IOLogError("Failed to write doze holdoff: %d\n", error);
+            IOLogError("Failed to write doze holdoff: %d", error);
             return error;
         }
     }
@@ -289,7 +283,7 @@ int F01::rmi_f01_read_properties()
     ret = rmiBus->readBlock(query_offset,
                          queries, RMI_F01_BASIC_QUERY_LEN);
     if (ret) {
-        IOLogError("F01 failed to read device query registers: %d\n", ret);
+        IOLogError("F01 failed to read device query registers: %d", ret);
         return ret;
     }
     
@@ -327,7 +321,7 @@ int F01::rmi_f01_read_properties()
     if (has_query42) {
         ret = rmiBus->read(query_offset, queries);
         if (ret) {
-            IOLogError("Failed to read query 42 register: %d\n", ret);
+            IOLogError("Failed to read query 42 register: %d", ret);
             return ret;
         }
         
@@ -338,7 +332,7 @@ int F01::rmi_f01_read_properties()
     if (has_ds4_queries) {
         ret = rmiBus->read(query_offset, &ds4_query_len);
         if (ret) {
-            IOLogError("Failed to read DS4 queries length: %d\n", ret);
+            IOLogError("Failed to read DS4 queries length: %d", ret);
             return ret;
         }
         query_offset++;
@@ -346,7 +340,7 @@ int F01::rmi_f01_read_properties()
         if (ds4_query_len > 0) {
             ret = rmiBus->read(query_offset, queries);
             if (ret) {
-                IOLogError("Failed to read DS4 queries: %d\n",
+                IOLogError("Failed to read DS4 queries: %d",
                         ret);
                 return ret;
             }
@@ -359,7 +353,7 @@ int F01::rmi_f01_read_properties()
             ret = rmiBus->readBlock(prod_info_addr,
                                  queries, sizeof(__le64));
             if (ret) {
-                IOLogError("Failed to read package info: %d\n",
+                IOLogError("Failed to read package info: %d",
                         ret);
                 return ret;
             }
@@ -373,7 +367,7 @@ int F01::rmi_f01_read_properties()
         if (has_build_id_query) {
             ret = rmiBus->readBlock(prod_info_addr, queries, 3);
             if (ret) {
-                IOLogError("Failed to read product info: %d\n",
+                IOLogError("Failed to read product info: %d",
                         ret);
                 return ret;
             }
@@ -403,7 +397,7 @@ int F01::rmi_f01_suspend()
                           &device_control->ctrl0);
     
     if (error) {
-        IOLogError("Failed to write sleep mode: %d.\n", error);
+        IOLogError("Failed to write sleep mode: %d.", error);
         if (old_nosleep)
             device_control->ctrl0 |= RMI_F01_CTRL0_NOSLEEP_BIT;
         device_control->ctrl0 &= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
@@ -427,7 +421,7 @@ int F01::rmi_f01_resume()
                           &device_control->ctrl0);
     
     if (error)
-        IOLogError("Failed to restore normal operation: %d.\n", error);
+        IOLogError("Failed to restore normal operation: %d.", error);
     
     return error;
 }
@@ -440,15 +434,15 @@ void F01::rmi_f01_attention()
     error = rmiBus->read(fn_descriptor->data_base_addr, &device_status);
     
     if (error) {
-        IOLogError("F01: Failed to read device status: %d.\n", error);
+        IOLogError("F01: Failed to read device status: %d", error);
         return;
     }
     
     if (RMI_F01_STATUS_BOOTLOADER(device_status))
-        IOLogError("Device in bootloader mode, please update firmware\n");
+        IOLogError("Device in bootloader mode, please update firmware");
     
     if (RMI_F01_STATUS_UNCONFIGURED(device_status)) {
-        IOLogDebug("Device reset detected.\n");
+        IOLogDebug("Device reset detected.");
         // reset
     }
 }

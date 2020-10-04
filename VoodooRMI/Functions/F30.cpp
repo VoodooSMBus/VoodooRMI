@@ -12,18 +12,11 @@
 OSDefineMetaClassAndStructors(F30, RMIFunction)
 #define super IOService
 
-// Make sure Configuration values don't show up in IOReg
-// Doesn't change any sort of functionality otherwise
-bool F30::init(OSDictionary *dict)
-{
-    return super::init();
-}
-
 bool F30::attach(IOService *provider)
 {
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
-        IOLogError("F30: No provider.\n");
+        IOLogError("F30: No provider.");
         return false;
     }
     
@@ -41,14 +34,14 @@ bool F30::start(IOService *provider)
 {
     if (!super::start(provider))
         return false;
-    // TODO: Either find F03 for trackstick button
+    // TODO: Either find F03 for trackpoint button
     // or just send buttons in attention
     
     int error = rmiBus->blockWrite(fn_descriptor->control_base_addr,
                                    ctrl_regs, ctrl_regs_size);
     
     if (error) {
-        IOLogError("%s: Could not write control registers at 0x%x: 0x%x\n",
+        IOLogError("%s: Could not write control registers at 0x%x: 0x%x",
                    __func__, fn_descriptor->control_base_addr, error);
         return false;;
     }
@@ -83,7 +76,7 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
                                           data_regs, register_count);
             
             if (error < 0) {
-                IOLogError("Could not read F30 data: 0x%x\n", error);
+                IOLogError("Could not read F30 data: 0x%x", error);
             }
             
             if (!has_gpio)
@@ -106,7 +99,7 @@ int F30::rmi_f30_initialize()
     error = rmiBus->readBlock(fn_descriptor->query_base_addr,
                               buf, RMI_F30_QUERY_SIZE);
     if (error) {
-        IOLogError("F30: Failed to read query register\n");
+        IOLogError("F30: Failed to read query register");
         return error;
     }
     
@@ -120,21 +113,17 @@ int F30::rmi_f30_initialize()
     gpioled_count = buf[1] & RMI_F30_GPIO_LED_COUNT;
     
     register_count = DIV_ROUND_UP(gpioled_count, 8);
-    
+    OSNumber *value;
     OSDictionary * attribute = OSDictionary::withCapacity(9);
-    attribute->setObject("extended_pattern", has_extended_pattern ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("mappable_buttons", has_mappable_buttons ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("led", has_led ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("gpio", has_gpio ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("haptic", has_haptic ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("gpio_driver_control", has_gpio_driver_control ? kOSBooleanTrue : kOSBooleanFalse);
-    attribute->setObject("mech_mouse_btns", has_mech_mouse_btns ? kOSBooleanTrue : kOSBooleanFalse);
-    OSNumber *count = OSNumber::withNumber(gpioled_count, 8);
-    attribute->setObject("gpioled_count", count);
-    OSSafeReleaseNULL(count);
-    count = OSNumber::withNumber(register_count, 8);
-    attribute->setObject("register_count", count);
-    OSSafeReleaseNULL(count);
+    setPropertyBoolean(attribute, "extended_pattern", has_extended_pattern);
+    setPropertyBoolean(attribute, "mappable_buttons", has_mappable_buttons);
+    setPropertyBoolean(attribute, "led", has_led);
+    setPropertyBoolean(attribute, "gpio", has_gpio);
+    setPropertyBoolean(attribute, "haptic", has_haptic);
+    setPropertyBoolean(attribute, "gpio_driver_control", has_gpio_driver_control);
+    setPropertyBoolean(attribute, "mech_mouse_btns", has_mech_mouse_btns);
+    setPropertyNumber(attribute, "gpioled_count", gpioled_count, 8);
+    setPropertyNumber(attribute, "register_count", register_count, 8);
     setProperty("Attibute", attribute);
     OSSafeReleaseNULL(attribute);
 
@@ -191,7 +180,7 @@ int F30::rmi_f30_initialize()
     
     error = rmi_f30_read_control_parameters();
     if (error) {
-        IOLogError("Failed to initialize F30 control params: %d\n",
+        IOLogError("Failed to initialize F30 control params: %d",
                    error);
         return error;
     }
@@ -221,8 +210,8 @@ int F30::rmi_f30_is_valid_button(int button)
 int F30::rmi_f30_map_gpios()
 {
     unsigned int button = BTN_LEFT;
-    unsigned int trackstick_button = BTN_LEFT;
-    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
+    unsigned int trackpoint_button = BTN_LEFT;
+    int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
     setProperty("Button Count", buttonArrLen, 32);
     
     gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(gpioled_key_map[0])));
@@ -232,22 +221,22 @@ int F30::rmi_f30_map_gpios()
         if (!rmi_f30_is_valid_button(i))
             continue;
         
-        if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
-            IOLogDebug("F30: Found Trackstick button %d\n", button);
-            gpioled_key_map[i] = trackstick_button++;
+        if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
+            IOLogDebug("F30: Found Trackpoint button %d\n", button);
+            gpioled_key_map[i] = trackpoint_button++;
         } else {
-            IOLogDebug("F30: Found Button %d\n", button);
+            IOLogDebug("F30: Found Button %d", button);
             gpioled_key_map[i] = button++;
             numButtons++;
             clickpad_index = i;
         }
     }
     
-    // Trackstick buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
+    // Trackpoint buttons either come through F03/PS2 passtrough OR they come through F30 interrupts
     // Generally I've found it more common for them to come through PS2
-    hasTrackstickButtons = trackstick_button != BTN_LEFT;
-    setProperty("Trackstick Buttons through F30", OSBoolean::withBoolean(hasTrackstickButtons));
-    setProperty("Clickpad", numButtons == 1 ? kOSBooleanTrue : kOSBooleanFalse);
+    hasTrackpointButtons = trackpoint_button != BTN_LEFT;
+    setProperty("Trackpoint Buttons through F30", hasTrackpointButtons);
+    setProperty("Clickpad", numButtons == 1);
     
     return 0;
 }
@@ -269,7 +258,7 @@ int F30::rmi_f30_read_control_parameters()
     error = rmiBus->readBlock(fn_descriptor->control_base_addr,
                               ctrl_regs, ctrl_regs_size);
     if (error) {
-        IOLogError("%s: Could not read control registers at 0x%x: %d\n",
+        IOLogError("%s: Could not read control registers at 0x%x: %d",
                    __func__, fn_descriptor->control_base_addr, error);
         return error;
     }
@@ -279,8 +268,8 @@ int F30::rmi_f30_read_control_parameters()
 
 void F30::rmi_f30_report_button()
 {
-    int buttonArrLen = min(gpioled_count, TRACKSTICK_RANGE_END);
-    unsigned int mask, trackstickBtns = 0, btns = 0;
+    int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
+    unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
     u16 key_code;
     bool key_down;
@@ -306,9 +295,9 @@ void F30::rmi_f30_report_button()
         
         IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
         
-        if (i >= TRACKSTICK_RANGE_START &&
-            i <= TRACKSTICK_RANGE_END) {
-            trackstickBtns |= mask;
+        if (i >= TRACKPOINT_RANGE_START &&
+            i <= TRACKPOINT_RANGE_END) {
+            trackpointBtns |= mask;
         } else {
             btns |= mask;
         }
@@ -325,8 +314,8 @@ void F30::rmi_f30_report_button()
         messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
     }
     
-    if (hasTrackstickButtons)
-        rmiBus->notify(kHandleRMITrackpointButton, trackstickBtns);
+    if (hasTrackpointButtons)
+        rmiBus->notify(kHandleRMITrackpointButton, trackpointBtns);
 }
 
 bool F30::handleOpen(IOService *forClient, IOOptionBits options, void *arg)

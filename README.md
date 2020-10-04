@@ -112,6 +112,7 @@ Note that you can use Rehabman's ioio to set properties temporarily (until the n
 
 ## Building
 1) `git submodule update --init --recursive`
+2) `git clone --depth 1 https://github.com/acidanthera/MacKernelSDK`
 2) Build within XCode using the play button in the top left
     * RMISMBus/RMII2C will automatically build when building VoodooRMI
 

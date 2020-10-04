@@ -20,6 +20,7 @@ class RMIFunction;
 #include "rmi.h"
 #include "rmi_driver.hpp"
 #include "RMI_2D_Sensor.hpp"
+#include <Availability.h>
 
 #include <F01.hpp>
 #include <F03.hpp>
@@ -27,6 +28,11 @@ class RMIFunction;
 #include <F12.hpp>
 #include <F30.hpp>
 #include <F3A.hpp>
+
+#ifndef __ACIDANTHERA_MAC_SDK
+#error "This kext SDK is unsupported. Download from https://github.com/acidanthera/MacKernelSDK"
+#error "You can also do 'git clone --depth=1 https://github.com/acidanthera/MacKernelSDK.git'"
+#endif
 
 class RMIBus : public IOService {
     OSDeclareDefaultStructors(RMIBus);

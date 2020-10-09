@@ -7,15 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		283DDAD7251D7E89007F45E0 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
-		283DDADC251D7E96007F45E0 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDADB251D7E96007F45E0 /* libkmod.a */; };
-		283DDADD251D7E9E007F45E0 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDADB251D7E96007F45E0 /* libkmod.a */; };
 		286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		286587C224C13D9600E74848 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
 		286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 286587AE24C13D0B00E74848 /* RMISMBus.hpp */; };
 		6F4B4A9024C1A0B80018F1F0 /* RMII2C.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */; };
 		6F4B4A9224C1A0B80018F1F0 /* RMII2C.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */; };
 		6F4B4A9C24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */; };
+		6F7B0EFC25303F60001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
+		6F7B0EFD25303F64001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
+		6F7B0EFE25303FC8001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
 		6FCE9B1E24C259740042525E /* VoodooTrackpoint.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 2861B6D224B5928F00383E0E /* VoodooTrackpoint.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6FCE9B1F24C2597B0042525E /* RMISMBus.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 286587D724C13D9600E74848 /* RMISMBus.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6FCE9B2024C2597F0042525E /* RMII2C.kext in Copy Plugins */ = {isa = PBXBuildFile; fileRef = 6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -100,7 +100,6 @@
 /* Begin PBXFileReference section */
 		2826E66D24FEE22E008F04F4 /* Logging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Logging.h; sourceTree = "<group>"; };
 		283DDAD6251D7E89007F45E0 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = "<group>"; };
-		283DDADB251D7E96007F45E0 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = usr/lib/libkmod.a; sourceTree = SDKROOT; };
 		2850FFBC24904435000FA6BC /* PS2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PS2.hpp; sourceTree = "<group>"; };
 		2861B6CD24B5928F00383E0E /* VoodooTrackpoint.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooTrackpoint.xcodeproj; path = Dependencies/VoodooTrackpoint/VoodooTrackpoint.xcodeproj; sourceTree = "<group>"; };
 		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
@@ -150,7 +149,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				283DDADC251D7E96007F45E0 /* libkmod.a in Frameworks */,
+				6F7B0EFD25303F64001616D6 /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -158,7 +157,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				283DDADD251D7E9E007F45E0 /* libkmod.a in Frameworks */,
+				6F7B0EFC25303F60001616D6 /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -166,7 +165,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				283DDAD7251D7E89007F45E0 /* libkmod.a in Frameworks */,
+				6F7B0EFE25303FC8001616D6 /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,7 +175,6 @@
 		283DDAD5251D7E89007F45E0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				283DDADB251D7E96007F45E0 /* libkmod.a */,
 				283DDAD6251D7E89007F45E0 /* libkmod.a */,
 			);
 			name = Frameworks;
@@ -366,9 +364,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 286587D424C13D9600E74848 /* Build configuration list for PBXNativeTarget "RMISMBus" */;
 			buildPhases = (
+				286587BF24C13D9600E74848 /* Headers */,
 				286587B324C13D9600E74848 /* Sources */,
 				286587BE24C13D9600E74848 /* Frameworks */,
-				286587BF24C13D9600E74848 /* Headers */,
 				286587D224C13D9600E74848 /* Resources */,
 			);
 			buildRules = (
@@ -403,9 +401,9 @@
 			buildConfigurationList = A4560ED1247F29EC0009CBE0 /* Build configuration list for PBXNativeTarget "VoodooRMI" */;
 			buildPhases = (
 				A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */,
+				A4560EC4247F29EC0009CBE0 /* Headers */,
 				A4560EC2247F29EC0009CBE0 /* Sources */,
 				A4560EC3247F29EC0009CBE0 /* Frameworks */,
-				A4560EC4247F29EC0009CBE0 /* Headers */,
 				6FCE9B1D24C259630042525E /* Copy Plugins */,
 				28445F072488403F00D8858A /* Copy VoodooInput */,
 			);

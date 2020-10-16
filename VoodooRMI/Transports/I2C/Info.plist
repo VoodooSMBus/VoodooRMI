@@ -50,13 +50,11 @@
 		<key>com.1Revenger1.VoodooRMI</key>
 		<string>1.0</string>
 		<key>com.apple.kpi.iokit</key>
-		<string>18.5</string>
+		<string>15</string>
 		<key>com.apple.kpi.libkern</key>
-		<string>18.5</string>
+		<string>15</string>
 		<key>com.apple.kpi.mach</key>
-		<string>18.5</string>
-		<key>com.apple.iokit.IOHIDFamily</key>
-		<string>2.0</string>
+		<string>15</string>
 	</dict>
 </dict>
 </plist>

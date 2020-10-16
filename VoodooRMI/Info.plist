@@ -64,14 +64,12 @@
 	<string>1.0.0</string>
 	<key>OSBundleLibraries</key>
 	<dict>
-		<key>com.apple.iokit.IOHIDFamily</key>
-		<string>2.0</string>
 		<key>com.apple.kpi.iokit</key>
-		<string>14</string>
+		<string>15</string>
 		<key>com.apple.kpi.libkern</key>
-		<string>14</string>
+		<string>15</string>
 		<key>com.apple.kpi.mach</key>
-		<string>13.0</string>
+		<string>15</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Console</string>

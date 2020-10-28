@@ -184,7 +184,10 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
             case kHandleRMIClickpadSet:
             case kHandleRMITrackpoint:
                 if (OSDynamicCast(F11, func) || OSDynamicCast(F12, func)) {
-                    IOLogDebug("Sending event %u to F11/F12: %u", type, argument);
+#if DEBUG
+                    if (conf.verbose)
+                        IOLogDebug("Sending event %u to F11/F12: %u", type, argument);
+#endif
                     messageClient(type, func, reinterpret_cast<void *>(argument));
                     OSSafeReleaseNULL(iter);
                     return;
@@ -192,7 +195,10 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
                 break;
             case kHandleRMITrackpointButton:
                 if (OSDynamicCast(F03, func)) {
-                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
+#if DEBUG
+                    if (conf.verbose)
+                        IOLogDebug("Sending trackpoint button to F03: %u", argument);
+#endif
                     messageClient(type, func, reinterpret_cast<void *>(argument));
                 }
                 break;
@@ -380,6 +386,7 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
     update |= Configuration::loadUInt64Configuration(dictionary, "DisableWhileTrackpointTimeout", &conf.disableWhileTrackpointTimeout);
     update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
     update |= Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
+    update |= Configuration::loadBoolConfiguration(dictionary, "Verbose", &conf.verbose);
     update |= Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
 
     if (update) {

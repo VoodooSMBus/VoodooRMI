@@ -293,7 +293,7 @@ void F30::rmi_f30_report_button()
             continue;
         }
         
-        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+        IOLogVerbose("Key %u is %s", key_code, key_down ? "Down": "Up");
         
         if (i >= TRACKPOINT_RANGE_START &&
             i <= TRACKPOINT_RANGE_END) {

@@ -122,7 +122,7 @@ bool F11::getReport()
     if (sensor->shouldDiscardReport(timestamp))
         return true;
     
-    IOLogDebug("F11 Packet");
+    IOLogVerbose("F11 Packet");
     
     abs_size = sensor->nbr_fingers & RMI_F11_ABS_BYTES;
     

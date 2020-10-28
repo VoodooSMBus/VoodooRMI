@@ -146,7 +146,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 IOLogError("Could not read F3A data: 0x%x", error);
             }
             
-            IOLogDebug("F3A Attention! DataReg: %u", reg);
+            IOLogVerbose("F3A Attention! DataReg: %u", reg);
             
             for (int i = 0; i < gpioCount; i++) {
                 if (gpioled_key_map[i] == KEY_RESERVED)
@@ -157,7 +157,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 key_code = gpioled_key_map[i];
                 mask = key_down << (key_code - 1);
                 
-                IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+                IOLogVerbose("Key %u is %s", key_code, key_down ? "Down": "Up");
                 
                 if (i >= TRACKPOINT_RANGE_START &&
                     i < TRACKPOINT_RANGE_END) {

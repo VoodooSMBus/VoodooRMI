@@ -222,7 +222,7 @@ void F03::handlePacket(u8 *packet)
         rmiBus->notify(kHandleRMITrackpoint);
     }
 
-    IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
+    IOLogVerbose("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
 }
 
 IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
@@ -247,8 +247,7 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
                 if (!(ob_status & RMI_F03_RX_DATA_OFB))
                     continue;
                 
-                
-                IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
+                IOLogVerbose("F03 - Recieved data over PS2: %x", ob_data);
                 if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
                     IOLogDebug("F03 Timeout Flag");
                     return kIOReturnSuccess;

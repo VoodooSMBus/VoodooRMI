@@ -328,7 +328,7 @@ void F12::getReport()
     if (sensor->shouldDiscardReport(timestamp))
         return;
     
-    IOLogDebug("F12 Packet");
+    IOLogVerbose("F12 Packet");
 #if DEBUG
     if (sensor->nbr_fingers > 5) {
         IOLogDebug("More than 5 fingers!");

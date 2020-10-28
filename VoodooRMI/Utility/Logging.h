@@ -13,8 +13,10 @@
 
 #ifdef DEBUG
 #define IOLogDebug(format, ...) do { IOLog("VRMI - Debug: " format "\n", ## __VA_ARGS__); } while(0)
+#define IOLogVerbose(format, ...) do { if (conf->verbose) IOLog("VRMI - Debug: " format "\n", ## __VA_ARGS__); } while(0)
 #else
 #define IOLogDebug(arg...)
+#define IOLogVerbose(arg...)
 #endif // DEBUG
 
 #endif /* Logging_h */

@@ -127,6 +127,7 @@ struct rmi_configuration {
     uint32_t trackpointDeadzone {1};
     /* RMI2DSensor */
     bool forceTouchEmulation {true};
+    bool verbose {false};
     uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
     // Time units are in milliseconds

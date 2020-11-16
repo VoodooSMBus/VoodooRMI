@@ -69,7 +69,7 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
 {
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
-    numButtons = min(gpioCount, TRACKSTICK_RANGE_END);
+    numButtons = min(gpioCount, TRACKPOINT_RANGE_END);
     
     setProperty("Button Count", gpioCount, 32);
     
@@ -85,7 +85,7 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
         if (!is_valid_button(i, query1_regs, ctrl1_regs))
             continue;
         
-        if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
+        if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
             IOLogDebug("F30: Found Trackpoint button %d\n", button);
             gpioled_key_map[i] = trackpoint_button++;
         } else {
@@ -131,8 +131,8 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 
                 IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
                 
-                if (i >= TRACKSTICK_RANGE_START &&
-                    i < TRACKSTICK_RANGE_END) {
+                if (i >= TRACKPOINT_RANGE_START &&
+                    i < TRACKPOINT_RANGE_END) {
                     trackpointBtns |= mask;
                 } else {
                     btns |= mask;

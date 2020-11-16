@@ -18,8 +18,8 @@
 #define DEFAULT_MULT 10
 #define MILLI_TO_NANO 1000000
 
-#define TRACKSTICK_RANGE_START      3
-#define TRACKSTICK_RANGE_END        6
+#define TRACKPOINT_RANGE_START      3
+#define TRACKPOINT_RANGE_END        6
 
 // Message types defined by ApplePS2Keyboard
 enum {

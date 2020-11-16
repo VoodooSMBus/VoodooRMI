@@ -1,10 +1,10 @@
-//
-//  F3A.cpp
-//  VoodooRMI
-//
-//  Created by Avery Black on 9/20/20.
-//  Copyright © 2020 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * Copyright (c) 2020 Avery Black
+ * Ported to macOS from linux kernel, original source at
+ * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/F3A.c
+ *
+ * Copyright (c) 2012-2020 Synaptics Incorporated
+ */
 
 #include "F3A.hpp"
 
@@ -22,55 +22,35 @@ bool F3A::attach(IOService *provider)
         return false;
     }
     
-    u8 query[F3A_QUERY_SIZE];
-    memset (query, 0, sizeof(query));
-    IOReturn status = rmiBus->readBlock(fn_descriptor->query_base_addr, query, F3A_QUERY_SIZE);
-    if (status != 0) {
-        IOLogError("F3A - Failed to read Query Registers!");
-    }
+    u8 query1[RMI_F3A_MAX_REG_SIZE];
+    u8 ctrl1[RMI_F3A_MAX_REG_SIZE];
+    u8 buf;
     
-#ifdef DEBUG
-    // Both devices that I've had tested both had a single button for the clickpad
-    /*
-     * QRY has 4 registers
-     * QRY_0 = (0x03) Flags? // Num of GPIO
-     * QRY_1 = (0x04) GPIO Count & 0x1F? GPIO Mask?
-     * QRY_2 = ???? (0x00 OR 0x04)
-     * QRY_3 = ???? (0x00 OR 0x04)
-     */
-    
-    for(int i = 0; i < F3A_QUERY_SIZE; i++) {
-        IOLogDebug("F3A QRY Register %u: %x", i, query[i]);
-    }
-#endif // DEBUG
-    if (!mapGpios(query)) {
+    IOReturn status = rmiBus->read(fn_descriptor->query_base_addr, &buf);
+    if (status != kIOReturnSuccess) {
+        IOLogError("F3A - Failed to read general info register!");
         return false;
     }
     
+    gpioCount = buf & RMI_F3A_GPIO_COUNT;
+    registerCount = DIV_ROUND_UP(gpioCount, 8);
     
-    u8 ctrl[F3A_CTRL_SIZE];
-    memset (ctrl, 0, sizeof(ctrl));
-    // CTRL size is 99% likely to be variable, need to figure out how to figure out length and stuff though
-    status = rmiBus->readBlock(fn_descriptor->control_base_addr, ctrl, F3A_CTRL_SIZE);
-    if (status != 0) {
-        IOLogError("F3A - Failed to read Ctrl Registers!");
+    status = rmiBus->readBlock(fn_descriptor->query_base_addr + 1, query1, registerCount);
+    if (status != kIOReturnSuccess) {
+        IOLogError("F3A - Failed to read query1 registers");
+        return false;
     }
     
-#ifdef DEBUG
-    /*
-     * CTRL has 6? registers (could be variable)
-     * CTRL_0 = ??? (0x02)
-     * CTRL_1 = ??? (0x00)
-     * CTRL_2 = ??? (0x00 OR 0x04)
-     * CTRL_3 = ??? (0x00)
-     * CTRL_4 = ??? (0x00)
-     * CTRL_5 = ??? (0x0e)
-     */
-    
-    for (int i = 0; i < F3A_CTRL_SIZE; i++) {
-        IOLogDebug("F3A CTRL Reg %u: %x", i, ctrl[i]);
+    status = rmiBus->readBlock(fn_descriptor->control_base_addr + 1, ctrl1, registerCount);
+    if (status != kIOReturnSuccess) {
+        IOLogError("F3A - Failed to read control1 register");
+        return false;
     }
-#endif //DEBUG
+    
+    if (!mapGpios(query1, ctrl1)) {
+        IOLogError("F3A - Failed to map GPIO");
+        return false;
+    }
     
     return true;
 }
@@ -85,36 +65,32 @@ bool F3A::start(IOService *provider)
     return super::start(provider);
 }
 
-bool F3A::mapGpios(u8 *qryRegs)
+bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
 {
-    if (!qryRegs)
-        return false;
-    
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
-    gpioCount = qryRegs[0];
+    numButtons = min(gpioCount, TRACKSTICK_RANGE_END);
+    
     setProperty("Button Count", gpioCount, 32);
     
-    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(gpioCount * sizeof(gpioled_key_map[0])));
+    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(numButtons * sizeof(gpioled_key_map[0])));
     if (!gpioled_key_map) {
         IOLogError("Could not create gpioled_key_map!");
         return false;
     }
     
-    memset(gpioled_key_map, 0, gpioCount * sizeof(gpioled_key_map[0]));
+    memset(gpioled_key_map, 0, numButtons * sizeof(gpioled_key_map[0]));
     
-    for (int i = 0; i < gpioCount; i++) {
-        if (!(BIT(i) & qryRegs[1]))
+    for (int i = 0; i < numButtons; i++) {
+        if (!is_valid_button(i, query1_regs, ctrl1_regs))
             continue;
         
-        // I don't know if this logic holds true or not for trackpoint buttons, this is just from F3A
-        if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
+        if (i >= TRACKSTICK_RANGE_START && i < TRACKSTICK_RANGE_END) {
             IOLogDebug("F30: Found Trackpoint button %d\n", button);
             gpioled_key_map[i] = trackpoint_button++;
         } else {
             IOLogDebug("F30: Found Button %d", button);
             gpioled_key_map[i] = button++;
-            numButtons++;
             clickpadIndex = i;
         }
     }
@@ -127,41 +103,37 @@ bool F3A::mapGpios(u8 *qryRegs)
 
 IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
 {
-    u8 reg = 0;
     int error = 0;
-    unsigned int mask, /*trackpointBtns = 0,*/ btns = 0;
+    unsigned int mask, trackpointBtns = 0, btns = 0;
     u16 key_code;
     bool key_down;
     
     switch (type) {
         case kHandleRMIAttention:
-            // No point doing work
-            if (!voodooTrackpointInstance && numButtons != 1)
+            if (!voodooTrackpointInstance)
                 return kIOReturnIOError;
             
             error = rmiBus->readBlock(fn_descriptor->data_base_addr,
-                                          &reg, 1);
+                                      data_regs, registerCount);
             
             if (error < 0) {
                 IOLogError("Could not read F3A data: 0x%x", error);
             }
             
-            IOLogDebug("F3A Attention! DataReg: %u", reg);
-            
-            for (int i = 0; i < gpioCount; i++) {
+            for (int i = 0; i < numButtons; i++) {
                 if (gpioled_key_map[i] == KEY_RESERVED)
                     continue;
                 
-                // F3A appears to pull bits down when pressed. High means not pressed
-                key_down = !(BIT(i) & reg);
+                // Key is down when pulled low
+                key_down = !(BIT(i) & data_regs[0]);
                 key_code = gpioled_key_map[i];
                 mask = key_down << (key_code - 1);
                 
                 IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
                 
-                if (i >= TRACKPOINT_RANGE_START &&
-                    i < TRACKPOINT_RANGE_END) {
-                    IOLogInfo("Trackpoint button?");
+                if (i >= TRACKSTICK_RANGE_START &&
+                    i < TRACKSTICK_RANGE_END) {
+                    trackpointBtns |= mask;
                 } else {
                     btns |= mask;
                 }
@@ -173,17 +145,17 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                      }
                     continue;
                 }
+            }
+            
+            if (numButtons > 1) {
+                AbsoluteTime timestamp;
+                clock_get_uptime(&timestamp);
                 
-                if (numButtons > 1) {
-                    AbsoluteTime timestamp;
-                    clock_get_uptime(&timestamp);
-                    
-                    relativeEvent.dx = relativeEvent.dy = 0;
-                    relativeEvent.buttons = btns;
-                    relativeEvent.timestamp = timestamp;
-                    
-                    messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
-                }
+                relativeEvent.dx = relativeEvent.dy = 0;
+                relativeEvent.buttons = btns;
+                relativeEvent.timestamp = timestamp;
+                
+                messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
             }
             
             break;

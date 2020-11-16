@@ -3,7 +3,7 @@
  * Ported to macOS from linux kernel, original source at
  * https://github.com/torvalds/linux/blob/master/include/linux/rmi.h
  *
- * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011-2020 Synaptics Incorporated
  * Copyright (c) 2011 Unixphere
  */
 
@@ -17,6 +17,9 @@
 
 #define DEFAULT_MULT 10
 #define MILLI_TO_NANO 1000000
+
+#define TRACKSTICK_RANGE_START      3
+#define TRACKSTICK_RANGE_END        6
 
 // Message types defined by ApplePS2Keyboard
 enum {

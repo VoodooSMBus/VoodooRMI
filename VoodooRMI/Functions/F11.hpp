@@ -3,7 +3,7 @@
  * Ported to macOS from linux kernel, original source at
  * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/F11.c
  *
- * Copyright (c) 2011-2016 Synaptics Incorporated
+ * Copyright (c) 2011-2015 Synaptics Incorporated
  * Copyright (c) 2011 Unixphere
  */
 

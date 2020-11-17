@@ -127,7 +127,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             // Dissallow large objects
             transducer.isValid = obj.z < 120 && obj.wx < 7 && obj.wy < 7;
             transducer.previousCoordinates = transducer.currentCoordinates;
-            transducer.currentCoordinates.width = obj.z / 1.5;
+            transducer.currentCoordinates.width = obj.z / 4.0;
             transducer.timestamp = report->timestamp;
             
             if (realFingerCount != 1)

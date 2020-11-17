@@ -106,13 +106,17 @@ bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
     TouchCoordinates &dimensions = obj.currentCoordinates;
     for (int i = 0; i < 2; i++) {
         RMI2DSensorZone &zone = rejectZones[i];
+        IOLogDebug("(%d %d) (%d %d)", zone.x_min, zone.y_min, zone.x_max, zone.y_max);
+        IOLogDebug("--- (%d %d)", dimensions.x, dimensions.y);
         if (dimensions.x >= zone.x_min &&
             dimensions.x <= zone.x_max &&
-            dimensions.y >= zone.y_min &&
-            dimensions.y <= zone.y_max)
+            dimensions.y <= 1297 - zone.y_min &&
+            dimensions.y >= 1297 - zone.y_max) {
+            IOLogDebug("True!");
             return true;
+        }
     }
-    
+    IOLogDebug("False!");
     return false;
 }
 
@@ -157,14 +161,15 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                 transducer.currentCoordinates = transducer.previousCoordinates;
             }
             
-            // Dissallow large objects and very small objects
-            transducer.isValid = obj.z > 10 &&
-                                 obj.z < 120 &&
+            // Dissallow large objects
+            transducer.isValid = obj.z < 120 &&
                                  obj.wx < conf->maxObjectSize &&
                                  obj.wy < conf->maxObjectSize &&
                                  !invalidFinger[i] &&
-                                 discardRegions &&
-                                 checkInZone(transducer);
+                                 !(discardRegions && checkInZone(transducer));
+            
+            // TODO: Make configurable
+            transducer.isValid &= transducer.currentCoordinates.y > 150;
             
             if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
                 pressureLock = true;

@@ -27,9 +27,9 @@
 			<key>Configuration</key>
 			<dict>
 				<key>DisableWhileTrackpointTimeout </key>
-				<integer>100</integer>
+				<integer>2000</integer>
 				<key>DisableWhileTypingTimeout</key>
-				<integer>100</integer>
+				<integer>2000</integer>
 				<key>FingerMajorMinorDiffMax</key>
 				<integer>3</integer>
 				<key>MaxObjectSize</key>
@@ -40,8 +40,6 @@
 				<true/>
 				<key>ForceTouchMinPressure</key>
 				<integer>90</integer>
-				<key>MinYDiffThumbDetection</key>
-				<integer>200</integer>
 				<key>TrackpointDeadzone</key>
 				<integer>1</integer>
 				<key>TrackpointMultiplier</key>

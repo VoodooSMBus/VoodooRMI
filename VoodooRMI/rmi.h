@@ -13,7 +13,7 @@
 #include <IOKit/IOService.h>
 
 // macOS kernel/math has absolute value in it. It's only for doubles though
-#define abs(x) ((x < 0) ? (-x) : (x))
+#define abs(x) ((x < 0) ? -(x) : (x))
 
 #define DEFAULT_MULT 10
 #define MILLI_TO_NANO 1000000
@@ -129,6 +129,8 @@ struct rmi_configuration {
     bool forceTouchEmulation {true};
     uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
+    uint32_t fingerMajorMinorMax {3};
+    uint32_t maxObjectSize {7};
     // Time units are in milliseconds
     uint64_t disableWhileTypingTimeout {500};
     uint64_t disableWhileTrackpointTimeout {500};

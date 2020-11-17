@@ -40,6 +40,13 @@ struct RMI2DSensorReport {
     AbsoluteTime timestamp;
 };
 
+struct RMI2DSensorZone {
+    u16 x_min;
+    u16 y_min;
+    u16 x_max;
+    u16 y_max;
+};
+
 //struct rmi_2d_sensor {
 //    struct rmi_2d_axis_alignment axis_align;
 //    int dmax;
@@ -91,6 +98,21 @@ private:
     VoodooInputEvent inputEvent {};
     IOService *voodooInputInstance {nullptr};
     
+    RMI2DSensorZone rejectZones[2] = {
+        {
+            .x_min = 0,
+            .y_min = 0,
+            .x_max = 100,
+            .y_max = 100
+        },
+        {
+            .x_min = 750,
+            .y_min = 0,
+            .x_max = 1000,
+            .y_max = 100
+        }
+    };
+    
     bool freeFingerTypes[kMT2FingerTypeCount];
     bool invalidFinger[10];
     bool clickpadState {false};
@@ -99,8 +121,21 @@ private:
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
     MT2FingerType getFingerType();
+    bool checkInZone(VoodooInputTransducer &obj);
     void setThumbFingerType(int fingers, RMI2DSensorReport *report);
     void handleReport(RMI2DSensorReport *report);
+    
+    inline void invalidateFingers() {
+        for (int i = 0; i < 5; i++) {
+            VoodooInputTransducer &finger = inputEvent.transducers[i];
+            
+            if (!finger.isValid || invalidFinger[i])
+                continue;
+            
+            if (checkInZone(finger))
+                invalidFinger[i] = true;
+        }
+    }
 };
 
 #endif /* RMI_2D_Sensor_hpp */

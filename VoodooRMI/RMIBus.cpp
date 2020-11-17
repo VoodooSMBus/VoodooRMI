@@ -381,6 +381,8 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
     update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
     update |= Configuration::loadBoolConfiguration(dictionary, "ForceTouchEmulation", &conf.forceTouchEmulation);
     update |= Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
+    update |= Configuration::loadUInt32Configuration(dictionary, "FingerMajorMinorDiffMax", &conf.fingerMajorMinorMax);
+    update |= Configuration::loadUInt32Configuration(dictionary, "MaxObjectSize", &conf.maxObjectSize);
 
     if (update) {
         IOLogDebug("Updating Configuration");

@@ -26,6 +26,7 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    memset(invalidFinger, false, sizeof(invalidFinger));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
     memset(invalidFinger, false, 10);
@@ -76,10 +77,12 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             uint64_t timestamp;
             clock_get_uptime(&timestamp);
             absolutetime_to_nanoseconds(timestamp, &lastTrackpointTS);
+            invalidateFingers();
             break;
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:
             lastKeyboardTS = *((uint64_t*) argument);
+            invalidateFingers();
             break;
         case kKeyboardGetTouchStatus: {
             bool *result = (bool *) argument;
@@ -96,9 +99,21 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return  !trackpadEnable
-        || (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO
-        || (timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
+    return !trackpadEnable;
+}
+
+bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
+    TouchCoordinates &dimensions = obj.currentCoordinates;
+    for (int i = 0; i < 2; i++) {
+        RMI2DSensorZone &zone = rejectZones[i];
+        if (dimensions.x >= zone.x_min &&
+            dimensions.x <= zone.x_max &&
+            dimensions.y >= zone.y_min &&
+            dimensions.y <= zone.y_max)
+            return true;
+    }
+    
+    return false;
 }
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
@@ -107,6 +122,9 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     
     if (!voodooInputInstance)
         return;
+    
+    bool discardRegions = (report->timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO ||
+                          (report->timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
     
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
@@ -124,8 +142,6 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         if (isValid) {
             realFingerCount++;
             
-            // Dissallow large objects
-            transducer.isValid = obj.z < 120 && obj.wx < 7 && obj.wy < 7;
             transducer.previousCoordinates = transducer.currentCoordinates;
             transducer.currentCoordinates.width = obj.z / 1.5;
             transducer.timestamp = report->timestamp;
@@ -141,17 +157,29 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                 transducer.currentCoordinates = transducer.previousCoordinates;
             }
             
+            // Dissallow large objects and very small objects
+            transducer.isValid = obj.z > 10 &&
+                                 obj.z < 120 &&
+                                 obj.wx < conf->maxObjectSize &&
+                                 obj.wy < conf->maxObjectSize &&
+                                 !invalidFinger[i] &&
+                                 discardRegions &&
+                                 checkInZone(transducer);
+            
             if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
             transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
-            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
-                       i, obj.x, obj.y, obj.z, obj.wx, obj.wy,
+            IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]\n",
+                       i, transducer.isValid ? "valid" : "invalid",
+                       obj.x, obj.y, obj.z, obj.wx, obj.wy,
                        transducer.fingerType,
                        transducer.currentCoordinates.pressure,
                        transducer.isPhysicalButtonDown);
+        } else {
+            invalidFinger[i] = false;
         }
     }
     
@@ -164,18 +192,24 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         auto& trans = inputEvent.transducers[i];
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
+        bool isValid =  obj.type == RMI_2D_OBJECT_FINGER ||
+                        obj.type == RMI_2D_OBJECT_STYLUS;
+        
+        // Rudimentry palm detection
+        trans.isValid &= abs(obj.wx - obj.wy) <= conf->fingerMajorMinorMax || trans.fingerType == kMT2FingerTypeThumb;
+        
         if (trans.isValid) {
-            // Rudimentry palm detection
-            trans.isValid = trans.isValid && (abs(obj.wx - obj.wy) < 3 || trans.fingerType == kMT2FingerTypeThumb);
-            
             if (trans.fingerType == kMT2FingerTypeUndefined) {
                 trans.fingerType = getFingerType();
             }
         } else {
             // Free finger
-            if (trans.fingerType != kMT2FingerTypeUndefined)
-                freeFingerTypes[trans.fingerType] = true;
+            freeFingerTypes[trans.fingerType] = true;
             trans.fingerType = kMT2FingerTypeUndefined;
+        }
+        
+        if (isValid && !trans.isValid) {
+            invalidFinger[i] = true;
         }
     }
     
@@ -216,7 +250,7 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
             secondLowest = trans.currentCoordinates.y;
         }
         
-        if (/*(obj->wy - obj->wx) > maxDiff ||*/ obj->z > maxArea) {
+        if (obj->z > maxArea) {
             maxDiff = (obj->wy - obj->wx);
             maxArea = obj->z;
             greatestFingerIndex = i;
@@ -224,8 +258,6 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
     }
     
     if (minY - secondLowest < conf->minYDiffGesture || greatestFingerIndex == -1) {
-//        IOLogDebug("Second Lowest: %u Lowest: %u", secondLowest, minY);
-        
         lowestFingerIndex = greatestFingerIndex;
     }
     

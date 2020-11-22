@@ -23,6 +23,7 @@ enum rmi_2d_sensor_object_type {
     RMI_2D_OBJECT_STYLUS,
     RMI_2D_OBJECT_PALM,
     RMI_2D_OBJECT_UNCLASSIFIED,
+    RMI_2D_OBJECT_INACCURATE
 };
 
 struct rmi_2d_sensor_abs_object {
@@ -97,36 +98,7 @@ private:
     
     VoodooInputEvent inputEvent {};
     IOService *voodooInputInstance {nullptr};
-    
-    RMI2DSensorZone rejectZones[3] = {
-        // 1297 is max y for my trackpad ~ 1Revenger1
-        // 0 is top, 1297 is bottom
-        // TODO: Get size of trackpad and calculate these
-        // TODO: Always reject if gesture starts in top zone?
-        // TODO: Make VoodooInput do this instead!
-        
-        // Left palm (top left)
-        {
-            .x_min = 0,
-            .y_min = 500,
-            .x_max = 250,
-            .y_max = 1297
-        },
-        // Right palm (top right)
-        {
-            .x_min = 1688,
-            .y_min = 500,
-            .x_max = 1938,
-            .y_max = 1297
-        },
-        // Thumb/trackpoint (top)
-        {
-            .x_min = 0,
-            .y_min = 1000,
-            .x_max = 1938,
-            .y_max = 1297
-        }
-    };
+    RMI2DSensorZone rejectZones[3];
     
     bool freeFingerTypes[kMT2FingerTypeCount];
     bool invalidFinger[10];

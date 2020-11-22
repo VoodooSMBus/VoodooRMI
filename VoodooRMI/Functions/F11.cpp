@@ -145,7 +145,17 @@ bool F11::getReport()
         report.objs[i].z = pos_data[4];
         report.objs[i].wx = pos_data[3] & 0x0f;
         report.objs[i].wy = pos_data[3] >> 4;
-        report.objs[i].type = finger_state == F11_PRESENT ? RMI_2D_OBJECT_FINGER : RMI_2D_OBJECT_NONE;
+        
+        switch (finger_state) {
+            case F11_PRESENT:
+                report.objs[i].type = RMI_2D_OBJECT_FINGER;
+                break;
+            case F11_INACCURATE:
+                report.objs[i].type = RMI_2D_OBJECT_INACCURATE;
+                break;
+            default:
+                report.objs[i].type = RMI_2D_OBJECT_NONE;
+        }
     }
     
     report.timestamp = timestamp;

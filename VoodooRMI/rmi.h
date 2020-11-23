@@ -130,10 +130,9 @@ struct rmi_configuration {
     uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
     uint32_t fingerMajorMinorMax {3};
-    uint32_t maxObjectSize {7};
     // Time units are in milliseconds
-    uint64_t disableWhileTypingTimeout {500};
-    uint64_t disableWhileTrackpointTimeout {500};
+    uint64_t disableWhileTypingTimeout {2000};
+    uint64_t disableWhileTrackpointTimeout {2000};
 };
 
 /*

@@ -32,8 +32,6 @@
 				<integer>2000</integer>
 				<key>FingerMajorMinorDiffMax</key>
 				<integer>3</integer>
-				<key>MaxObjectSize</key>
-				<integer>7</integer>
 				<key>MinYDiffThumbDetection</key>
 				<integer>200</integer>
 				<key>ForceTouchEmulation</key>

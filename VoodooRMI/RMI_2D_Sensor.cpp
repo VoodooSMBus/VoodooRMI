@@ -32,10 +32,12 @@ bool RMI2DSensor::start(IOService *provider)
     const int palmRejectHeight = max_y * 0.7;
     const int trackpointRejectHeight = max_y * 0.2;
     
-    // Calculate reject zones
-    // 0, 0 is top left
+    /*
+     * Calculate reject zones.
+     * These zones invalidate any fingers within them when typing
+     * or using the trackpoint. 0, 0 is top left
+     */
     
-    // TODO: Always reject if gesture starts in top zone?
     // TODO: Make VoodooInput do this instead?
     // TODO: Make configurable and update
     
@@ -49,7 +51,7 @@ bool RMI2DSensor::start(IOService *provider)
              max_x - palmRejectWidth, 0,
              max_x, palmRejectHeight);
 
-    // Top band for trackpoint
+    // Top band for trackpoint(and spacebar?)
     fillZone(&rejectZones[2],
              0, 0,
              max_x, trackpointRejectHeight);
@@ -139,19 +141,19 @@ bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
     TouchCoordinates &dimensions = obj.currentCoordinates;
     for (int i = 0; i < 3; i++) {
         RMI2DSensorZone &zone = rejectZones[i];
-        IOLogDebug("(%d %d) (%d %d)", zone.x_min, zone.y_min, zone.x_max, zone.y_max);
-        IOLogDebug("--- (%d %d)", dimensions.x, dimensions.y);
         if (dimensions.x >= zone.x_min &&
             dimensions.x <= zone.x_max &&
             dimensions.y >= zone.y_min &&
             dimensions.y <= zone.y_max) {
-            IOLogDebug("True!");
             return true;
         }
     }
-    IOLogDebug("False!");
+    
     return false;
 }
+
+#define RMI_2D_MIN_Z 10
+#define RMI_2D_MAX_Z 120
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
@@ -201,15 +203,12 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             
             // Dissallow large objects
             transducer.isValid = obj.type != RMI_2D_OBJECT_INACCURATE &&
-                                 obj.z < 120 &&
-                                 obj.z > 10 &&
-                                 // Accidental light brushes by the palm generally are tall and skinny
-                                 !(obj.z < 50 && deltaWidth > 2) &&
-                                 !(transducer.currentCoordinates.y < (max_y / 3) && deltaWidth > 2) &&
+                                 obj.z < RMI_2D_MAX_Z &&
+                                 obj.z > RMI_2D_MIN_Z &&
                                  !invalidFinger[i] &&
+                                 // Accidental light brushes by the palm generally are tall and skinny
+                                 (obj.z > 50 || transducer.currentCoordinates.y > (max_y / 3) || deltaWidth < conf->fingerMajorMinorMax) &&
                                  !(discardRegions && checkInZone(transducer));
-            
-            IOLogDebug("Delta WX: %d", abs(obj.wx - obj.wy));
             
             if (!transducer.isValid)
                 invalidFinger[i] = true;

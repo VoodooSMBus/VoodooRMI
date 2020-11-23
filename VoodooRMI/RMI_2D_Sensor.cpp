@@ -207,7 +207,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                                  obj.z > RMI_2D_MIN_Z &&
                                  !invalidFinger[i] &&
                                  // Accidental light brushes by the palm generally are tall and skinny
-                                 (obj.z > 50 || transducer.currentCoordinates.y > (max_y / 3) || deltaWidth < conf->fingerMajorMinorMax) &&
+                                 ((obj.z > 50 && transducer.currentCoordinates.y > (max_y / 3)) || deltaWidth < conf->fingerMajorMinorMax) &&
                                  !(discardRegions && checkInZone(transducer));
             
             if (!transducer.isValid)
@@ -260,6 +260,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     memset(report, 0, sizeof(RMI2DSensorReport));
 }
 
+// Take the most obvious lowest fingers - otherwise take finger with greatest area
 void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
 {
     int lowestFingerIndex = -1;
@@ -275,7 +276,6 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
         if (!trans.isValid)
             continue;
         
-        // Take the most obvious lowest finger - otherwise take finger with greatest area
         if (trans.currentCoordinates.y > minY) {
             lowestFingerIndex = i;
             secondLowest = minY;

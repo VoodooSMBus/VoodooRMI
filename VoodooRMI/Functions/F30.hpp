@@ -3,8 +3,7 @@
  * Ported to macOS from linux kernel, original source at
  * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/F30.c
  *
- * Copyright (c) 2011-2016 Synaptics Incorporated
- * Copyright (c) 2011 Unixphere
+ * Copyright (c) 2012-2016 Synaptics Incorporated
  */
 
 #ifndef F30_hpp
@@ -48,9 +47,6 @@
     + RMI_F30_CTRL_MAX_BYTES    \
     + 1                \
     + 1)
-
-#define TRACKPOINT_RANGE_START        3
-#define TRACKPOINT_RANGE_END        6
 
 struct rmi_f30_ctrl_data {
     int address;

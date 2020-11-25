@@ -6,8 +6,8 @@
  * https://github.com/torvalds/linux/blob/master/drivers/input/mouse/psmouse-base.c
  *
  * Synaptic RMI4:
- * Copyright (c) 2011-2016 Synaptics Incorporated
- * Copyright (c) 2011 Unixphere
+ * Copyright (c) 2015-2016 Red Hat
+ * Copyright (c) 2015 Lyude Paul <thatslyude@gmail.com>
  */
 
 #ifndef F03_hpp

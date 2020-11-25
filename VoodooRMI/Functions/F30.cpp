@@ -3,8 +3,7 @@
  * Ported to macOS from linux kernel, original source at
  * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/F30.c
  *
- * Copyright (c) 2011-2016 Synaptics Incorporated
- * Copyright (c) 2011 Unixphere
+ * Copyright (c) 2012-2016 Synaptics Incorporated
  */
 
 #include "F30.hpp"
@@ -34,8 +33,6 @@ bool F30::start(IOService *provider)
 {
     if (!super::start(provider))
         return false;
-    // TODO: Either find F03 for trackpoint button
-    // or just send buttons in attention
     
     int error = rmiBus->blockWrite(fn_descriptor->control_base_addr,
                                    ctrl_regs, ctrl_regs_size);

@@ -12,6 +12,13 @@
 OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 #define super IOService
 
+static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, int max_y) {
+    zone->x_min = min_x;
+    zone->y_min = min_y;
+    zone->x_max = max_x;
+    zone->y_max = max_y;
+}
+
 bool RMI2DSensor::start(IOService *provider)
 {
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, max_x, 16);
@@ -21,11 +28,40 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
+    const int palmRejectWidth = max_x * 0.05;
+    const int palmRejectHeight = max_y * 0.7;
+    const int trackpointRejectHeight = max_y * 0.2;
+    
+    /*
+     * Calculate reject zones.
+     * These zones invalidate any fingers within them when typing
+     * or using the trackpoint. 0, 0 is top left
+     */
+    
+    // TODO: Make VoodooInput do this instead?
+    // TODO: Make configurable and update
+    
+    // Top left
+    fillZone(&rejectZones[0],
+             0, 0,
+             palmRejectWidth, palmRejectHeight);
+    
+    // Top right
+    fillZone(&rejectZones[1],
+             max_x - palmRejectWidth, 0,
+             max_x, palmRejectHeight);
+
+    // Top band for trackpoint(and spacebar?)
+    fillZone(&rejectZones[2],
+             0, 0,
+             max_x, trackpointRejectHeight);
+    
     setProperty("VoodooInputSupported", kOSBooleanTrue);
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    memset(invalidFinger, false, sizeof(invalidFinger));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
     memset(invalidFinger, false, 10);
@@ -76,10 +112,12 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
             uint64_t timestamp;
             clock_get_uptime(&timestamp);
             absolutetime_to_nanoseconds(timestamp, &lastTrackpointTS);
+            invalidateFingers();
             break;
         // VoodooPS2 Messages
         case kKeyboardKeyPressTime:
             lastKeyboardTS = *((uint64_t*) argument);
+            invalidateFingers();
             break;
         case kKeyboardGetTouchStatus: {
             bool *result = (bool *) argument;
@@ -96,10 +134,26 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
 
 bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return  !trackpadEnable
-        || (timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO
-        || (timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
+    return !trackpadEnable;
 }
+
+bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
+    TouchCoordinates &dimensions = obj.currentCoordinates;
+    for (int i = 0; i < 3; i++) {
+        RMI2DSensorZone &zone = rejectZones[i];
+        if (dimensions.x >= zone.x_min &&
+            dimensions.x <= zone.x_max &&
+            dimensions.y >= zone.y_min &&
+            dimensions.y <= zone.y_max) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+#define RMI_2D_MIN_Z 10
+#define RMI_2D_MAX_Z 120
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
@@ -108,11 +162,17 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     if (!voodooInputInstance)
         return;
     
+    bool discardRegions = (report->timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO ||
+                          (report->timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
+    
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
         bool isValid =  obj.type == RMI_2D_OBJECT_FINGER ||
-                        obj.type == RMI_2D_OBJECT_STYLUS;
+                        obj.type == RMI_2D_OBJECT_STYLUS ||
+                        // Allow inaccurate objects to record them as an invalid finger
+                        // This can be a random finger or one which was lifted up slightly
+                        obj.type == RMI_2D_OBJECT_INACCURATE;
         
         auto& transducer = inputEvent.transducers[i];
         transducer.type = FINGER;
@@ -124,8 +184,6 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         if (isValid) {
             realFingerCount++;
             
-            // Dissallow large objects
-            transducer.isValid = obj.z < 120 && obj.wx < 7 && obj.wy < 7;
             transducer.previousCoordinates = transducer.currentCoordinates;
             transducer.currentCoordinates.width = obj.z / 4.0;
             transducer.timestamp = report->timestamp;
@@ -141,17 +199,34 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                 transducer.currentCoordinates = transducer.previousCoordinates;
             }
             
+            int deltaWidth = abs(obj.wx - obj.wy);
+            
+            // Dissallow large objects
+            transducer.isValid = obj.type != RMI_2D_OBJECT_INACCURATE &&
+                                 obj.z < RMI_2D_MAX_Z &&
+                                 obj.z > RMI_2D_MIN_Z &&
+                                 !invalidFinger[i] &&
+                                 // Accidental light brushes by the palm generally are tall and skinny
+                                 ((obj.z > 50 && transducer.currentCoordinates.y > (max_y / 3)) || deltaWidth < conf->fingerMajorMinorMax) &&
+                                 !(discardRegions && checkInZone(transducer));
+            
+            if (!transducer.isValid)
+                invalidFinger[i] = true;
+            
             if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
                 pressureLock = true;
             
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
             transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
-            IOLogDebug("Finger num: %d (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
-                       i, obj.x, obj.y, obj.z, obj.wx, obj.wy,
+            IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]\n",
+                       i, transducer.isValid ? "valid" : "invalid",
+                       obj.x, obj.y, obj.z, obj.wx, obj.wy,
                        transducer.fingerType,
                        transducer.currentCoordinates.pressure,
                        transducer.isPhysicalButtonDown);
+        } else {
+            invalidFinger[i] = false;
         }
     }
     
@@ -162,19 +237,14 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     // Sencond loop to get type
     for (int i = 0; i < report->fingers; i++) {
         auto& trans = inputEvent.transducers[i];
-        rmi_2d_sensor_abs_object obj = report->objs[i];
         
         if (trans.isValid) {
-            // Rudimentry palm detection
-            trans.isValid = trans.isValid && (abs(obj.wx - obj.wy) < 3 || trans.fingerType == kMT2FingerTypeThumb);
-            
             if (trans.fingerType == kMT2FingerTypeUndefined) {
                 trans.fingerType = getFingerType();
             }
         } else {
             // Free finger
-            if (trans.fingerType != kMT2FingerTypeUndefined)
-                freeFingerTypes[trans.fingerType] = true;
+            freeFingerTypes[trans.fingerType] = true;
             trans.fingerType = kMT2FingerTypeUndefined;
         }
     }
@@ -190,6 +260,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     memset(report, 0, sizeof(RMI2DSensorReport));
 }
 
+// Take the most obvious lowest fingers - otherwise take finger with greatest area
 void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
 {
     int lowestFingerIndex = -1;
@@ -205,7 +276,6 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
         if (!trans.isValid)
             continue;
         
-        // Take the most obvious lowest finger - otherwise take finger with greatest area
         if (trans.currentCoordinates.y > minY) {
             lowestFingerIndex = i;
             secondLowest = minY;
@@ -216,7 +286,7 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
             secondLowest = trans.currentCoordinates.y;
         }
         
-        if (/*(obj->wy - obj->wx) > maxDiff ||*/ obj->z > maxArea) {
+        if (obj->z > maxArea) {
             maxDiff = (obj->wy - obj->wx);
             maxArea = obj->z;
             greatestFingerIndex = i;
@@ -224,8 +294,6 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
     }
     
     if (minY - secondLowest < conf->minYDiffGesture || greatestFingerIndex == -1) {
-//        IOLogDebug("Second Lowest: %u Lowest: %u", secondLowest, minY);
-        
         lowestFingerIndex = greatestFingerIndex;
     }
     

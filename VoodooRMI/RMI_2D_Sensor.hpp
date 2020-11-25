@@ -23,6 +23,7 @@ enum rmi_2d_sensor_object_type {
     RMI_2D_OBJECT_STYLUS,
     RMI_2D_OBJECT_PALM,
     RMI_2D_OBJECT_UNCLASSIFIED,
+    RMI_2D_OBJECT_INACCURATE
 };
 
 struct rmi_2d_sensor_abs_object {
@@ -38,6 +39,13 @@ struct RMI2DSensorReport {
     rmi_2d_sensor_abs_object objs[10];
     int fingers;
     AbsoluteTime timestamp;
+};
+
+struct RMI2DSensorZone {
+    u16 x_min;
+    u16 y_min;
+    u16 x_max;
+    u16 y_max;
 };
 
 //struct rmi_2d_sensor {
@@ -90,6 +98,7 @@ private:
     
     VoodooInputEvent inputEvent {};
     IOService *voodooInputInstance {nullptr};
+    RMI2DSensorZone rejectZones[3];
     
     bool freeFingerTypes[kMT2FingerTypeCount];
     bool invalidFinger[10];
@@ -99,8 +108,22 @@ private:
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
     MT2FingerType getFingerType();
+    bool checkInZone(VoodooInputTransducer &obj);
     void setThumbFingerType(int fingers, RMI2DSensorReport *report);
     void handleReport(RMI2DSensorReport *report);
+
+    // TODO: move into cpp file
+    inline void invalidateFingers() {
+        for (int i = 0; i < 5; i++) {
+            VoodooInputTransducer &finger = inputEvent.transducers[i];
+            
+            if (!finger.isValid || invalidFinger[i])
+                continue;
+            
+            if (checkInZone(finger))
+                invalidFinger[i] = true;
+        }
+    }
 };
 
 #endif /* RMI_2D_Sensor_hpp */

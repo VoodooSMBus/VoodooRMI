@@ -42,8 +42,13 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     if (getHIDDescriptorAddress() != kIOReturnSuccess)
         IOLogInfo("%s::%s Could not get HID descriptor address\n", getName(), name);
 
-    if (getHIDDescriptor() != kIOReturnSuccess || hdesc.wVendorID != SYNAPTICS_VENDOR_ID) {
+    if (getHIDDescriptor() != kIOReturnSuccess) {
         IOLogError("%s::%s Could not get valid HID descriptor", getName(), name);
+        return NULL;
+    }
+
+    if (hdesc.wVendorID != SYNAPTICS_VENDOR_ID) {
+        IOLogDebug("%s::%s Skip vendor %x", getName(), name, hdesc.wVendorID);
         return NULL;
     }
 

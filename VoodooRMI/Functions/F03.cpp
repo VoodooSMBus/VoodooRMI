@@ -108,7 +108,7 @@ bool F03::start(IOService *provider)
     timer->setTimeoutMS(100);
     timer->enable();
     
-    setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+    voodooTrackpointInstance = rmiBus->getVoodooInput();
     registerService();
     
     return super::start(provider);
@@ -166,7 +166,7 @@ void F03::handlePacket(u8 *packet)
     AbsoluteTime timestamp;
     clock_get_uptime(&timestamp);
     
-    if (!voodooTrackpointInstance)
+    if (!voodooTrackpointInstance || !*voodooTrackpointInstance)
         return;
     
     // The highest dx/dy is lowered by subtracting by trackpointDeadzone.
@@ -192,7 +192,7 @@ void F03::handlePacket(u8 *packet)
         if (middlePressed) {
             relativeEvent.buttons = 0x04;
             relativeEvent.timestamp = timestamp;
-            messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+            messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
         }
         
         middlePressed = false;
@@ -208,14 +208,14 @@ void F03::handlePacket(u8 *packet)
         scrollEvent.deltaAxis3 = 0;
         scrollEvent.timestamp = timestamp;
         
-        messageClient(kIOMessageVoodooTrackpointScrollWheel, voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
+        messageClient(kIOMessageVoodooTrackpointScrollWheel, *voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
     } else {
         relativeEvent.buttons = buttons;
         relativeEvent.dx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
         relativeEvent.dy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
         relativeEvent.timestamp = timestamp;
         
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
     }
 
     if (dx || dy) {
@@ -507,25 +507,6 @@ int F03::ps2Command(u8 *param, unsigned int command)
 {
     return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &F03::ps2CommandGated),
                                        param, &command);
-}
-
-bool F03::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
-{
-    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)
-        && super::handleOpen(forClient, options, arg)) {
-        voodooTrackpointInstance = forClient;
-        voodooTrackpointInstance->retain();
-
-        return true;
-    }
-    
-    return false;
-}
-
-void F03::handleClose(IOService *forClient, IOOptionBits options)
-{
-    OSSafeReleaseNULL(voodooTrackpointInstance);
-    super::handleClose(forClient, options);
 }
 
 int F03::signum(int value)

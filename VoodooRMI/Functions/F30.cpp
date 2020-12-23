@@ -43,19 +43,14 @@ bool F30::start(IOService *provider)
         return false;;
     }
     
-    if (numButtons != 1) {
-        setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
-    }
+    voodooTrackpointInstance = rmiBus->getVoodooInput();
     
     registerService();
-//        publishButtons();
-    
     return true;
 }
 
 void F30::stop(IOService *provider)
 {
-//    unpublishButtons();
     super::stop(provider);
 }
 
@@ -300,7 +295,7 @@ void F30::rmi_f30_report_button()
         }
     }
     
-    if (numButtons > 1) {
+    if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
         AbsoluteTime timestamp;
         clock_get_uptime(&timestamp);
         
@@ -308,27 +303,9 @@ void F30::rmi_f30_report_button()
         relativeEvent.buttons = btns;
         relativeEvent.timestamp = timestamp;
         
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
     }
     
     if (hasTrackpointButtons)
         rmiBus->notify(kHandleRMITrackpointButton, trackpointBtns);
-}
-
-bool F30::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
-{
-    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
-        voodooTrackpointInstance = forClient;
-        voodooTrackpointInstance->retain();
-
-        return true;
-    }
-    
-    return super::handleOpen(forClient, options, arg);
-}
-
-void F30::handleClose(IOService *forClient, IOOptionBits options)
-{
-    OSSafeReleaseNULL(voodooTrackpointInstance);
-    super::handleClose(forClient, options);
 }

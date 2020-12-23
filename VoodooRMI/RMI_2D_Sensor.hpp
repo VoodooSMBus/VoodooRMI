@@ -85,6 +85,7 @@ public:
     u8 nbr_fingers;
     
     rmi_configuration *conf;
+    IOService **voodooInputInstance {nullptr};
 
     bool start(IOService *provider) override;
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
@@ -97,7 +98,6 @@ private:
     int lastFingers;
     
     VoodooInputEvent inputEvent {};
-    IOService *voodooInputInstance {nullptr};
     RMI2DSensorZone rejectZones[3];
     
     bool freeFingerTypes[kMT2FingerTypeCount];

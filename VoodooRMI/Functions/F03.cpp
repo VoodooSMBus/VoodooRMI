@@ -108,7 +108,7 @@ bool F03::start(IOService *provider)
     timer->setTimeoutMS(100);
     timer->enable();
     
-    setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+    setProperty("VoodooInputSupported", kOSBooleanTrue);
     registerService();
     
     return super::start(provider);
@@ -511,7 +511,7 @@ int F03::ps2Command(u8 *param, unsigned int command)
 
 bool F03::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
         && super::handleOpen(forClient, options, arg)) {
         voodooTrackpointInstance = forClient;
         voodooTrackpointInstance->retain();

@@ -58,7 +58,7 @@ bool F3A::attach(IOService *provider)
 bool F3A::start(IOService *provider)
 {
     if (numButtons != 1) {
-        setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+        setProperty("VoodooInputSupported", kOSBooleanTrue);
     }
     
     registerService();
@@ -168,7 +168,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
 
 bool F3A::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
         voodooTrackpointInstance = forClient;
         voodooTrackpointInstance->retain();
 

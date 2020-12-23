@@ -10,7 +10,6 @@
 #define F30_hpp
 
 #include <RMIBus.hpp>
-#include <VoodooTrackpointMessages.h>
 
 #define RMI_F30_QUERY_SIZE            2
 

@@ -44,18 +44,15 @@ bool F30::start(IOService *provider)
     }
     
     if (numButtons != 1) {
-        setProperty("VoodooTrackpointSupported", kOSBooleanTrue);
+        setProperty("VoodooInputSupported", kOSBooleanTrue);
     }
     
     registerService();
-//        publishButtons();
-    
     return true;
 }
 
 void F30::stop(IOService *provider)
 {
-//    unpublishButtons();
     super::stop(provider);
 }
 
@@ -317,7 +314,7 @@ void F30::rmi_f30_report_button()
 
 bool F30::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
-    if (forClient && forClient->getProperty(VOODOO_TRACKPOINT_IDENTIFIER)) {
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
         voodooTrackpointInstance = forClient;
         voodooTrackpointInstance->retain();
 

@@ -16,7 +16,6 @@
 #include "../RMIBus.hpp"
 #include "../Utility/PS2.hpp"
 #include "../Utility/Configuration.hpp"
-#include <VoodooTrackpointMessages.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOTimerEventSource.h>

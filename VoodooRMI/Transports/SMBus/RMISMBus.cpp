@@ -71,7 +71,7 @@ bool RMISMBus::start(IOService *provider)
             rmiStart();
 
             notifier->remove();
-            return true;
+            return rmiStart();
         });
         
         IOLogDebug("Notifier installed: %s", notifierStatus ? "true" : "false");
@@ -85,8 +85,7 @@ bool RMISMBus::start(IOService *provider)
     OSSafeReleaseNULL(dict);
     
     // No VoodooPS2Trackpad, start now
-    rmiStart();
-    return true;
+    return rmiStart();
 }
 
 bool RMISMBus::rmiStart()

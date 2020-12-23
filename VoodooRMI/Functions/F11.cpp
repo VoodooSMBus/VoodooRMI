@@ -30,13 +30,15 @@ bool F11::attach(IOService *provider)
 {
     int error;
 
-    sensor->conf = conf;
 
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
         IOLogError("F11: Provider is not RMIBus");
         return false;
     }
+
+    sensor->conf = conf;
+    sensor->voodooInputInstance = rmiBus->getVoodooInput();
     
     error = rmi_f11_initialize();
     if (error)

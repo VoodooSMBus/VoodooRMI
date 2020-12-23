@@ -16,7 +16,6 @@
 #include "../RMIBus.hpp"
 #include "../Utility/PS2.hpp"
 #include "../Utility/Configuration.hpp"
-#include <VoodooTrackpointMessages.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOTimerEventSource.h>
@@ -121,8 +120,6 @@ public:
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
@@ -131,7 +128,7 @@ private:
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
     
-    IOService *voodooTrackpointInstance {nullptr};
+    IOService **voodooTrackpointInstance {nullptr};
     IOTimerEventSource *timer {nullptr};
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};

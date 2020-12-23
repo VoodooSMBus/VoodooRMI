@@ -10,7 +10,6 @@
 #define F30_hpp
 
 #include <RMIBus.hpp>
-#include <VoodooTrackpointMessages.h>
 
 #define RMI_F30_QUERY_SIZE            2
 
@@ -62,14 +61,12 @@ public:
     bool start(IOService *provider) override;
     void stop(IOService *providerr) override;
     void free() override;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
     RMIBus *rmiBus;
     
-    IOService *voodooTrackpointInstance {nullptr};
+    IOService **voodooTrackpointInstance {nullptr};
     RelativePointerEvent relativeEvent {};
     
     /* Query Data */

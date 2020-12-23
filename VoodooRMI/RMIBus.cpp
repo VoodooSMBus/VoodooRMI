@@ -60,7 +60,7 @@ bool RMIBus::start(IOService *provider) {
     
     if (!super::start(provider))
         return false;
-
+    
     if (!(workLoop = IOWorkLoop::workLoop()) ||
         !(commandGate = IOCommandGate::commandGate(this)) ||
         (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
@@ -80,11 +80,12 @@ bool RMIBus::start(IOService *provider) {
     provider->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);
     
-    registerService();
     setProperty(RMIBusIdentifier, kOSBooleanTrue);
+    
     if (!transport->open(this))
         return false;
 
+    registerService();
     return true;
 err:
     IOLogError("Could not start");

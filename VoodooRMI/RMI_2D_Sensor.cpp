@@ -56,7 +56,6 @@ bool RMI2DSensor::start(IOService *provider)
              0, 0,
              max_x, trackpointRejectHeight);
     
-    setProperty("VoodooInputSupported", kOSBooleanTrue);
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     
@@ -66,6 +65,7 @@ bool RMI2DSensor::start(IOService *provider)
     
     memset(invalidFinger, false, 10);
     
+    setProperty("VoodooInputSupported", kOSBooleanTrue);
     registerService();
     
     return super::start(provider);
@@ -83,8 +83,8 @@ bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *a
 {
     if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
         && super::handleOpen(forClient, options, arg)) {
-        voodooInputInstance = forClient;
-        voodooInputInstance->retain();
+        *voodooInputInstance = forClient;
+        (*voodooInputInstance)->retain();
         
         return true;
     }
@@ -94,7 +94,7 @@ bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *a
 
 void RMI2DSensor::handleClose(IOService *forClient, IOOptionBits options)
 {
-    OSSafeReleaseNULL(voodooInputInstance);
+    OSSafeReleaseNULL(*voodooInputInstance);
     super::handleClose(forClient, options);
 }
 
@@ -159,7 +159,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
     int realFingerCount = 0;
     
-    if (!voodooInputInstance)
+    if (!voodooInputInstance || !*voodooInputInstance)
         return;
     
     bool discardRegions = (report->timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO ||
@@ -256,7 +256,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         pressureLock = false;
     }
     
-    messageClient(kIOMessageVoodooInputMessage, voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
+    messageClient(kIOMessageVoodooInputMessage, *voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
     memset(report, 0, sizeof(RMI2DSensorReport));
 }
 

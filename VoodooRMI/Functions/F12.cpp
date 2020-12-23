@@ -31,13 +31,14 @@ bool F12::attach(IOService *provider)
     const rmi_register_desc_item *item;
     u16 data_offset = 0;
 
-    sensor->conf = conf;
-
     rmiBus = OSDynamicCast(RMIBus, provider);
     if (!rmiBus) {
         IOLogError("F12: Provider is not RMIBus");
         return false;
     }
+    
+    sensor->conf = conf;
+    sensor->voodooInputInstance = rmiBus->getVoodooInput();
     
     ret = rmiBus->read(query_addr, &buf);
     if (ret < 0) {

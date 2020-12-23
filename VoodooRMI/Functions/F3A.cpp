@@ -57,10 +57,6 @@ bool F3A::attach(IOService *provider)
 
 bool F3A::start(IOService *provider)
 {
-    if (numButtons != 1) {
-        setProperty("VoodooInputSupported", kOSBooleanTrue);
-    }
-    
     registerService();
     return super::start(provider);
 }
@@ -147,7 +143,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 }
             }
             
-            if (numButtons > 1) {
+            if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
                 AbsoluteTime timestamp;
                 clock_get_uptime(&timestamp);
                 
@@ -155,7 +151,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 relativeEvent.buttons = btns;
                 relativeEvent.timestamp = timestamp;
                 
-                messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
             }
             
             break;
@@ -164,24 +160,6 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
     }
     
     return kIOReturnSuccess;
-}
-
-bool F3A::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
-{
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
-        voodooTrackpointInstance = forClient;
-        voodooTrackpointInstance->retain();
-
-        return true;
-    }
-    
-    return super::handleOpen(forClient, options, arg);
-}
-
-void F3A::handleClose(IOService *forClient, IOOptionBits options)
-{
-    OSSafeReleaseNULL(voodooTrackpointInstance);
-    super::handleClose(forClient, options);
 }
 
 void F3A::free()

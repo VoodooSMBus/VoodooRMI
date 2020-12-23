@@ -70,6 +70,12 @@ public:
         return transport->blockWrite(rmiaddr, buf, len);
     }
     
+    // Return pointer to voodooInput variable as this likely won't init
+    // until all other Function services start
+    inline IOService **getVoodooInput() {
+        return &voodooInputInstance;
+    }
+    
     OSSet *functions;
     
     void notify(UInt32 type, unsigned int argument = 0);
@@ -78,6 +84,7 @@ public:
 private:
     IOWorkLoop *workLoop {nullptr};
     IOCommandGate *commandGate {nullptr};
+    IOService *voodooInputInstance {nullptr};
 
     void updateConfiguration(OSDictionary *dictionary);
     rmi_configuration conf {};

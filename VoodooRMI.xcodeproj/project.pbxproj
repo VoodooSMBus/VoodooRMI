@@ -161,13 +161,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		2861B6CC24B5928A00383E0E /* Dependencies */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Dependencies;
-			sourceTree = "<group>";
-		};
 		286587DB24C13F5D00E74848 /* SMBus */ = {
 			isa = PBXGroup;
 			children = (
@@ -203,7 +196,6 @@
 		A4560EBD247F29EC0009CBE0 = {
 			isa = PBXGroup;
 			children = (
-				2861B6CC24B5928A00383E0E /* Dependencies */,
 				A4560F02247F381B0009CBE0 /* Headers */,
 				A4560EC9247F29EC0009CBE0 /* VoodooRMI */,
 				A4560EC8247F29EC0009CBE0 /* Products */,

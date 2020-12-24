@@ -15,6 +15,7 @@
 #include <IOKit/IOService.h>
 #include "../Utility/LinuxCompat.h"
 #include "../Utility/Logging.h"
+#include "../rmi.h"
 
 #define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
 #define kIOMessageVoodooI2CHostNotify   iokit_vendor_specific_msg(421)

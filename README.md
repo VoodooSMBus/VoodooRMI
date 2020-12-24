@@ -54,9 +54,8 @@ Linux:
   * VoodooRMI releases (for now) include VoodooSMBus. If you are building VoodooSMBus yourself, build from the Dev branch of the VoodooSMBus git repo.
 * [VoodooPS2](https://github.com/acidanthera/VoodooPS2)
   * Needed for PS2 reset of the trackpad
-  * Generally users should only add VoodooPS2Controller and VoodooPS2Keyboard. VoodooPS2Trackpad/VoodooPS2Mouse will cause VoodooRMI to not attach.
-  * OpenCore users can just disable VoodooPS2Trackpad/VoodooPS2Mouse in their `config.plist`.
-  * Clover users can go inside the VoodooPS2 kext and remove VoodooPS2Trackpad/VoodooPS2Mouse from PlugIns folder.
+  * VoodooPS2 2.2.0 or greater needed
+  * VoodooPS2Trackpad should be left in (unlike previous versions)
 
 **I2C**
 * [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) 2.5 or newer is required

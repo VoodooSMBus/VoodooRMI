@@ -23,9 +23,7 @@ jobs:
         mkdir -p build/${VOODOORMI_SHA}/{Debug,Release}
         xcodebuild -configuration Debug -scheme VoodooRMI -derivedDataPath build clean build
         xcodebuild -configuration Release -scheme VoodooRMI -derivedDataPath build build
-        mv build/Build/Products/Debug/VoodooRMI.kext build/${VOODOORMI_SHA}/Debug/VoodooRMI.kext
-        mv build/Build/Products/Release/VoodooRMI.kext build/${VOODOORMI_SHA}/Release/VoodooRMI.kext
     - uses: actions/upload-artifact@v2
       with:
         name: VoodooRMI
-        path: build/VoodooRMI-*
+        path: build/Products/*/*.zip

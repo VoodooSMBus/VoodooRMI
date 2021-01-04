@@ -2,7 +2,7 @@
  * Configuration.hpp
  * RMI4 Driver for macOS X
  *
- * Copyright (c) 2020 Avery Black <1Revenger1>
+ * Copyright (c) 2021 Avery Black <1Revenger1>
  */
 
 #ifndef Logging_h

@@ -1,5 +1,5 @@
  /* SPDX-License-Identifier: GPL-2.0-only
-  * Copyright (c) 2020 Zhen
+  * Copyright (c) 2021 Zhen
   * Ported to macOS from linux kernel, original source at
   * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_i2c.c
   * https://github.com/torvalds/linux/blob/master/drivers/hid/hid-rmi.c

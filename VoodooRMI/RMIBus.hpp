@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only
  * RMI4 Sensor Controller for macOS
  *
- * Copyright (c) 2020 Avery Black
+ * Copyright (c) 2021 Avery Black
  */
 
 #ifndef RMIBus_h

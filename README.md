@@ -55,7 +55,8 @@ Linux:
 * [VoodooPS2](https://github.com/acidanthera/VoodooPS2)
   * Needed for PS2 reset of the trackpad
   * VoodooPS2 2.2.0 or greater needed
-  * VoodooPS2Trackpad should be left in (unlike in previous versions)
+  * VoodooPS2Trackpad should be injected (unlike in previous versions)
+
 
 **I2C**
 * [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) 2.5 or newer is required

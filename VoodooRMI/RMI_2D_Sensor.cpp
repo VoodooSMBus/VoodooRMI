@@ -219,7 +219,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
             transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
-            IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]\n",
+            IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
                        i, transducer.isValid ? "valid" : "invalid",
                        obj.x, obj.y, obj.z, obj.wx, obj.wy,
                        transducer.fingerType,

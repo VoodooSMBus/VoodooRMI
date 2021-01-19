@@ -57,6 +57,7 @@ bool F3A::attach(IOService *provider)
 
 bool F3A::start(IOService *provider)
 {
+    voodooTrackpointInstance = rmiBus->getVoodooInput();
     registerService();
     return super::start(provider);
 }
@@ -82,10 +83,10 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
             continue;
         
         if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
-            IOLogDebug("F30: Found Trackpoint button %d\n", button);
+            IOLogDebug("F3A: Found Trackpoint button %d\n", trackpoint_button);
             gpioled_key_map[i] = trackpoint_button++;
         } else {
-            IOLogDebug("F30: Found Button %d", button);
+            IOLogDebug("F3A: Found Button %d", button);
             gpioled_key_map[i] = button++;
             clickpadIndex = i;
         }

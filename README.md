@@ -2,21 +2,17 @@
 
 [![Gitter](https://badges.gitter.im/VoodooSMBus/dev.svg)](https://gitter.im/VoodooSMBus/dev?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-A port for macOS of Synaptic's RMI code from Linux. RMI4 is used for touchscreens, touchpads, and other sensors - though this implementation only has code for trackpads/trackpoints. Many PS2 trackpads and sensors support other buses like I2C or SMBus, though SMBus is advantageous for macOS due to not requiring ACPI edits.
-
-This driver communicates over SMBus or I2C.
+A port for macOS of Synaptic's RMI driver from Linux. RMI4 is used for touchscreens, touchpads, and other sensors - though this implementation only has code for trackpads/trackpoints. This works for both I2C HID trackpads from Synaptic as well as Synaptic's SMBus trackpads. When following the instructions below, make sure you only select I2C or SMBus depending on your trackpad's capabilities.
 
 ## Supported Features
-* Force Touch emulation for clickpads (press down clickpad and increase touched area)
-* Up to four finger gestures (Though it can track up to 5 fingers)
-* Buttons
-  * F3A has partial support (Most trackpads use F30 though, which is fully supported), it's only been tested on Clickpads which only have one button.
+* Force Touch emulation for clickpads (press down clickpad and increase finger pressure)
+* 3 and 4 finger gestures
 * Trackpoint
-* Power Management
-* SMBus Communication
-* I2C Communication
+* SMBus or I2C communication
 
 ## Compatibility
+
+Synaptic trackpads generally work over SMBus or I2C, though not both. Pay close attention to which bus it works over.
 
 **SMBus**  
 
@@ -52,10 +48,9 @@ Linux:
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
   * Apple's SMBus **PCI** controller cannot load, as it interferes with VoodooSMBus.
   * VoodooRMI releases (for now) include VoodooSMBus. If you are building VoodooSMBus yourself, build from the Dev branch of the VoodooSMBus git repo.
-* [VoodooPS2](https://github.com/acidanthera/VoodooPS2)
+* [VoodooPS2 >=2.2.0](https://github.com/acidanthera/VoodooPS2)
   * Needed for PS2 reset of the trackpad
-  * VoodooPS2 2.2.0 or greater needed
-  * VoodooPS2Trackpad should be injected (unlike in previous versions)
+  * VoodooPS2Trackpad should be injected
 
 
 **I2C**
@@ -81,7 +76,9 @@ Linux:
 
 ## Installation
 1) Add the required kexts to your bootloader
-2) Disable VoodooPS2Trackpad, VoodooPS2Mouse, and if applicable, VoodooInput from within the PS2 kext.
+2) Disable VoodooPS2Mouse, and if applicable, VoodooInput from within the PS2 kext.
+    * Note that VoodooPS2Trackpad should be injected if using Acidanthera's VoodooPS2 2.2.0 or greater
+    * Injecting VoodooPS2Trackpad is not a strict requirement
 3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C to your Config.plist.
     * RMISMBus/RMII2C should be after VoodooRMI
     * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`

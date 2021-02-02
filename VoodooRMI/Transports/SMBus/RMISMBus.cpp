@@ -68,18 +68,20 @@ bool RMISMBus::start(IOService *provider)
             
             IOLogInfo("VoodooPS2Mouse finished init, starting...");
             messageClient(kPS2M_SMBusStart, newService);
-            rmiStart();
-
             notifier->remove();
-            return rmiStart();
+            rmiStart();
+            
+            return true;
         });
         
-        IOLogDebug("Notifier installed: %s", notifierStatus ? "true" : "false");
+        if (!notifierStatus) {
+            IOLogError("Notifier not installed");
+        }
         
         // Retained by addMatchingNotification
         OSSafeReleaseNULL(dict);
         OSSafeReleaseNULL(ps2);
-        return true;
+        return !!notifierStatus;
     }
     
     OSSafeReleaseNULL(dict);

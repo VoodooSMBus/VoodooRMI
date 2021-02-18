@@ -152,7 +152,6 @@ bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
     return false;
 }
 
-#define RMI_2D_MIN_Z 10
 #define RMI_2D_MAX_Z 120
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
@@ -162,8 +161,8 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     if (!voodooInputInstance || !*voodooInputInstance)
         return;
     
-    bool discardRegions = (report->timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO ||
-                          (report->timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
+    bool discardRegions = ((report->timestamp - lastKeyboardTS) < (conf->disableWhileTypingTimeout * MILLI_TO_NANO)) ||
+                          ((report->timestamp - lastTrackpointTS) < (conf->disableWhileTrackpointTimeout * MILLI_TO_NANO));
     
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
@@ -202,13 +201,12 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             int deltaWidth = abs(obj.wx - obj.wy);
             
             // Dissallow large objects
-            transducer.isValid = obj.type != RMI_2D_OBJECT_INACCURATE &&
-                                 obj.z < RMI_2D_MAX_Z &&
-                                 obj.z > RMI_2D_MIN_Z &&
+            transducer.isValid = !(discardRegions && checkInZone(transducer)) &&
                                  !invalidFinger[i] &&
+                                 obj.type != RMI_2D_OBJECT_INACCURATE &&
+                                 obj.z < RMI_2D_MAX_Z &&
                                  // Accidental light brushes by the palm generally are tall and skinny
-                                 ((obj.z > 50 && transducer.currentCoordinates.y > (max_y / 3)) || deltaWidth < conf->fingerMajorMinorMax) &&
-                                 !(discardRegions && checkInZone(transducer));
+                                 ((obj.z > 50 && transducer.currentCoordinates.y > (max_y / 3))/* || deltaWidth < conf->fingerMajorMinorMax*/);
             
             if (!transducer.isValid)
                 invalidFinger[i] = true;

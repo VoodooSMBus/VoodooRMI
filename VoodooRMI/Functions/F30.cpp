@@ -277,6 +277,8 @@ void F30::rmi_f30_report_button()
         // Key code is one above the value we need to bitwise shift left, as key code 0 is "Reserved" or "not present"
         mask = key_down << (key_code - 1);
         
+        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+        
         if (numButtons == 1 && i == clickpad_index) {
             if (clickpadState != key_down) {
                  rmiBus->notify(kHandleRMIClickpadSet, key_down);
@@ -284,8 +286,6 @@ void F30::rmi_f30_report_button()
              }
             continue;
         }
-        
-        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
         
         if (i >= TRACKPOINT_RANGE_START &&
             i <= TRACKPOINT_RANGE_END) {

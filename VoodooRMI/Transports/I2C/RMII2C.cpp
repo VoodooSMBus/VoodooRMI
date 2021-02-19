@@ -95,16 +95,22 @@ bool RMII2C::start(IOService *provider) {
         goto exit;
     }
 
-    /* Implementation of polling */
+    // Try to get interrupt source, fall back to polling though if we can't get an interrupt source
     interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
-    if (!interrupt_source) {
+    
+    if (interrupt_source) {
+        work_loop->addEventSource(interrupt_source);
+    } else {
         IOLogInfo("%s::%s Could not get interrupt event source, falling back to polling", getName(), name);
         interrupt_simulator = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &RMII2C::simulateInterrupt));
         if (!interrupt_simulator) {
             IOLogError("%s::%s Could not get timer event source", getName(), name);
             goto exit;
         }
+        
+        work_loop->addEventSource(interrupt_simulator);
     }
+    
 
     PMinit();
     provider->joinPMtree(this);
@@ -121,20 +127,30 @@ exit:
 }
 
 void RMII2C::releaseResources() {
-    if (command_gate)
+    if (command_gate) {
         work_loop->removeEventSource(command_gate);
-    OSSafeReleaseNULL(command_gate);
-
+    }
+    
     stopInterrupt();
-    OSSafeReleaseNULL(interrupt_source);
-    OSSafeReleaseNULL(interrupt_simulator);
-    OSSafeReleaseNULL(work_loop);
+    
+    if (interrupt_source) {
+        work_loop->removeEventSource(interrupt_source);
+    }
+    
+    if (interrupt_simulator) {
+        work_loop->removeEventSource(interrupt_simulator);
+    }
 
     if (device_nub) {
         if (device_nub->isOpen(this))
             device_nub->close(this);
         device_nub = nullptr;
     }
+    
+    OSSafeReleaseNULL(command_gate);
+    OSSafeReleaseNULL(interrupt_source);
+    OSSafeReleaseNULL(interrupt_simulator);
+    OSSafeReleaseNULL(work_loop);
     OSSafeReleaseNULL(acpi_device);
 
     IOLockFree(page_mutex);
@@ -388,11 +404,9 @@ IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
 
 void RMII2C::startInterrupt() {
     if (interrupt_simulator) {
-        work_loop->addEventSource(interrupt_simulator);
         interrupt_simulator->setTimeoutMS(200);
         interrupt_simulator->enable();
     } else if (interrupt_source) {
-        work_loop->addEventSource(interrupt_source);
         interrupt_source->enable();
     }
 }
@@ -401,9 +415,7 @@ void RMII2C::stopInterrupt() {
     ready = false;
     if (interrupt_simulator) {
         interrupt_simulator->disable();
-        work_loop->removeEventSource(interrupt_simulator);
     } else if (interrupt_source) {
         interrupt_source->disable();
-        work_loop->removeEventSource(interrupt_source);
     }
 }

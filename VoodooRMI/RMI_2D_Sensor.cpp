@@ -203,7 +203,6 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             // Dissallow large objects
             transducer.isValid = !(discardRegions && checkInZone(transducer)) &&
                                  !invalidFinger[i] &&
-                                 obj.type != RMI_2D_OBJECT_INACCURATE &&
                                  obj.z < RMI_2D_MAX_Z &&
                                  // Accidental light brushes by the palm generally are not circular
                                  deltaWidth <= conf->fingerMajorMinorMax;

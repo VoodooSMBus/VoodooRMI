@@ -29,7 +29,7 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
     const int palmRejectWidth = max_x * 0.05;
-    const int palmRejectHeight = max_y * 0.7;
+    const int palmRejectHeight = max_y * 0.8;
     const int trackpointRejectHeight = max_y * 0.2;
     
     /*
@@ -51,7 +51,7 @@ bool RMI2DSensor::start(IOService *provider)
              max_x - palmRejectWidth, 0,
              max_x, palmRejectHeight);
 
-    // Top band for trackpoint(and spacebar?)
+    // Top band for trackpoint and buttons
     fillZone(&rejectZones[2],
              0, 0,
              max_x, trackpointRejectHeight);
@@ -152,8 +152,7 @@ bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
     return false;
 }
 
-#define RMI_2D_MIN_Z 10
-#define RMI_2D_MAX_Z 120
+#define RMI_2D_MAX_Z 140
 
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
@@ -162,8 +161,8 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     if (!voodooInputInstance || !*voodooInputInstance)
         return;
     
-    bool discardRegions = (report->timestamp - lastKeyboardTS) < conf->disableWhileTypingTimeout * MILLI_TO_NANO ||
-                          (report->timestamp - lastTrackpointTS) < conf->disableWhileTrackpointTimeout * MILLI_TO_NANO;
+    bool discardRegions = ((report->timestamp - lastKeyboardTS) < (conf->disableWhileTypingTimeout * MILLI_TO_NANO)) ||
+                          ((report->timestamp - lastTrackpointTS) < (conf->disableWhileTrackpointTimeout * MILLI_TO_NANO));
     
     for (int i = 0; i < report->fingers; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
@@ -202,20 +201,23 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
             int deltaWidth = abs(obj.wx - obj.wy);
             
             // Dissallow large objects
-            transducer.isValid = obj.type != RMI_2D_OBJECT_INACCURATE &&
-                                 obj.z < RMI_2D_MAX_Z &&
-                                 obj.z > RMI_2D_MIN_Z &&
+            transducer.isValid = !(discardRegions && checkInZone(transducer)) &&
                                  !invalidFinger[i] &&
-                                 // Accidental light brushes by the palm generally are tall and skinny
-                                 ((obj.z > 50 && transducer.currentCoordinates.y > (max_y / 3)) || deltaWidth < conf->fingerMajorMinorMax) &&
-                                 !(discardRegions && checkInZone(transducer));
+                                 obj.z < RMI_2D_MAX_Z &&
+                                 // Accidental light brushes by the palm generally are not circular
+                                 deltaWidth <= conf->fingerMajorMinorMax;
             
+            // Invalid fingers stays invalid until lifted
             if (!transducer.isValid)
                 invalidFinger[i] = true;
             
+            // Force touch emulation only works with clickpads (button underneath trackpad)
+            // Lock finger in a force touch state until lifted
             if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
                 pressureLock = true;
             
+            // Force touch = 255 pressure
+            // isPhysicalButtonDown interferes with force touch
             transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
             transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
             
@@ -226,6 +228,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                        transducer.currentCoordinates.pressure,
                        transducer.isPhysicalButtonDown);
         } else {
+            // Finger lifted, make finger valid
             invalidFinger[i] = false;
         }
     }

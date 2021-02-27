@@ -130,13 +130,13 @@ void RMII2C::releaseResources() {
     if (command_gate) {
         work_loop->removeEventSource(command_gate);
     }
-    
+
     stopInterrupt();
-    
+
     if (interrupt_source) {
         work_loop->removeEventSource(interrupt_source);
     }
-    
+
     if (interrupt_simulator) {
         work_loop->removeEventSource(interrupt_simulator);
     }
@@ -146,7 +146,7 @@ void RMII2C::releaseResources() {
             device_nub->close(this);
         device_nub = nullptr;
     }
-    
+
     OSSafeReleaseNULL(command_gate);
     OSSafeReleaseNULL(interrupt_source);
     OSSafeReleaseNULL(interrupt_simulator);

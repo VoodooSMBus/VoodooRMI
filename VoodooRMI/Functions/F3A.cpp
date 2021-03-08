@@ -66,6 +66,7 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
 {
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
+    const gpio_data *gpio = rmiBus->getGPIOData();
     numButtons = min(gpioCount, TRACKPOINT_RANGE_END);
     
     setProperty("Button Count", gpioCount, 32);
@@ -82,7 +83,8 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
         if (!is_valid_button(i, query1_regs, ctrl1_regs))
             continue;
         
-        if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
+        if (gpio->trackpointButtons &&
+            (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END)) {
             IOLogDebug("F3A: Found Trackpoint button %d\n", trackpoint_button);
             gpioled_key_map[i] = trackpoint_button++;
         } else {

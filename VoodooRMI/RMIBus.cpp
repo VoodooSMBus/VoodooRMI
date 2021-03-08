@@ -50,9 +50,7 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
     // GPIO data from VoodooPS2
     if (OSObject *object = transport->getProperty("GPIO Data")) {
         OSDictionary *dict = OSDynamicCast(OSDictionary, object);
-        if (dict) {
-            getGPIOData(dict);
-        }
+        getGPIOData(dict);
     }
 
     if (rmi_driver_probe(this)) {
@@ -409,6 +407,9 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
 }
 
 void RMIBus::getGPIOData(OSDictionary *dict) {
+    if (!dict)
+        return;
+    
     Configuration::loadBoolConfiguration(dict, "Clickpad", &gpio.clickpad);
     Configuration::loadBoolConfiguration(dict, "TrackstickButtons", &gpio.trackpointButtons);
     

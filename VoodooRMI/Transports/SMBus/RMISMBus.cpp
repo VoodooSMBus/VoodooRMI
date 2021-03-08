@@ -66,7 +66,12 @@ bool RMISMBus::start(IOService *provider)
                 return true;
             }
             
-            IOLogInfo("VoodooPS2Mouse finished init, starting...");
+            if (OSObject *gpio = newService->getProperty("GPIO Data")) {
+                IOLogDebug("Found GPIO data!");
+                setProperty("GPIO Data", gpio);
+            }
+            
+            IOLogInfo("VoodooPS2Trackpad finished init, starting...");
             messageClient(kPS2M_SMBusStart, newService);
             notifier->remove();
             rmiStart();

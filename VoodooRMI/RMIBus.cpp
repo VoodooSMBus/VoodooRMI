@@ -46,6 +46,12 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
         IOLogError("Could not get transport instance");
         return NULL;
     }
+    
+    // GPIO data from VoodooPS2
+    if (OSObject *object = transport->getProperty("GPIO Data")) {
+        OSDictionary *dict = OSDynamicCast(OSDictionary, object);
+        getGPIOData(dict);
+    }
 
     if (rmi_driver_probe(this)) {
         IOLogError("Could not probe");
@@ -398,4 +404,16 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
     } else {
         IOLogError("Invalid Configuration");
     }
+}
+
+void RMIBus::getGPIOData(OSDictionary *dict) {
+    if (!dict)
+        return;
+    
+    Configuration::loadBoolConfiguration(dict, "Clickpad", &gpio.clickpad);
+    Configuration::loadBoolConfiguration(dict, "TrackstickButtons", &gpio.trackpointButtons);
+    
+    setProperty("GPIO Data", dict);
+    
+    IOLogInfo("Recieved GPIO Data");
 }

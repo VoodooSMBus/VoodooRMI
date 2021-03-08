@@ -204,6 +204,7 @@ int F30::rmi_f30_map_gpios()
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
     int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
+    const gpio_data *gpio = rmiBus->getGPIOData();
     setProperty("Button Count", buttonArrLen, 32);
     
     gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(gpioled_key_map[0])));
@@ -213,8 +214,9 @@ int F30::rmi_f30_map_gpios()
         if (!rmi_f30_is_valid_button(i))
             continue;
         
-        if (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END) {
-            IOLogDebug("F30: Found Trackpoint button %d\n", button);
+        if (gpio->trackpointButtons &&
+            (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END)) {
+            IOLogDebug("F30: Found Trackpoint button %d\n", trackpoint_button);
             gpioled_key_map[i] = trackpoint_button++;
         } else {
             IOLogDebug("F30: Found Button %d", button);

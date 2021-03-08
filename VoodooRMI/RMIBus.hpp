@@ -49,8 +49,10 @@ public:
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setProperties(OSObject* properties) override;
 
+    // TODO: Clean up pointers
     rmi_driver_data *data;
     RMITransport *transport;
+    gpio_data gpio;
     bool awake {true};
     
     // rmi_read
@@ -76,6 +78,10 @@ public:
         return &voodooInputInstance;
     }
     
+    inline const gpio_data* getGPIOData() {
+        return &gpio;
+    }
+    
     OSSet *functions;
     
     void notify(UInt32 type, unsigned int argument = 0);
@@ -85,7 +91,8 @@ private:
     IOWorkLoop *workLoop {nullptr};
     IOCommandGate *commandGate {nullptr};
     IOService *voodooInputInstance {nullptr};
-
+    
+    void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);
     rmi_configuration conf {};
 

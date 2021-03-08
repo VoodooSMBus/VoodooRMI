@@ -140,6 +140,12 @@ struct rmi_configuration {
     uint64_t disableWhileTrackpointTimeout {2000};
 };
 
+// Data for F30 and F3A
+struct gpio_data {
+    bool clickpad {false};
+    bool trackpointButtons {true}; // Does not affect F03
+};
+
 /*
  *  Wrapper class for functions
  */

@@ -23,7 +23,7 @@
 		<key>RMIDevice</key>
 		<dict>
 			<key>CFBundleIdentifier</key>
-			<string>com.1Revenger1.VoodooRMI</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>Configuration</key>
 			<dict>
 				<key>DisableWhileTrackpointTimeout </key>

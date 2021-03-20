@@ -79,7 +79,7 @@ Linux:
 2) Disable VoodooPS2Mouse, and if applicable, VoodooInput from within the PS2 kext.
     * Note that VoodooPS2Trackpad should be injected if using Acidanthera's VoodooPS2 2.2.0 or greater
     * Injecting VoodooPS2Trackpad is not a strict requirement
-3) For OpenCore users, make sure to add VoodooInput, VoodooTrackpoint and RMISMBus/RMII2C to your Config.plist.
+3) For OpenCore users, make sure to add VoodooInput and RMISMBus/RMII2C to your Config.plist.
     * RMISMBus/RMII2C should be after VoodooRMI
     * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
 
@@ -145,12 +145,19 @@ sudo kextunload -vvvv -b com.1Revenger1.RMISMBus -b com.1Revenger1.VoodooRMI
 
 ## Troubleshooting
 
-Couple things to keep in mind:
+Before creating an issue, please check the below:
 1) Make sure VoodooSMBus/VoodooI2C is loading and attaching
     * [VoodooSMBus Troubleshooting](https://github.com/VoodooSMBus/VoodooSMBus/tree/dev#voodoosmbus-does-not-load)
     * [VoodooI2C Troubleshooting](https://voodooi2c.github.io/#Troubleshooting/Troubleshooting)
-2) Make sure VoodooInput/VoodooTrackpoint are loading
-3) IORegistryExplorer is a good way to see which Functions are loading, and what is/isn't loading
-4) Getting logs is harder than it should be
-    * If loading within macOS, you can use `sudo log show --last 5m | grep VRMI`
-    * If injecting, you will want to add the boot arg `msgbuf=1048576` and use `sudo dmesg | grep VRMI`
+2) Make sure VoodooInput is loading
+    * `kextstat | grep VoodooInput`
+
+If the above are loading, next place to check is within the IORegistry and within VoodooRMI logs:
+1) Use IORegistryExplorer to check what is attaching and loading.
+    * The various functions in VoodooRMI will publish debug information which can be useful
+    * IORegs can be be saved using `File -> Save As` in the top left
+2) Get logs from within macOS
+    * If loading VoodooRMI using `kextload` or `kextutil` within macOS, you can use `sudo log show --last boot | grep VRMI`
+    * If injecting through OpenCore/Clover, you will want to add the boot arg `msgbuf=1048576` and use `sudo dmesg | grep VRMI` immediately after booting with the boot arg.
+
+When creating an issue, you will need to provide log files (IORegs not required but helpful)!

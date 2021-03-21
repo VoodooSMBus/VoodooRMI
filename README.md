@@ -16,6 +16,10 @@ Synaptic trackpads generally work over SMBus or I2C, though not both. Pay close 
 
 **SMBus**  
 
+macOS (Requires Acidanthera's VoodooPS2 version 2.2.0 or above):
+* Look in IORegistryExplorer under `ApplePS2SynapticsTrackpad`, and look for the value `Intertouch Support=True`
+* Look for "VoodooPS2Trackpad: Trackpad supports SMBus operation" within macOS logs (may need to use `sudo dmesg` to see this)
+
 Windows:
 * Check under Device Manager for a Synaptics SMBus device
 

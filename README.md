@@ -45,13 +45,9 @@ Linux:
 ## Requirements
 
 **SMBus**
+* [Acidanthera's VoodooPS2 >= 2.2.0](https://github.com/acidanthera/VoodooPS2)
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
-  * Apple's SMBus **PCI** controller cannot load, as it interferes with VoodooSMBus.
   * VoodooRMI releases (for now) include VoodooSMBus. If you are building VoodooSMBus yourself, build from the Dev branch of the VoodooSMBus git repo.
-* [VoodooPS2 >=2.2.0](https://github.com/acidanthera/VoodooPS2)
-  * Needed for PS2 reset of the trackpad
-  * VoodooPS2Trackpad should be injected
-
 
 **I2C**
 * [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) 2.5 or newer is required
@@ -61,7 +57,7 @@ Linux:
 
 | Name | Main function |
 |---|---|
-| `SYN1B7F` | F12 |
+| `SYN1B7F`  | F12 |
 | `SYNA0000` | F11 |
 | `SYNA1202` | F12 |
 | `SYNA2393` | unknown |
@@ -76,16 +72,22 @@ Linux:
 
 ## Installation
 1) Add the required kexts to your bootloader
-2) Disable VoodooPS2Mouse, and if applicable, VoodooInput from within the PS2 kext.
-    * Note that VoodooPS2Trackpad should be injected if using Acidanthera's VoodooPS2 2.2.0 or greater
-    * Injecting VoodooPS2Trackpad is not a strict requirement
-3) For OpenCore users, make sure to add VoodooInput and RMISMBus/RMII2C to your Config.plist.
-    * RMISMBus/RMII2C should be after VoodooRMI
-    * All dependencies are found under `VoodooRMI.kext/Contents/PlugIns/`
-
-You generally only want **one** of the two below kexts
-* RMII2C is needed if using VoodooI2C for your trackpad
-* RMISMBus is needed if using VoodooSMBus for your trackpad
+2) Make sure VoodooPS2 is configured as below:
+    * Enabled:
+        * VoodooPS2Controller.kext
+        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext
+        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext
+        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext
+    * Disabled:
+        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooInput.kext
+4) For OpenCore users, make sure to add the below kexts to your Config.plist.
+    * VoodooRMI/Contents/PlugIns/VoodooInput.kext
+    * SMBus trackpads:
+        * VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
+        * VoodooSMBus.kext
+    * I2C trackpads:
+        * VoodooRMI.kext/Contents/PlugIns/RMII2C.kext
+        * VoodooI2C.kext
 
 There is no support for this kext being loaded into Library/Extensions or System/Library/Extensions. This likely won't break loading it, but test with injection first before sending in a bug report.
 
@@ -149,8 +151,8 @@ Before creating an issue, please check the below:
 1) Make sure VoodooSMBus/VoodooI2C is loading and attaching
     * [VoodooSMBus Troubleshooting](https://github.com/VoodooSMBus/VoodooSMBus/tree/dev#voodoosmbus-does-not-load)
     * [VoodooI2C Troubleshooting](https://voodooi2c.github.io/#Troubleshooting/Troubleshooting)
-2) Make sure VoodooInput is loading
-    * `kextstat | grep VoodooInput`
+2) Make sure VoodooInput and VoodooPS2Trackpad is loading
+    * `kextstat | grep Voodoo`
 
 If the above are loading, next place to check is within the IORegistry and within VoodooRMI logs:
 1) Use IORegistryExplorer to check what is attaching and loading.

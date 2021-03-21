@@ -2,12 +2,12 @@
 
 [![Gitter](https://badges.gitter.im/VoodooSMBus/dev.svg)](https://gitter.im/VoodooSMBus/dev?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-A port for macOS of Synaptic's RMI driver from Linux. RMI4 is used for touchscreens, touchpads, and other sensors - though this implementation only has code for trackpads/trackpoints. This works for both I2C HID trackpads from Synaptic as well as Synaptic's SMBus trackpads. When following the instructions below, make sure you only select I2C or SMBus depending on your trackpad's capabilities.
+A port for macOS of Synaptic's RMI Trackpad driver from Linux. This works for both I2C HID trackpads from Synaptic as well as Synaptic's SMBus trackpads. When following the instructions below, make sure you only select I2C or SMBus depending on your trackpad's capabilities.
 
 ## Supported Features
 * Force Touch emulation for clickpads (press down clickpad and increase finger pressure)
 * 3 and 4 finger gestures
-* Trackpoint
+* Trackpoint over PS2 Passthrough
 * SMBus or I2C communication
 
 ## Compatibility
@@ -29,7 +29,7 @@ Linux:
 * If you are using intertouch (i.e. psmouse.intertouch=1) for your synaptics trackpad, then it's compatible
 * Get `i2c-tools` from your package manager. Run `i2cdetect -l`, and note the number for SMBus (It's usually zero). Run `i2cdetect #` where # is the number you got from running the prior command. Synaptic devices are always at address 0x2c, so check at that address for anything other than `--`. It will usually appear as `UU` in my experiance if it's a Synaptics device.
   * If the trackpad does not show up, there is a chance that it will still work. There have been one or two examples of the trackpad not showing up but still being compatible.
-* Likely compatible if you run `dmesg` and find a message along the lines of `"Your touchpad x says it can support a different bus."` and it's a synaptics trackpad.
+* Likely compatible if you run `dmesg` and find a message along the lines of `"Your touchpad x says it can support a different bus."` and it's a Synaptics trackpad.
 
 **I2C**
 
@@ -80,9 +80,9 @@ Linux:
     * Enabled:
         * VoodooPS2Controller.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext
-        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext
     * Disabled:
+        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooInput.kext
 4) For OpenCore users, make sure to add the below kexts to your Config.plist.
     * VoodooRMI/Contents/PlugIns/VoodooInput.kext

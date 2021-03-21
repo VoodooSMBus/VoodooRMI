@@ -157,6 +157,9 @@ Before creating an issue, please check the below:
     * [VoodooI2C Troubleshooting](https://voodooi2c.github.io/#Troubleshooting/Troubleshooting)
 2) Make sure VoodooInput and VoodooPS2Trackpad is loading
     * `kextstat | grep Voodoo`
+3) You may need to do IRQ patching on Haswell and older devices for SMBus trackpads (Not always required)
+    * Required if the `SBUS` device does not have any IOInterruptControllers in IORegistryExplorer
+    * [CorpNewt's SSDTTime](https://github.com/corpnewt/SSDTTime) can do this automatically for you
 
 If the above are loading, next place to check is within the IORegistry and within VoodooRMI logs:
 1) Use IORegistryExplorer to check what is attaching and loading.

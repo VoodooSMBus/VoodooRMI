@@ -85,7 +85,8 @@ Linux:
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooInput.kext
 4) For OpenCore users, make sure to add the below kexts to your Config.plist.
-    * VoodooRMI/Contents/PlugIns/VoodooInput.kext
+    * VoodooRMI.kext
+    * VoodooRMI.kext/Contents/PlugIns/VoodooInput.kext
     * SMBus trackpads:
         * VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
         * VoodooSMBus.kext

@@ -145,13 +145,25 @@ int RMISMBus::rmi_smb_get_version()
 {
     int retval;
     
-    /* Check if for SMBus new version device by reading version byte. */
+    /* Check for SMBus new version device by reading version byte. */
     retval = device_nub->readByteData(SMB_PROTOCOL_VERSION_ADDRESS);
     if (retval < 0) {
         return retval;
     }
     
     return retval + 1;
+}
+
+int RMISMBus::reset()
+{
+    /* Discard mapping table */
+    IOLockLock(mapping_table_mutex);
+    memset(mapping_table, 0, sizeof(mapping_table));
+    IOLockUnlock(mapping_table_mutex);
+
+    // Full reset can only be done in PS2
+    // Getting the version allows the trackpad to be used over SMBus
+    return rmi_smb_get_version();
 }
 
 /*

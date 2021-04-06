@@ -76,6 +76,8 @@ bool RMISMBus::start(IOService *provider)
             notifier->remove();
             rmiStart();
             
+            
+            
             return true;
         });
         
@@ -299,18 +301,32 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whatDevice != this)
         return kIOPMAckImplied;
     
-    if (whichState == 0 && awake) {
-        IOLogDebug("Sleep");
-        messageClient(kHandleRMISuspend, bus);
-        awake = false;
-    } else if (!awake) {
-        IOLogDebug("Wakeup");
+    if (whichState == 0) {
+        messageClient(kIOMessageRMI4Sleep, bus);
+    } else {
+        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
         IOSleep(1000);
-        reset();
-        // Reconfigure device then tell device to wake up again.
-        messageClient(kIOMessageRMI4ResetHandler, bus);
-        messageClient(kHandleRMIResume, bus);
-        awake = true;
+        
+        // Put trackpad in SMBus mode again
+        int retval = reset();
+        if (retval < 0) {
+            IOLogError("Failed to reset trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        // Reconfigure device
+        retval = messageClient(kIOMessageRMI4ResetHandler, bus);
+        if (retval < 0) {
+            IOLogError("Failed to config trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        // Enable trackpad again
+        retval = messageClient(kIOMessageRMI4Resume, bus);
+        if (retval < 0) {
+            IOLogError("Failed to resume trackpad!");
+            return kIOPMAckImplied;
+        }
     }
 
     return kIOPMAckImplied;

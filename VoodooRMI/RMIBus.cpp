@@ -163,8 +163,6 @@ void RMIBus::handleHostNotifyLegacy()
 
 void RMIBus::handleReset()
 {
-    IOLogInfo("Reset!");
-    
     if (!data || !data->f01_container) {
         IOLogDebug("Device not ready for reset, ignoring...");
         return;
@@ -195,13 +193,17 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             break;
         case kIOMessageRMI4ResetHandler:
             handleReset();
-        case kHandleRMISuspend:
-            messageClients(kHandleRMISuspend);
+            break;
+        case kIOMessageRMI4Sleep:
+            IOLogDebug("Sleep");
+            messageClients(kHandleRMISleep);
             rmi_driver_clear_irq_bits(this);
             break;
-        case kHandleRMIResume:
+        case kIOMessageRMI4Resume:
+            IOLogDebug("Wakeup");
             err = rmi_driver_set_irq_bits(this);
             if (err < 0) {
+                IOLogError("Could not wakeup device");
                 return kIOReturnError;
             }
             messageClients(kHandleRMIResume);

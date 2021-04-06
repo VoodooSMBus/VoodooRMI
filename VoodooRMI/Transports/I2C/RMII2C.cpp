@@ -252,8 +252,9 @@ int RMII2C::rmi_set_mode(u8 mode) {
 
     if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
+    
+    IOLogDebug("%s::%s mode set", getName(), name);
 
-    IOLogInfo("%s::%s reset completed", getName(), name);
     return 1;
 }
 
@@ -264,8 +265,11 @@ int RMII2C::reset() {
         return retval;
     
     ready = true;
+    
+    // Tell driver to reconfigure
     retval = messageClient(kIOMessageRMI4ResetHandler, bus);
 
+    IOLogInfo("%s::%s reset completed", getName(), name);
     return retval;
 };
 
@@ -319,7 +323,10 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         IOLogError("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d", getName(), name, i2cInput[2]);
         if (i2cInput[2] == HID_GENERIC_MOUSE ||
             i2cInput[2] == HID_GENERIC_POINTER) {
-            reset();
+            int err = reset();
+            if (err < 0) {
+                IOLogError("Failed to reset trackpad after report id mismatch!");
+            }
         }
         retval = -1;
         goto exit;
@@ -404,12 +411,25 @@ IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
         return kIOReturnInvalid;
 
     if (powerState == 0) {
-        messageClient(kHandleRMISuspend, bus);
+        messageClient(kIOMessageRMI4Sleep, bus);
         stopInterrupt();
     } else {
         startInterrupt();
-        reset();
-        messageClient(kHandleRMIResume, bus);
+        
+        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
+        IOSleep(1000);
+        
+        int retval = reset();
+        if (retval < 0) {
+            IOLogError("Failed to config trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        retval = messageClient(kIOMessageRMI4Resume, bus);
+        if (retval < 0) {
+            IOLogError("Failed to resume trackpad!");
+            return kIOPMAckImplied;
+        }
     }
     
     return kIOPMAckImplied;

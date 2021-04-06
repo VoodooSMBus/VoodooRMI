@@ -31,11 +31,11 @@ enum {
     kPS2M_SMBusStart = iokit_vendor_specific_msg(152),          // Reset, disable PS2 comms to not interfere with SMBus comms
 };
 
-// RMI message types
+// RMI Bus message types
 enum {
     kHandleRMIAttention = iokit_vendor_specific_msg(2046),
     kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
-    kHandleRMISuspend = iokit_vendor_specific_msg(2048),
+    kHandleRMISleep = iokit_vendor_specific_msg(2048),
     kHandleRMIResume = iokit_vendor_specific_msg(2049),
     kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
     kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051),

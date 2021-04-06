@@ -451,7 +451,7 @@ IOReturn F01::message(UInt32 type, IOService *provider, void *argument)
 {
     int error = 0;
     switch (type) {
-        case kHandleRMISuspend:
+        case kHandleRMISleep:
             error = rmi_f01_suspend();
             break;
         case kHandleRMIResume:

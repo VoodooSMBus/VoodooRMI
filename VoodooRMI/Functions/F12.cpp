@@ -146,6 +146,54 @@ bool F12::attach(IOService *provider)
 
 bool F12::start(IOService *provider)
 {
+    int ret = rmi_f12_config();
+    if (ret < 0)
+        return false;
+    
+    registerService();
+    
+    if (!sensor->attach(this))
+        return false;
+    
+    if (!sensor->start(this))
+        return false;
+    
+    return super::start(provider);
+}
+
+void F12::stop(IOService *provider)
+{
+    sensor->detach(this);
+    sensor->stop(this);
+    super::stop(provider);
+}
+
+void F12::free()
+{
+    clearDesc();
+    OSSafeReleaseNULL(sensor);
+    super::free();
+}
+
+IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
+{
+    switch (type)
+    {
+        case kHandleRMIAttention:
+            getReport();
+            break;
+        case kHandleRMIClickpadSet:
+        case kHandleRMITrackpoint:
+            return messageClient(type, sensor, argument);
+        case kHandleRMIConfig:
+            return rmi_f12_config();
+    }
+    
+    return kIOReturnSuccess;
+}
+
+int F12::rmi_f12_config()
+{
     const struct rmi_register_desc_item *item;
     unsigned long control_size;
     char buf[3];
@@ -189,43 +237,6 @@ bool F12::start(IOService *provider)
             if (ret)
                 return ret;
         }
-    }
-    
-    registerService();
-    
-    if (!sensor->attach(this))
-        return false;
-    
-    if (!sensor->start(this))
-        return false;
-    
-    return super::start(provider);
-}
-
-void F12::stop(IOService *provider)
-{
-    sensor->detach(this);
-    sensor->stop(this);
-    super::stop(provider);
-}
-
-void F12::free()
-{
-    clearDesc();
-    OSSafeReleaseNULL(sensor);
-    super::free();
-}
-
-IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
-{
-    switch (type)
-    {
-        case kHandleRMIAttention:
-            getReport();
-            break;
-        case kHandleRMIClickpadSet:
-        case kHandleRMITrackpoint:
-            return messageClient(type, sensor, argument);
     }
     
     return kIOReturnSuccess;

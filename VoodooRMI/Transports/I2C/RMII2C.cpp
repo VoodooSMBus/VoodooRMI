@@ -260,8 +260,11 @@ int RMII2C::rmi_set_mode(u8 mode) {
 int RMII2C::reset() {
     int retval = rmi_set_mode(reportMode);
 
-    if (retval >= 0)
-        ready = true;
+    if (retval < 0)
+        return retval;
+    
+    ready = true;
+    retval = messageClient(kIOMessageRMI4ResetHandler, bus);
 
     return retval;
 };
@@ -314,6 +317,10 @@ int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
 
     if (i2cInput[2] != RMI_READ_DATA_REPORT_ID) {
         IOLogError("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d", getName(), name, i2cInput[2]);
+        if (i2cInput[2] == HID_GENERIC_MOUSE ||
+            i2cInput[2] == HID_GENERIC_POINTER) {
+            reset();
+        }
         retval = -1;
         goto exit;
     }
@@ -392,13 +399,19 @@ IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
     IOLogDebug("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
     if (!bus)
         return kIOPMAckImplied;
+    
     if (whatDevice != this)
         return kIOReturnInvalid;
 
-    if (powerState == 0)
+    if (powerState == 0) {
+        messageClient(kHandleRMISuspend, bus);
         stopInterrupt();
-    else
+    } else {
         startInterrupt();
+        reset();
+        messageClient(kHandleRMIResume, bus);
+    }
+    
     return kIOPMAckImplied;
 }
 

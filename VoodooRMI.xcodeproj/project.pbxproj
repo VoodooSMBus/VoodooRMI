@@ -148,8 +148,8 @@
 			isa = PBXGroup;
 			children = (
 				286587D824C13D9600E74848 /* Info.plist */,
-				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 				286587AE24C13D0B00E74848 /* RMISMBus.hpp */,
+				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 			);
 			path = SMBus;
 			sourceTree = "<group>";

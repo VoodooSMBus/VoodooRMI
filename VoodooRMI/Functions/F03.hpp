@@ -158,15 +158,15 @@ private:
 
     IOWorkLoop* getWorkLoop();
     
-    int rmi_f03_pt_write (unsigned char val);
+    int rmi_f03_pt_write(unsigned char val);
     int ps2DoSendbyteGated(u8 byte, uint64_t timeout);
     int ps2CommandGated(u8 *param, unsigned int *command);
     int ps2Command(u8 *param, unsigned int command);
     void handleByte(u8);
     void initPS2();
-    void initPS2Interrupt (OSObject *owner, IOTimerEventSource *timer);
+    void initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer);
     // TODO: Move to math file as long as with abs in rmi_driver.h
-    int signum (int value);
+    int signum(int value);
     
     void handlePacket(u8 *packet);
 };

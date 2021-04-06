@@ -54,13 +54,10 @@ bool F11::start(IOService *provider)
     if (!super::start(provider))
         return false;
     
-    int rc;
-    
-    rc = f11_write_control_regs(&sens_query, &dev_controls,
-                                fn_descriptor->query_base_addr);
+    int rc = rmi_f11_config();
     
     if (rc < 0)
-        return !rc;
+        return false;
     
     registerService();
     
@@ -97,6 +94,9 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIClickpadSet:
         case kHandleRMITrackpoint:
             return messageClient(type, sensor, argument);
+        case kHandleRMIConfig:
+            rmi_f11_config();
+            break;
     }
     
     return kIOReturnSuccess;
@@ -166,6 +166,12 @@ bool F11::getReport()
     messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
     
     return true;
+}
+
+int F11::rmi_f11_config()
+{
+    return f11_write_control_regs(&sens_query, &dev_controls,
+                                fn_descriptor->query_base_addr);
 }
 
 int F11::f11_read_control_regs(f11_2d_ctrl *ctrl, u16 ctrl_base_addr)

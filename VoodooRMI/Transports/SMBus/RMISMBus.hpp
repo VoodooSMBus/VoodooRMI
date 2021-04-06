@@ -33,13 +33,14 @@ public:
     RMISMBus *probe(IOService *provider, SInt32 *score) override;
     bool start(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
     void stop(IOService *provider) override;
     void free() override;
     
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) override;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
     
-    inline int reset() override {
+    int reset() override {
         /* Discord mapping table */
         IOLockLock(mapping_table_mutex);
         memset(mapping_table, 0, sizeof(mapping_table));
@@ -58,6 +59,7 @@ private:
     
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
     u8 table_index {0};
+    bool awake {true};
     
     bool rmiStart();
     int rmi_smb_get_version();

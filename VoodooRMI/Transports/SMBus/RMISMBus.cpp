@@ -117,6 +117,10 @@ bool RMISMBus::rmiStart()
     setProperty("SMBus Version", retval, 32);
     IOLogInfo("SMBus version %u", retval);
     
+    PMinit();
+    device_nub->joinPMtree(this);
+    registerPowerDriver(this, RMIPowerStates, 2);
+    
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
     return true;
@@ -289,3 +293,21 @@ IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
             return IOService::message(type, provider, argument);
     }
 };
+
+IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
+    if (whatDevice != this)
+        return kIOPMAckImplied;
+    
+    if (whichState == 0 && awake) {
+        IOLogDebug("Sleep");
+        messageClients(kHandleRMISuspend);
+    } else if (!awake) {
+        IOLogDebug("Wakeup");
+        reset();
+        messageClients(kIOMessageRMI4ResetHandler);
+        messageClients(kHandleRMIResume);
+        awake = true;
+    }
+
+    return kIOPMAckImplied;
+}

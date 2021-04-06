@@ -183,6 +183,8 @@ void RMIBus::handleReset()
 }
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
+    IOReturn err;
+    
     switch (type) {
         case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
@@ -198,7 +200,10 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             rmi_driver_clear_irq_bits(this);
             break;
         case kHandleRMIResume:
-            rmi_driver_set_irq_bits(this);
+            err = rmi_driver_set_irq_bits(this);
+            if (err < 0) {
+                return kIOReturnError;
+            }
             messageClients(kHandleRMIResume);
             break;
         default:
@@ -240,7 +245,6 @@ void RMIBus::stop(IOService *provider) {
     OSSafeReleaseNULL(commandGate);
     OSSafeReleaseNULL(workLoop);
 
-    PMstop();
     rmi_driver_clear_irq_bits(this);
     
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {

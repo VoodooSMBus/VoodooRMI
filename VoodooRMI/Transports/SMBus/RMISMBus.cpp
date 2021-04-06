@@ -128,6 +128,7 @@ bool RMISMBus::rmiStart()
 
 void RMISMBus::stop(IOService *provider)
 {
+    PMstop();
     super::stop(provider);
 }
 
@@ -300,12 +301,15 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     
     if (whichState == 0 && awake) {
         IOLogDebug("Sleep");
-        messageClients(kHandleRMISuspend);
+        messageClient(kHandleRMISuspend, bus);
+        awake = false;
     } else if (!awake) {
         IOLogDebug("Wakeup");
+        IOSleep(1000);
         reset();
-        messageClients(kIOMessageRMI4ResetHandler);
-        messageClients(kHandleRMIResume);
+        // Reconfigure device then tell device to wake up again.
+        messageClient(kIOMessageRMI4ResetHandler, bus);
+        messageClient(kHandleRMIResume, bus);
         awake = true;
     }
 

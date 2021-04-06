@@ -44,7 +44,6 @@ public:
     virtual void stop(IOService *provider) override;
     virtual bool willTerminate(IOService *provider, IOOptionBits options) override;
     virtual void free() override;
-    IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setProperties(OSObject* properties) override;

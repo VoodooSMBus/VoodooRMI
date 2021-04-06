@@ -76,8 +76,6 @@ bool RMISMBus::start(IOService *provider)
             notifier->remove();
             rmiStart();
             
-            
-            
             return true;
         });
         

@@ -449,20 +449,22 @@ void F01::rmi_f01_attention()
 
 IOReturn F01::message(UInt32 type, IOService *provider, void *argument)
 {
-    int error;
+    int error = 0;
     switch (type) {
-        case kHandleRMISuspend:
+        case kHandleRMISleep:
             error = rmi_f01_suspend();
-            if (error) return kIOReturnError;
             break;
         case kHandleRMIResume:
             error = rmi_f01_resume();
-            if (error) return kIOReturnError;
             break;
         case kHandleRMIAttention:
             rmi_f01_attention();
             break;
+        case kHandleRMIConfig:
+            error = rmi_f01_config();
+            break;
     }
     
+    if (error) return kIOReturnError;
     return kIOReturnSuccess;
 }

@@ -82,10 +82,6 @@ bool RMIBus::start(IOService *provider) {
     if (retval)
         goto err;
     
-    PMinit();
-    provider->joinPMtree(this);
-    registerPowerDriver(this, RMIPowerStates, 2);
-    
     setProperty(RMIBusIdentifier, kOSBooleanTrue);
     
     if (!transport->open(this))
@@ -165,26 +161,62 @@ void RMIBus::handleHostNotifyLegacy()
      OSSafeReleaseNULL(iter);
  }
 
+void RMIBus::handleReset()
+{
+    if (!data || !data->f01_container) {
+        IOLogDebug("Device not ready for reset, ignoring...");
+        return;
+    }
+    
+    int error = readBlock(data->f01_container->fd.control_base_addr + 1,
+                          reinterpret_cast<u8 *>(&data->current_irq_mask),
+                          data->num_of_irq_regs);
+    
+    if (error < 0) {
+        IOLogError("Failed to read current IRQ mask during reset!");
+        return;
+    }
+    
+    messageClients(kHandleRMIConfig);
+}
+
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
+    IOReturn err;
+    
     switch (type) {
         case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
-            if (awake)
-                handleHostNotify();
-            return kIOReturnSuccess;
+            handleHostNotify();
+            break;
         case kIOMessageVoodooI2CLegacyHostNotify:
-            if (awake)
-                handleHostNotifyLegacy();
-            return kIOReturnSuccess;
+            handleHostNotifyLegacy();
+            break;
+        case kIOMessageRMI4ResetHandler:
+            handleReset();
+            break;
+        case kIOMessageRMI4Sleep:
+            IOLogDebug("Sleep");
+            messageClients(kHandleRMISleep);
+            rmi_driver_clear_irq_bits(this);
+            break;
+        case kIOMessageRMI4Resume:
+            IOLogDebug("Wakeup");
+            err = rmi_driver_set_irq_bits(this);
+            if (err < 0) {
+                IOLogError("Could not wakeup device");
+                return kIOReturnError;
+            }
+            messageClients(kHandleRMIResume);
+            break;
         default:
             return super::message(type, provider);
     }
+    
+    return kIOReturnSuccess;
 }
 
 void RMIBus::notify(UInt32 type, unsigned int argument)
 {
-    // TODO: Maybe make notify not check the type of message, and just send to all?
-    // Would save having to write cases for every message that goes through here.
     OSIterator* iter = OSCollectionIterator::withCollection(functions);
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         switch (type) {
@@ -208,36 +240,6 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
     OSSafeReleaseNULL(iter);
 }
 
-IOReturn RMIBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
-    if (whatDevice != this)
-        return kIOPMAckImplied;
-    
-    if (whichState == 0 && awake) {
-        IOLogDebug("Sleep");
-        messageClients(kHandleRMISuspend);
-        rmi_driver_clear_irq_bits(this);
-        awake = false;
-    } else if (!awake) {
-        IOSleep(1000);
-        IOLogDebug("Wakeup");
-        if (reset() < 0)
-            IOLogError("Could not get SMBus Version on wakeup");
-        // c++ lambdas are wack
-        // Sensor doesn't wake up if we don't scan property tables
-        rmi_scan_pdt(this, NULL, [](RMIBus *rmi_dev,
-                                 void *ctx, const struct pdt_entry *pdt) -> int
-        {
-            IOLogDebug("Function F%X found again", pdt->function_number);
-            return 0;
-        });
-        rmi_driver_set_irq_bits(this);
-        messageClients(kHandleRMIResume);
-        awake = true;
-    }
-
-    return kIOPMAckImplied;
-}
-
 void RMIBus::stop(IOService *provider) {
     OSIterator *iter = OSCollectionIterator::withCollection(functions);
     
@@ -245,7 +247,6 @@ void RMIBus::stop(IOService *provider) {
     OSSafeReleaseNULL(commandGate);
     OSSafeReleaseNULL(workLoop);
 
-    PMstop();
     rmi_driver_clear_irq_bits(this);
     
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {

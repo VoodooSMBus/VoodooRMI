@@ -97,6 +97,7 @@ private:
     bool hasTrackpointButtons;
     
     int rmi_f30_initialize();
+    int rmi_f30_config();
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
                                int *ctrl_addr, int len, u8 **reg);
     int rmi_f30_read_control_parameters();

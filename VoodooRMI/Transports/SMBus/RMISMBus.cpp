@@ -117,6 +117,10 @@ bool RMISMBus::rmiStart()
     setProperty("SMBus Version", retval, 32);
     IOLogInfo("SMBus version %u", retval);
     
+    PMinit();
+    device_nub->joinPMtree(this);
+    registerPowerDriver(this, RMIPowerStates, 2);
+    
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
     return true;
@@ -124,6 +128,7 @@ bool RMISMBus::rmiStart()
 
 void RMISMBus::stop(IOService *provider)
 {
+    PMstop();
     super::stop(provider);
 }
 
@@ -140,13 +145,25 @@ int RMISMBus::rmi_smb_get_version()
 {
     int retval;
     
-    /* Check if for SMBus new version device by reading version byte. */
+    /* Check for SMBus new version device by reading version byte. */
     retval = device_nub->readByteData(SMB_PROTOCOL_VERSION_ADDRESS);
     if (retval < 0) {
         return retval;
     }
     
     return retval + 1;
+}
+
+int RMISMBus::reset()
+{
+    /* Discard mapping table */
+    IOLockLock(mapping_table_mutex);
+    memset(mapping_table, 0, sizeof(mapping_table));
+    IOLockUnlock(mapping_table_mutex);
+
+    // Full reset can only be done in PS2
+    // Getting the version allows the trackpad to be used over SMBus
+    return rmi_smb_get_version();
 }
 
 /*
@@ -289,3 +306,38 @@ IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
             return IOService::message(type, provider, argument);
     }
 };
+
+IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
+    if (whatDevice != this)
+        return kIOPMAckImplied;
+    
+    if (whichState == 0) {
+        messageClient(kIOMessageRMI4Sleep, bus);
+    } else {
+        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
+        IOSleep(1000);
+        
+        // Put trackpad in SMBus mode again
+        int retval = reset();
+        if (retval < 0) {
+            IOLogError("Failed to reset trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        // Reconfigure device
+        retval = messageClient(kIOMessageRMI4ResetHandler, bus);
+        if (retval < 0) {
+            IOLogError("Failed to config trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        // Enable trackpad again
+        retval = messageClient(kIOMessageRMI4Resume, bus);
+        if (retval < 0) {
+            IOLogError("Failed to resume trackpad!");
+            return kIOPMAckImplied;
+        }
+    }
+
+    return kIOPMAckImplied;
+}

@@ -44,16 +44,13 @@ public:
     virtual void stop(IOService *provider) override;
     virtual bool willTerminate(IOService *provider, IOOptionBits options) override;
     virtual void free() override;
-    IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setProperties(OSObject* properties) override;
 
-    // TODO: Clean up pointers
     rmi_driver_data *data;
     RMITransport *transport;
     gpio_data gpio;
-    bool awake {true};
     
     // rmi_read
     inline int read(u16 addr, u8 *buf) {
@@ -98,6 +95,9 @@ private:
 
     void handleHostNotify();
     void handleHostNotifyLegacy();
+    void handleReset();
+    
+    void configAllFunctions();
 };
     
 #endif /* RMIBus_h */

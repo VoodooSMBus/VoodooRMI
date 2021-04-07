@@ -72,6 +72,8 @@ private:
     static bool rmi_register_desc_has_subpacket(const rmi_register_desc_item *item,
                                                 u8 subpacket);
     
+    int rmi_f12_config();
+    
     /* F12 Data */
     RMI2DSensor *sensor;
     struct rmi_2d_sensor_platform_data sensor_pdata;

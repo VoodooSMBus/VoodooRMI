@@ -540,6 +540,7 @@ private:
     unsigned long *rel_mask;
     
     bool getReport();
+    int rmi_f11_config();
     int rmi_f11_initialize();
     int rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
                                       u16 query_base_addr);

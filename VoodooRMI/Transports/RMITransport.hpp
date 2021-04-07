@@ -17,9 +17,12 @@
 #include "../Utility/Logging.h"
 #include "../rmi.h"
 
-#define kIOMessageVoodooSMBusHostNotify iokit_vendor_specific_msg(420)
-#define kIOMessageVoodooI2CHostNotify   iokit_vendor_specific_msg(421)
-#define kIOMessageVoodooI2CLegacyHostNotify   iokit_vendor_specific_msg(422)
+#define kIOMessageVoodooSMBusHostNotify     iokit_vendor_specific_msg(420)
+#define kIOMessageVoodooI2CHostNotify       iokit_vendor_specific_msg(421)
+#define kIOMessageVoodooI2CLegacyHostNotify iokit_vendor_specific_msg(422)
+#define kIOMessageRMI4ResetHandler          iokit_vendor_specific_msg(423)
+#define kIOMessageRMI4Sleep                 iokit_vendor_specific_msg(424)
+#define kIOMessageRMI4Resume                iokit_vendor_specific_msg(425)
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
 

@@ -33,24 +33,14 @@ public:
     RMISMBus *probe(IOService *provider, SInt32 *score) override;
     bool start(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
     void stop(IOService *provider) override;
     void free() override;
     
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) override;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
     
-    inline int reset() override {
-        /* Discord mapping table */
-        IOLockLock(mapping_table_mutex);
-        memset(mapping_table, 0, sizeof(mapping_table));
-        IOLockUnlock(mapping_table_mutex);
-        
-        /*
-         * I don't think this does a full reset, as it still seems to retain memory
-         * I believe a PS2 reset needs to be done to completely reset the sensor
-         */
-        return rmi_smb_get_version();
-    }
+    int reset() override;
 private:
     VoodooSMBusDeviceNub *device_nub;
     IOLock *page_mutex;

@@ -34,14 +34,8 @@ bool F30::start(IOService *provider)
     if (!super::start(provider))
         return false;
     
-    int error = rmiBus->blockWrite(fn_descriptor->control_base_addr,
-                                   ctrl_regs, ctrl_regs_size);
-    
-    if (error) {
-        IOLogError("%s: Could not write control registers at 0x%x: 0x%x",
-                   __func__, fn_descriptor->control_base_addr, error);
-        return false;;
-    }
+    int ret = rmi_f30_config();
+    if (ret < 0) return false;
     
     voodooTrackpointInstance = rmiBus->getVoodooInput();
     
@@ -62,9 +56,10 @@ void F30::free()
 
 IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
 {
+    int error;
     switch (type) {
         case kHandleRMIAttention:
-            int error = rmiBus->readBlock(fn_descriptor->data_base_addr,
+            error = rmiBus->readBlock(fn_descriptor->data_base_addr,
                                           data_regs, register_count);
             
             if (error < 0) {
@@ -76,9 +71,23 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
             
             rmi_f30_report_button();
             break;
+        case kHandleRMIConfig:
+            return rmi_f30_config();
     }
     
     return kIOReturnSuccess;
+}
+
+int F30::rmi_f30_config()
+{
+    int error = rmiBus->blockWrite(fn_descriptor->control_base_addr,
+                                   ctrl_regs, ctrl_regs_size);
+    
+    if (error) {
+        IOLogError("%s: Could not write control registers at 0x%x: 0x%x",
+                   __func__, fn_descriptor->control_base_addr, error);
+    }
+    return error;
 }
 
 int F30::rmi_f30_initialize()

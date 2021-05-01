@@ -16,6 +16,8 @@
 		6F7B0EFC25303F60001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
 		6F7B0EFD25303F64001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
 		6F7B0EFE25303FC8001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
+		6F87145F263D412100B0FB3A /* F17.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F87145D263D412100B0FB3A /* F17.cpp */; };
+		6F871460263D412100B0FB3A /* F17.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F87145E263D412100B0FB3A /* F17.hpp */; };
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
 		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
@@ -75,6 +77,8 @@
 		6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMII2C.cpp; sourceTree = "<group>"; };
 		6F4B4A9324C1A0B80018F1F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooI2CDeviceNub.hpp; path = Dependencies/VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CDevice/VoodooI2CDeviceNub.hpp; sourceTree = "<group>"; };
+		6F87145D263D412100B0FB3A /* F17.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F17.cpp; sourceTree = "<group>"; };
+		6F87145E263D412100B0FB3A /* F17.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F17.hpp; sourceTree = "<group>"; };
 		A41323E62492077C00907B0D /* Configuration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
 		A41323E72492077C00907B0D /* Configuration.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Configuration.hpp; sourceTree = "<group>"; };
 		A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooSMBusDeviceNub.hpp; path = Dependencies/VoodooSMBus/VoodooSMBus/VoodooSMBusDeviceNub.hpp; sourceTree = "<group>"; };
@@ -235,6 +239,8 @@
 				A4560EF4247F32760009CBE0 /* F11.cpp */,
 				A4560EF2247F32760009CBE0 /* F12.hpp */,
 				A4560EF5247F32760009CBE0 /* F12.cpp */,
+				6F87145E263D412100B0FB3A /* F17.hpp */,
+				6F87145D263D412100B0FB3A /* F17.cpp */,
 				A4560EF3247F32760009CBE0 /* F30.hpp */,
 				A4560EF8247F32760009CBE0 /* F30.cpp */,
 				A46D70DA2517CB6800A60B75 /* F3A.hpp */,
@@ -289,6 +295,7 @@
 				A4560EFA247F32760009CBE0 /* F12.hpp in Headers */,
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
 				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
+				6F871460263D412100B0FB3A /* F17.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
 				A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */,
 				A4560F07247F38670009CBE0 /* MultitouchHelpers.h in Headers */,
@@ -477,6 +484,7 @@
 				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,
 				A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */,
+				6F87145F263D412100B0FB3A /* F17.cpp in Sources */,
 				A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

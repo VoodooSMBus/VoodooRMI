@@ -190,7 +190,7 @@ int F17::rmi_f17_initialize() {
         retval = rmi_f17_init_stick(&f17->sticks[i],
                     &next_query_reg, &next_data_reg,
                     &next_control_reg);
-        if (!retval) {
+        if (retval < 0) {
             IOLogError("%s: Failed to init stick %d", __func__, i);
             return retval;
         }

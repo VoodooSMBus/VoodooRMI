@@ -130,8 +130,8 @@ private:
     
     IOService **voodooTrackpointInstance {nullptr};
     IOTimerEventSource *timer {nullptr};
-    RelativePointerEvent relativeEvent {};
-    ScrollWheelEvent scrollEvent {};
+    RelativePointerEvent *relativeEvent {nullptr};
+    ScrollWheelEvent *scrollEvent {nullptr};
     
     bool isScrolling;
     bool middlePressed;

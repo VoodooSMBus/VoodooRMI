@@ -67,7 +67,7 @@ private:
     RMIBus *rmiBus;
     
     IOService **voodooTrackpointInstance {nullptr};
-    RelativePointerEvent relativeEvent {};
+    RelativePointerEvent *relativeEvent {nullptr};
     
     /* Query Data */
     bool has_extended_pattern;

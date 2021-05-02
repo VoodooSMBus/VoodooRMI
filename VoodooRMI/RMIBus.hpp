@@ -79,6 +79,14 @@ public:
     inline const gpio_data* getGPIOData() {
         return &gpio;
     }
+
+    inline RelativePointerEvent *getRelativePointerEvent() {
+        return &relativeEvent;
+    }
+    
+    inline ScrollWheelEvent *getScrollEvent() {
+        return &scrollEvent;
+    }
     
     OSSet *functions;
     
@@ -93,6 +101,8 @@ private:
     void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);
     rmi_configuration conf {};
+    RelativePointerEvent relativeEvent {};
+    ScrollWheelEvent scrollEvent {};
 
     void handleHostNotify();
     void handleHostNotifyLegacy();

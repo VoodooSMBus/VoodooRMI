@@ -109,6 +109,9 @@ bool F03::start(IOService *provider)
     timer->enable();
     
     voodooTrackpointInstance = rmiBus->getVoodooInput();
+    relativeEvent = rmiBus->getRelativePointerEvent();
+    scrollEvent = rmiBus->getScrollEvent();
+
     registerService();
     
     return super::start(provider);
@@ -190,9 +193,9 @@ void F03::handlePacket(u8 *packet)
     // Otherwise just turn scrolling off and remove middle buttons from packet
     if (!(buttons & 0x04)) {
         if (middlePressed) {
-            relativeEvent.buttons = 0x04;
-            relativeEvent.timestamp = timestamp;
-            messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+            relativeEvent->buttons = 0x04;
+            relativeEvent->timestamp = timestamp;
+            messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
         }
         
         middlePressed = false;
@@ -203,19 +206,19 @@ void F03::handlePacket(u8 *packet)
     
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {
-        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackpointScrollYMult / DEFAULT_MULT);
-        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackpointScrollXMult / DEFAULT_MULT);
-        scrollEvent.deltaAxis3 = 0;
-        scrollEvent.timestamp = timestamp;
+        scrollEvent->deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackpointScrollYMult / DEFAULT_MULT);
+        scrollEvent->deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackpointScrollXMult / DEFAULT_MULT);
+        scrollEvent->deltaAxis3 = 0;
+        scrollEvent->timestamp = timestamp;
         
         messageClient(kIOMessageVoodooTrackpointScrollWheel, *voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
     } else {
-        relativeEvent.buttons = buttons;
-        relativeEvent.dx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
-        relativeEvent.dy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
-        relativeEvent.timestamp = timestamp;
+        relativeEvent->buttons = buttons;
+        relativeEvent->dx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
+        relativeEvent->dy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
+        relativeEvent->timestamp = timestamp;
         
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
     }
 
     if (dx || dy) {

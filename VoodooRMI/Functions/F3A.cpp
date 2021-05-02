@@ -57,7 +57,12 @@ bool F3A::attach(IOService *provider)
 
 bool F3A::start(IOService *provider)
 {
+    if (!super::start(provider))
+        return false;
+
     voodooTrackpointInstance = rmiBus->getVoodooInput();
+    relativeEvent = rmiBus->getRelativePointerEvent();
+
     registerService();
     return super::start(provider);
 }
@@ -150,11 +155,11 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 AbsoluteTime timestamp;
                 clock_get_uptime(&timestamp);
                 
-                relativeEvent.dx = relativeEvent.dy = 0;
-                relativeEvent.buttons = btns;
-                relativeEvent.timestamp = timestamp;
+                relativeEvent->dx = relativeEvent->dy = 0;
+                relativeEvent->buttons = btns;
+                relativeEvent->timestamp = timestamp;
                 
-                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
             }
             
             break;

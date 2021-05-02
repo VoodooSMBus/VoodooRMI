@@ -52,6 +52,8 @@ bool F17::start(IOService *provider)
     if (ret < 0) return false;
     
     voodooTrackpointInstance = rmiBus->getVoodooInput();
+    relativeEvent = rmiBus->getRelativePointerEvent();
+
     registerService();
     return super::start(provider);
 }
@@ -245,12 +247,12 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
                 AbsoluteTime timestamp;
                 clock_get_uptime(&timestamp);
                 
-                relativeEvent.dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf->trackpointMult / DEFAULT_MULT);
-                relativeEvent.dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf->trackpointMult / DEFAULT_MULT);
-                relativeEvent.buttons = 0;
-                relativeEvent.timestamp = timestamp;
+                relativeEvent->dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf->trackpointMult / DEFAULT_MULT);
+                relativeEvent->dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf->trackpointMult / DEFAULT_MULT);
+//                relativeEvent->buttons = 0;
+                relativeEvent->timestamp = timestamp;
                 
-                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
             }
         }
     }

@@ -103,29 +103,62 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
     }
     *next_query_reg += sizeof(stick->query.general.regs);
     IOLogDebug("%s: Stick %d found", __func__, stick->index);
-    IOLogDebug("%s:     Manufacturer: %d", __func__, stick->query.general.manufacturer);
-    IOLogDebug("%s:     Resistive:    %d", __func__, stick->query.general.resistive);
-    IOLogDebug("%s:     Ballistics:   %d", __func__, stick->query.general.ballistics);
-    IOLogDebug("%s:     Manufacturer: %d", __func__, stick->query.general.ballistics);
-    IOLogDebug("%s:     Has relative: %d", __func__, stick->query.general.has_relative);
-    IOLogDebug("%s:     Has absolute: %d", __func__, stick->query.general.has_absolute);
-    IOLogDebug("%s:     Had dribble:  %d", __func__, stick->query.general.has_dribble);
-    IOLogDebug("%s:     Has gestures: %d", __func__, stick->query.general.has_gestures);
+    char stickName[8];
+    snprintf(stickName, 8, "Stick %d", stick->index);
+    OSObject *value;
+    OSDictionary *stickProps = OSDictionary::withCapacity(9);
+    switch (stick->query.general.manufacturer) {
+        case F17_MANUFACTURER_SYNAPTICS:
+            setPropertyString(stickProps, "Manufacturer", "SYNAPTICS");
+            break;
+            
+        case F17_MANUFACTURER_NMB:
+            setPropertyString(stickProps, "Manufacturer", "NMB");
+            break;
+            
+        case F17_MANUFACTURER_ALPS:
+            setPropertyString(stickProps, "Manufacturer", "ALPS");
+            break;
+            
+        default:
+            setPropertyNumber(stickProps, "Manufacturer", stick->query.general.manufacturer, 8);
+            break;
+    }
+    setPropertyBoolean(stickProps, "Resistive", stick->query.general.resistive);
+    setPropertyBoolean(stickProps, "Ballistics", stick->query.general.ballistics);
+    setPropertyBoolean(stickProps, "Has relative", stick->query.general.has_relative);
+    setPropertyBoolean(stickProps, "Has absolute", stick->query.general.has_absolute);
+    setPropertyBoolean(stickProps, "Has gestures", stick->query.general.has_gestures);
+    setPropertyBoolean(stickProps, "Has dribble", stick->query.general.has_dribble);
+#ifdef DEBUG
+    setPropertyNumber(stickProps, "Reserved1", stick->query.general.reserved1, 8);
+    setPropertyNumber(stickProps, "Reserved2", stick->query.general.reserved2, 8);
+#endif
     if (stick->query.general.has_gestures) {
         retval = rmiBus->readBlock(*next_query_reg,
             stick->query.gestures.regs,
             sizeof(stick->query.gestures.regs));
         if (retval < 0) {
             IOLogError("%s: Failed to read F17 gestures query, code %d", __func__, retval);
+            setProperty(stickName, stickProps);
+            stickProps->release();
             return retval;
         }
         *next_query_reg += sizeof(stick->query.gestures.regs);
-        IOLogDebug("%s:         single tap: %d", __func__, stick->query.gestures.has_single_tap);
-        IOLogDebug("%s:         tap & hold: %d", __func__, stick->query.gestures.has_tap_and_hold);
-        IOLogDebug("%s:         double tap: %d", __func__, stick->query.gestures.has_double_tap);
-        IOLogDebug("%s:         early tap:  %d", __func__, stick->query.gestures.has_early_tap);
-        IOLogDebug("%s:         press:      %d", __func__, stick->query.gestures.has_press);
+        OSDictionary *gesturesProps = OSDictionary::withCapacity(6);
+        setPropertyBoolean(gesturesProps, "single tap", stick->query.gestures.has_single_tap);
+        setPropertyBoolean(gesturesProps, "tap & hold", stick->query.gestures.has_tap_and_hold);
+        setPropertyBoolean(gesturesProps, "double tap", stick->query.gestures.has_double_tap);
+        setPropertyBoolean(gesturesProps, "early tap", stick->query.gestures.has_early_tap);
+        setPropertyBoolean(gesturesProps, "press", stick->query.gestures.has_press);
+#ifdef DEBUG
+        setPropertyNumber(gesturesProps, "Raw", stick->query.gestures.regs[0], 8);
+#endif
+        stickProps->setObject("Has gestures", gesturesProps);
+        gesturesProps->release();
     }
+    setProperty(stickName, stickProps);
+    stickProps->release();
     if (stick->query.general.has_absolute) {
         stick->data.abs.address = *next_data_reg;
         *next_data_reg += sizeof(stick->data.abs.regs);
@@ -142,7 +175,6 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
 }
 
 int F17::rmi_f17_initialize() {
-//    u8 buf[RMI_F17_QUERY_SIZE];
     int retval;
     u16 next_query_reg = fn_descriptor->query_base_addr;
     u16 next_data_reg = fn_descriptor->data_base_addr;
@@ -151,15 +183,10 @@ int F17::rmi_f17_initialize() {
     retval = rmiBus->readBlock(fn_descriptor->query_base_addr,
                                f17->query.regs, sizeof(f17->query.regs));
 
-//    retval = rmiBus->readBlock(fn_descriptor->query_base_addr,
-//                              buf, RMI_F17_QUERY_SIZE);
-
     if (retval < 0) {
         IOLogError("%s: Failed to read query register", __func__);
         return retval;
     }
-
-    //    numSticks = buf[0] & RMI_F17_NUM_OF_STICKS;
 
     IOLogInfo("%s: Found %d sticks", __func__, f17->query.number_of_sticks + 1);
 
@@ -179,13 +206,20 @@ int F17::rmi_f17_initialize() {
         return retval;
     }
 
-//    unused
-//    f17->control_address = fn_descriptor->control_base_addr;
-//    retval = f17_read_control_parameters(rmi_dev, f17);
-//    if (retval < 0) {
-//        IOLogError("F17: Failed to initialize control params");
-//        return retval;
-//    }
+    retval = rmi_f17_read_control_parameters();
+    if (retval < 0) {
+        IOLogError("F17: Failed to initialize control params");
+        return retval;
+    }
+
+    OSNumber *value;
+    OSDictionary * attribute = OSDictionary::withCapacity(2);
+    setPropertyNumber(attribute, "number_of_sticks", f17->query.number_of_sticks + 1, 8);
+#ifdef DEBUG
+    setPropertyNumber(attribute, "Raw", f17->query.regs[0], 8);
+#endif
+    setProperty("Device Query", attribute);
+    OSSafeReleaseNULL(attribute);
 
     for (int i = 0; i < f17->query.number_of_sticks + 1; i++) {
         f17->sticks[i].index = i;
@@ -197,12 +231,6 @@ int F17::rmi_f17_initialize() {
             return retval;
         }
     }
-
-    OSNumber *value;
-    OSDictionary * attribute = OSDictionary::withCapacity(1);
-    setPropertyNumber(attribute, "number_of_sticks", f17->query.number_of_sticks + 1, 8);
-    setProperty("Attibute", attribute);
-    OSSafeReleaseNULL(attribute);
 
     return retval;
 }
@@ -269,5 +297,12 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
         }
     }
 
+    return retval;
+}
+
+int F17::rmi_f17_read_control_parameters() {
+    int retval = 0;
+//    retval = rmiBus->readBlock(fn_descriptor->control_base_addr,
+//                               f17->controls.regs, sizeof(f17->controls.regs));
     return retval;
 }

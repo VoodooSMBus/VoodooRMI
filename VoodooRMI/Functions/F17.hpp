@@ -142,7 +142,6 @@ struct rmi_f17_stick_data {
 //    struct input_dev *mouse;
 };
 struct rmi_f17_device_data {
-//    u16 control_address;
     union f17_device_query query;
     union f17_device_commands commands;
     union f17_device_controls controls;

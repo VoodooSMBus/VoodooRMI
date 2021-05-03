@@ -135,12 +135,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 
                 IOLogDebug("Button %d Key %u is %s", i, key_code, key_down ? "Down": "Up");
 
-//                if (i >= TRACKPOINT_RANGE_START &&
-//                    i < TRACKPOINT_RANGE_END) {
-//                    trackpointBtns |= mask;
-//                } else {
-                    btns |= mask;
-//                }
+                btns |= mask;
                 
                 if (numButtons == 1 && i == clickpadIndex) {
                     if (clickpadState != key_down) {

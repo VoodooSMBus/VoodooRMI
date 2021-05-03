@@ -152,7 +152,7 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
         setPropertyBoolean(gesturesProps, "early tap", stick->query.gestures.has_early_tap);
         setPropertyBoolean(gesturesProps, "press", stick->query.gestures.has_press);
 #ifdef DEBUG
-        setPropertyNumber(gesturesProps, "Raw", stick->query.gestures.regs[0], 8);
+        setPropertyNumber(gesturesProps, "raw", stick->query.gestures.regs[0], 8);
 #endif
         stickProps->setObject("Has gestures", gesturesProps);
         gesturesProps->release();
@@ -206,6 +206,10 @@ int F17::rmi_f17_initialize() {
         return retval;
     }
 
+#ifdef DEBUG
+    setProperty("rezero", f17->commands.rezero);
+#endif
+
     retval = rmi_f17_read_control_parameters();
     if (retval < 0) {
         IOLogError("F17: Failed to initialize control params");
@@ -216,7 +220,7 @@ int F17::rmi_f17_initialize() {
     OSDictionary * attribute = OSDictionary::withCapacity(2);
     setPropertyNumber(attribute, "number_of_sticks", f17->query.number_of_sticks + 1, 8);
 #ifdef DEBUG
-    setPropertyNumber(attribute, "Raw", f17->query.regs[0], 8);
+    setPropertyNumber(attribute, "raw", f17->query.regs[0], 8);
 #endif
     setProperty("Device Query", attribute);
     OSSafeReleaseNULL(attribute);
@@ -277,7 +281,6 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
                 
                 relativeEvent->dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf->trackpointMult / DEFAULT_MULT);
                 relativeEvent->dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf->trackpointMult / DEFAULT_MULT);
-//                relativeEvent->buttons = 0;
                 relativeEvent->timestamp = timestamp;
                 
                 messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));

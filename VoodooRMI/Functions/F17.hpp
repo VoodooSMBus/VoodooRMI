@@ -136,10 +136,6 @@ struct rmi_f17_stick_data {
     struct f17_stick_data data;
     u16 control_address;
     int index;
-//    char input_phys[NAME_BUFFER_SIZE];
-//    struct input_dev *input;
-//    char mouse_phys[NAME_BUFFER_SIZE];
-//    struct input_dev *mouse;
 };
 struct rmi_f17_device_data {
     union f17_device_query query;
@@ -148,35 +144,6 @@ struct rmi_f17_device_data {
     struct rmi_f17_stick_data *sticks;
 };
 
-#define RMI_F17_QUERY_SIZE             1
-
-/* Defs for Device Query */
-#define RMI_F17_NUM_OF_STICKS          0x07
-
-/* Defs for Stick Query 0 - General */
-#define RMI_F17_MANUFACTURER           0x0f
-#define RMI_F17_RESISTIVE              BIT(4)
-#define RMI_F17_BALLISTICS             BIT(5)
-
-/* Defs for Stick Query 1 - General*/
-#define RMI_F17_HAS_RELATIVE           0x01
-#define RMI_F17_HAS_ABSOLUTE           BIT(1)
-#define RMI_F17_HAS_GESTURES           BIT(2)
-#define RMI_F17_HAS_DRIBBLE            BIT(3)
-
-/* Defs for Stick Query 2 - Gestures  */
-#define RMI_F17_HAS_SINGLE_TAP         0x01
-#define RMI_F17_HAS_TAP_AND_HOLD       BIT(1)
-#define RMI_F17_HAS_DOUBLE_TAP         BIT(2)
-#define RMI_F17_HAS_EARLY_TAP          BIT(3)
-#define RMI_F17_HAS_PRESS              BIT(4)
-
-/* Defs for Device Control */
-#define RMI_F17_CTRL_REPORTING_MODE    0x07
-#define RMI_F17_CTRL_DRIBBLE           BIT(3)
-
-/* Defs for Stick Control */
-
 class F17 : public RMIFunction {
     OSDeclareDefaultStructors(F17)
     
@@ -184,7 +151,6 @@ public:
     bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
-//    void stop(IOService *providerr) override;
     void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
@@ -193,15 +159,12 @@ private:
     IOService **voodooTrackpointInstance{nullptr};
     RelativePointerEvent *relativeEvent {nullptr};
 
-//    u8 numSticks {0};
-
     rmi_f17_device_data *f17 {nullptr};
 
     int rmi_f17_init_stick(struct rmi_f17_stick_data *stick, u16 *next_query_reg, u16 *next_data_reg, u16 *next_control_reg);
     int rmi_f17_initialize();
     int rmi_f17_config();
     int rmi_f17_read_control_parameters();
-    //    int f17_read_control_parameters();
     int rmi_f17_process_stick(struct rmi_f17_stick_data *stick);
 };
 

@@ -229,12 +229,6 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
                     return;
                 }
                 break;
-            case kHandleRMITrackpointButton:
-                if (OSDynamicCast(F03, func)) {
-                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
-                    messageClient(type, func, reinterpret_cast<void *>(argument));
-                }
-                break;
         }
     }
     OSSafeReleaseNULL(iter);

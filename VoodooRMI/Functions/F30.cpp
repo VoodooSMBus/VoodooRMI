@@ -273,7 +273,7 @@ int F30::rmi_f30_read_control_parameters()
 void F30::rmi_f30_report_button()
 {
     int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
-    unsigned int mask, trackpointBtns = 0, btns = 0;
+    unsigned int mask, btns = 0;
     unsigned int reg_num, bit_num;
     u16 key_code;
     bool key_down;
@@ -289,7 +289,7 @@ void F30::rmi_f30_report_button()
         // Key code is one above the value we need to bitwise shift left, as key code 0 is "Reserved" or "not present"
         mask = key_down << (key_code - 1);
         
-        IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
+        IOLogDebug("Button %d Key %u is %s", i, key_code, key_down ? "Down": "Up");
         
         if (numButtons == 1 && i == clickpad_index) {
             if (clickpadState != key_down) {
@@ -299,12 +299,7 @@ void F30::rmi_f30_report_button()
             continue;
         }
         
-        if (i >= TRACKPOINT_RANGE_START &&
-            i <= TRACKPOINT_RANGE_END) {
-            trackpointBtns |= mask;
-        } else {
-            btns |= mask;
-        }
+        btns |= mask;
     }
     
     if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
@@ -317,7 +312,4 @@ void F30::rmi_f30_report_button()
         
         messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
     }
-    
-    if (hasTrackpointButtons)
-        rmiBus->notify(kHandleRMITrackpointButton, trackpointBtns);
 }

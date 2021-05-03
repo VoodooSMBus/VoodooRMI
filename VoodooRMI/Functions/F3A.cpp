@@ -108,7 +108,7 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
 IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
 {
     int error = 0;
-    unsigned int mask, trackpointBtns = 0, btns = 0;
+    unsigned int mask, btns = 0;
     u16 key_code;
     bool key_down;
     
@@ -133,14 +133,14 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 key_code = gpioled_key_map[i];
                 mask = key_down << (key_code - 1);
                 
-                IOLogDebug("Key %u is %s", key_code, key_down ? "Down": "Up");
-                
-                if (i >= TRACKPOINT_RANGE_START &&
-                    i < TRACKPOINT_RANGE_END) {
-                    trackpointBtns |= mask;
-                } else {
+                IOLogDebug("Button %d Key %u is %s", i, key_code, key_down ? "Down": "Up");
+
+//                if (i >= TRACKPOINT_RANGE_START &&
+//                    i < TRACKPOINT_RANGE_END) {
+//                    trackpointBtns |= mask;
+//                } else {
                     btns |= mask;
-                }
+//                }
                 
                 if (numButtons == 1 && i == clickpadIndex) {
                     if (clickpadState != key_down) {

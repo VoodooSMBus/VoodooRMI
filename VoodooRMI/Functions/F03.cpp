@@ -161,7 +161,7 @@ void F03::handlePacket(u8 *packet)
         timer->enable();
     }
     
-    UInt32 buttons = (packet[0] & 0x7) | overwrite_buttons;
+    UInt32 buttons = (packet[0] & 0x7) | relativeEvent->buttons;
     SInt32 dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
     SInt32 dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
     index = 0;
@@ -263,13 +263,6 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
                 
                 handleByte(ob_data);
             }
-            break;
-        }
-        case kHandleRMITrackpointButton: {
-            // We do not lose any info casting to unsigned int.
-            // This message originates in RMIBus::Notify, which sends an unsigned int
-            overwrite_buttons = (unsigned int)((intptr_t) argument);
-            handlePacket(emptyPkt);
             break;
         }
         case kHandleRMIResume:

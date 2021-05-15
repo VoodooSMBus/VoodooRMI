@@ -26,6 +26,7 @@ class RMIFunction;
 #include <F03.hpp>
 #include <F11.hpp>
 #include <F12.hpp>
+#include <F17.hpp>
 #include <F30.hpp>
 #include <F3A.hpp>
 
@@ -78,6 +79,14 @@ public:
     inline const gpio_data* getGPIOData() {
         return &gpio;
     }
+
+    inline RelativePointerEvent *getRelativePointerEvent() {
+        return &relativeEvent;
+    }
+    
+    inline ScrollWheelEvent *getScrollEvent() {
+        return &scrollEvent;
+    }
     
     OSSet *functions;
     
@@ -92,6 +101,8 @@ private:
     void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);
     rmi_configuration conf {};
+    RelativePointerEvent relativeEvent {};
+    ScrollWheelEvent scrollEvent {};
 
     void handleHostNotify();
     void handleHostNotifyLegacy();

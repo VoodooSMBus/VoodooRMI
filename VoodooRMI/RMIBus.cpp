@@ -229,12 +229,6 @@ void RMIBus::notify(UInt32 type, unsigned int argument)
                     return;
                 }
                 break;
-            case kHandleRMITrackpointButton:
-                if (OSDynamicCast(F03, func)) {
-                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
-                    messageClient(type, func, reinterpret_cast<void *>(argument));
-                }
-                break;
         }
     }
     OSSafeReleaseNULL(iter);
@@ -307,6 +301,9 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
         case 0x11: /* multifinger pointing */
             function = OSTypeAlloc(F11);
             break;
+        case 0x17: /* trackpoints */
+            function = OSTypeAlloc(F17);
+            break;
         case 0x12: /* multifinger pointing */
             function = OSTypeAlloc(F12);
             break;
@@ -318,7 +315,6 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             break;
 //        case 0x08: /* self test (aka BIST) */
 //        case 0x09: /* self test (aka BIST) */
-//        case 0x17: /* trackpoints */
 //        case 0x19: /* capacitive buttons */
 //        case 0x1A: /* simple capacitive buttons */
 //        case 0x21: /* force sensing */

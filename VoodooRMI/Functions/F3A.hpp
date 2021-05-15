@@ -30,7 +30,7 @@ public:
 private:
     RMIBus *rmiBus;
     IOService **voodooTrackpointInstance{nullptr};
-    RelativePointerEvent relativeEvent {};
+    RelativePointerEvent *relativeEvent {nullptr};
     
     u16 *gpioled_key_map;
     u8 gpioCount {0};

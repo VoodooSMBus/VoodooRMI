@@ -27,14 +27,11 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
-    device_nub = OSDynamicCast(VoodooSMBusDeviceNub, provider);
+    device_nub = OSDynamicCast(AppleSMBusDevice, provider);
     if (!device_nub) {
         IOLogError("Could not cast nub");
         return NULL;
     }
-    
-    device_nub->wakeupController();
-    device_nub->setSlaveDeviceFlags(I2C_CLIENT_HOST_NOTIFY);
     
     return this;
 }
@@ -144,14 +141,24 @@ void RMISMBus::free()
 int RMISMBus::rmi_smb_get_version()
 {
     int retval;
+    uint8_t buf;
     
     /* Check for SMBus new version device by reading version byte. */
-    retval = device_nub->readByteData(SMB_PROTOCOL_VERSION_ADDRESS);
+    AppleSMBusI2CRequest req;
+    memset(&req, 0, sizeof(req));
+    req.receiveProtocol = SMBUS_DATA_CALL;
+    req.receiveAddress = 0x2c;
+    req.receiveSubAddress = SMB_PROTOCOL_VERSION_ADDRESS;
+    req.receiveFlags = 0xffffffff;
+    req.receieveBuffer = &buf;
+    req.receiveBytes = 1;
+    
+    retval = device_nub->startIO(&req);
     if (retval < 0) {
         return retval;
     }
     
-    return retval + 1;
+    return buf + 1;
 }
 
 int RMISMBus::reset()
@@ -202,8 +209,18 @@ int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
     new_map.rmiaddr = OSSwapHostToLittleInt16(rmiaddr);
     new_map.readcount = bytecount;
     new_map.flags = !isread ? RMI_SMB2_MAP_FLAGS_WE : 0;
-    retval = device_nub->writeBlockData(i + 0x80,
-                                         sizeof(new_map), reinterpret_cast<u8*>(&new_map));
+    
+    AppleSMBusI2CRequest req;
+    memset(&req, 0, sizeof(req));
+    req.sendProtocol = SMBUS_DATA_CALL;
+    req.sendAddress = 0x2c;
+    req.sendSubAddress = i + 0x80;
+    req.receiveFlags = 0xffffffff;
+    req.sendFlags = 0xffffffff;
+    req.buffer = reinterpret_cast<uint8_t *>(&new_map);
+    req.sendBytes = sizeof(new_map);
+    
+    retval = device_nub->startIO(&req);
     if (retval < 0) {
         IOLogError("smb_get_command_code: Failed to write mapping table data");
         /*
@@ -243,7 +260,16 @@ int RMISMBus::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         if (retval < 0)
             goto exit;
         
-        retval = device_nub->readBlockData(commandcode, databuff);
+        AppleSMBusI2CRequest req;
+        memset(&req, 0, sizeof(req));
+        req.receiveProtocol = SMBUS_DATA_CALL;
+        req.receiveAddress = 0x2c;
+        req.receiveSubAddress = commandcode;
+        req.receiveFlags = 0xffffffff;
+        req.receieveBuffer = databuff;
+        req.receiveBytes = block_len;
+        
+        retval = device_nub->startIO(&req);
         
         if (retval < 0)
             goto exit;
@@ -281,8 +307,17 @@ int RMISMBus::blockWrite(u16 rmiaddr, u8 *buf, size_t len)
         if (retval < 0)
             goto exit;
         
-        retval = device_nub->writeBlockData(commandcode,
-                                            block_len, buf);
+        AppleSMBusI2CRequest req;
+        memset(&req, 0, sizeof(req));
+        req.sendProtocol = SMBUS_DATA_CALL;
+        req.sendAddress = 0x2c;
+        req.sendSubAddress = commandcode;
+        req.receiveFlags = 0xffffffff;
+        req.sendFlags = 0xffffffff;
+        req.buffer = buf;
+        req.sendBytes = block_len;
+        
+        retval = device_nub->startIO(&req);
         
         if (retval < 0)
             goto exit;
@@ -310,6 +345,18 @@ IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
 IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
     if (whatDevice != this)
         return kIOPMAckImplied;
+    
+    // TODO: No power states for now
+    else return kIOPMAckImplied;
+    
+    if (whichState == lastState) {
+        return kIOPMAckImplied;
+    }
+    
+    IOLogDebug("latsstate %ld != whichstate %ld", lastState, whichState);
+    
+    lastState = whichState;
+    // End of part to be removed one working
     
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);

@@ -22,15 +22,13 @@
 	<dict>
 		<key>RMISMBus</key>
 		<dict>
-			<key>IOPropertyMatch</key>
-			<dict>
-				<key>VoodooSMBUS Slave Device Address</key>
-				<integer>44</integer>
-			</dict>
-			<key>IOProbeScore</key>
-			<integer>500</integer>
+			<key>IONameMatch</key>
+			<array>
+				<string>synaptics</string>
+				<string>TPD0</string>
+			</array>
 			<key>IOProviderClass</key>
-			<string>VoodooSMBusDeviceNub</string>
+			<string>AppleSMBusDevice</string>
 			<key>IOClass</key>
 			<string>RMISMBus</string>
 			<key>CFBundleIdentifier</key>
@@ -41,8 +39,8 @@
 	<string>Copyright © 2021 1Revenger1. All rights reserved.</string>
 	<key>OSBundleLibraries</key>
 	<dict>
-		<key>de.leo-labs.VoodooSMBus</key>
-		<string>3.0</string>
+		<key>com.apple.driver.AppleSMBusController</key>
+		<string>1.0</string>
 		<key>com.1Revenger1.VoodooRMI</key>
 		<string>1.0</string>
 		<key>com.apple.kpi.iokit</key>

@@ -11,6 +11,7 @@
 #define RMISMBus_h
 
 #include "RMITransport.hpp"
+#include "AppleSMBusDevice.hpp"
 #include "VoodooSMBusDeviceNub.hpp"
 
 #define I2C_CLIENT_HOST_NOTIFY          0x40    /* We want to use I2C host notify */
@@ -42,9 +43,10 @@ public:
     
     int reset() override;
 private:
-    VoodooSMBusDeviceNub *device_nub;
+    AppleSMBusDevice *device_nub;
     IOLock *page_mutex;
     IOLock *mapping_table_mutex;
+    unsigned long lastState {1};
     
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
     u8 table_index {0};

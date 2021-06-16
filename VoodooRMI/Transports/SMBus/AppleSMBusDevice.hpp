@@ -1,42 +1,41 @@
-//
-//  AppleSMBusDevice.h
-//  RMISMBus
-//
-//  Created by Sheika Slate on 6/11/21.
-//  Copyright © 2021 1Revenger1. All rights reserved.
-//
-
 #ifndef AppleSMBusDevice_h
 #define AppleSMBusDevice_h
 
 #include <IOKit/IOUserClient.h>
 #include <IOKit/IOSMBusController.h>
 
-#define SMBUS_PROCESS_CALL 3
-#define SMBUS_DATA_CALL 1
+// Transaction Type
+enum {
+    kAppleSMBusI2CSimpleTransactionType = 1,
+    kAppleSMbusI2CProcessTransactionType = 3,
+};
 
-#define DATA_FLAG 2
+// Transaction Flags
+enum {
+    kAppleSMBusI2CDataFlag = 0x00000002,
+};
 
-#define SMBUS_THIS_DEVICE 1
+static constexpr uint32_t kAppleSMBusI2CUseNubAddress = 1;
 
 #pragma pack(push, 4)
 struct AppleSMBusI2CRequest {
-    uint32_t sendProtocol;
-    uint32_t receiveProtocol;
-    uint32_t sendAddress;       // 1 == SMBus device addr
-    uint32_t receiveAddress;    // 1 == SMBus device addr
+    uint32_t sendTransactionType;
+    uint32_t receiveTransactionType;
+    uint32_t sendAddress;
+    uint32_t receiveAddress;
     uint8_t sendSubAddress;
     uint8_t receiveSubAddress;
     uint8_t __unknown1[10];
-    uint32_t sendFlags;
-    uint32_t receiveFlags;
-    uint8_t __unknowxn2;
+    uint32_t result;            // Never used
+    uint32_t transactionFlags;
+    uint8_t __unknown2[4];
     uint32_t sendBytes;
     uint8_t __unknown3[12];
     uint32_t receiveBytes;
-    uint8_t __unknown4[8];
-    uint8_t *buffer; // max size 32
-    uint8_t *receieveBuffer;
+    void * callback;
+    // Max buffer size is 32 bytes
+    uint8_t *sendBuffer;
+    uint8_t *receievBuffer;
 };
 #pragma pack(pop)
 

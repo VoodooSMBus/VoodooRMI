@@ -146,11 +146,11 @@ int RMISMBus::rmi_smb_get_version()
     /* Check for SMBus new version device by reading version byte. */
     AppleSMBusI2CRequest req;
     memset(&req, 0, sizeof(req));
-    req.receiveProtocol = SMBUS_DATA_CALL;
+    req.receiveTransactionType = kAppleSMBusI2CSimpleTransactionType;
     req.receiveAddress = 0x2c;
     req.receiveSubAddress = SMB_PROTOCOL_VERSION_ADDRESS;
-    req.receiveFlags = 0xffffffff;
-    req.receieveBuffer = &buf;
+    req.transactionFlags = 0x2;
+    req.receievBuffer = &buf;
     req.receiveBytes = 1;
     
     retval = device_nub->startIO(&req);
@@ -210,15 +210,16 @@ int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
     new_map.readcount = bytecount;
     new_map.flags = !isread ? RMI_SMB2_MAP_FLAGS_WE : 0;
     
+    IOSleep(100);
+    
     AppleSMBusI2CRequest req;
     memset(&req, 0, sizeof(req));
-    req.sendProtocol = SMBUS_DATA_CALL;
-    req.sendAddress = 0x2c;
-    req.sendSubAddress = i + 0x80;
-    req.receiveFlags = 0xffffffff;
-    req.sendFlags = 0xffffffff;
-    req.buffer = reinterpret_cast<uint8_t *>(&new_map);
-    req.sendBytes = sizeof(new_map);
+    req.sendTransactionType = kAppleSMBusI2CSimpleTransactionType;
+    req.sendAddress = kAppleSMBusI2CUseNubAddress;
+    req.sendSubAddress = 0x80 + i;
+    req.transactionFlags = kAppleSMBusI2CDataFlag;
+    req.sendBuffer = (uint8_t *)(&new_map);
+    req.sendBytes = 4;
     
     retval = device_nub->startIO(&req);
     if (retval < 0) {
@@ -229,6 +230,8 @@ int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
          */
         memset(&new_map, 0, sizeof(new_map));
     }
+    
+    IOLogDebug("");
     
     /* save to the driver level mapping table */
     mapping_table[i] = new_map;
@@ -255,6 +258,7 @@ int RMISMBus::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         /* break into 8 bytes chunks to write get command code */
         int block_len =  min(cur_len, SMB_MAX_COUNT);
         
+        IOLogDebug("%d read", block_len);
         retval = rmi_smb_get_command_code(rmiaddr, block_len,
                                           true, &commandcode);
         if (retval < 0)
@@ -262,11 +266,11 @@ int RMISMBus::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
         
         AppleSMBusI2CRequest req;
         memset(&req, 0, sizeof(req));
-        req.receiveProtocol = SMBUS_DATA_CALL;
+        req.receiveTransactionType = kAppleSMBusI2CSimpleTransactionType;
         req.receiveAddress = 0x2c;
         req.receiveSubAddress = commandcode;
-        req.receiveFlags = 0xffffffff;
-        req.receieveBuffer = databuff;
+        req.transactionFlags = 0x2;
+        req.receievBuffer = databuff;
         req.receiveBytes = block_len;
         
         retval = device_nub->startIO(&req);
@@ -309,12 +313,11 @@ int RMISMBus::blockWrite(u16 rmiaddr, u8 *buf, size_t len)
         
         AppleSMBusI2CRequest req;
         memset(&req, 0, sizeof(req));
-        req.sendProtocol = SMBUS_DATA_CALL;
-        req.sendAddress = 0x2c;
+        req.sendTransactionType = kAppleSMBusI2CSimpleTransactionType;
+        req.sendAddress = kAppleSMBusI2CUseNubAddress;
         req.sendSubAddress = commandcode;
-        req.receiveFlags = 0xffffffff;
-        req.sendFlags = 0xffffffff;
-        req.buffer = buf;
+        req.transactionFlags = kAppleSMBusI2CDataFlag;
+        req.sendBuffer = buf;
         req.sendBytes = block_len;
         
         retval = device_nub->startIO(&req);

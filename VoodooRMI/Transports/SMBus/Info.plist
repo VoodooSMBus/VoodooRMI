@@ -20,6 +20,21 @@
 	<string>1.0</string>
 	<key>IOKitPersonalities</key>
 	<dict>
+		<key>SMBusFixer</key>
+		<dict>
+			<key>IOPCIClassMatch</key>
+			<string>0x0C050000</string>
+			<key>IOProbeScore</key>
+			<integer>400</integer>
+			<key>IOMatchCategory</key>
+			<string>SMBusFixer</string>
+			<key>IOProviderClass</key>
+			<string>IOPCIDevice</string>
+			<key>IOClass</key>
+			<string>SMBusFixer</string>
+			<key>CFBundleIdentifier</key>
+			<string>com.1Revenger1.RMISMBus</string>
+		</dict>
 		<key>RMISMBus</key>
 		<dict>
 			<key>IONameMatch</key>
@@ -49,6 +64,8 @@
 		<string>15</string>
 		<key>com.apple.kpi.mach</key>
 		<string>15</string>
+		<key>com.apple.iokit.IOPCIFamily</key>
+		<string>2.9</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Console</string>

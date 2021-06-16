@@ -10,6 +10,8 @@
 		286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		286587C224C13D9600E74848 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
 		286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 286587AE24C13D0B00E74848 /* RMISMBus.hpp */; };
+		2879AE23267942D700B90928 /* SMBusFixer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2879AE21267942D700B90928 /* SMBusFixer.cpp */; };
+		2879AE24267942D700B90928 /* SMBusFixer.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2879AE22267942D700B90928 /* SMBusFixer.hpp */; };
 		2886D95026743A7B005C3BBC /* AppleSMBusDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2886D94F26743A7B005C3BBC /* AppleSMBusDevice.hpp */; };
 		6F4B4A9024C1A0B80018F1F0 /* RMII2C.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */; };
 		6F4B4A9224C1A0B80018F1F0 /* RMII2C.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */; };
@@ -71,6 +73,8 @@
 		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
 		286587D724C13D9600E74848 /* RMISMBus.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMISMBus.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		286587D824C13D9600E74848 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2879AE21267942D700B90928 /* SMBusFixer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SMBusFixer.cpp; sourceTree = "<group>"; };
+		2879AE22267942D700B90928 /* SMBusFixer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SMBusFixer.hpp; sourceTree = "<group>"; };
 		2886D94F26743A7B005C3BBC /* AppleSMBusDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppleSMBusDevice.hpp; sourceTree = "<group>"; };
 		6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMII2C.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMII2C.hpp; sourceTree = "<group>"; };
@@ -153,6 +157,8 @@
 				286587AE24C13D0B00E74848 /* RMISMBus.hpp */,
 				A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */,
 				2886D94F26743A7B005C3BBC /* AppleSMBusDevice.hpp */,
+				2879AE21267942D700B90928 /* SMBusFixer.cpp */,
+				2879AE22267942D700B90928 /* SMBusFixer.hpp */,
 			);
 			path = SMBus;
 			sourceTree = "<group>";
@@ -266,6 +272,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2879AE24267942D700B90928 /* SMBusFixer.hpp in Headers */,
 				2886D95026743A7B005C3BBC /* AppleSMBusDevice.hpp in Headers */,
 				286587C224C13D9600E74848 /* RMITransport.hpp in Headers */,
 				286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */,
@@ -457,6 +464,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */,
+				2879AE23267942D700B90928 /* SMBusFixer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

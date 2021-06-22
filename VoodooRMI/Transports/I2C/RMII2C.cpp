@@ -415,7 +415,7 @@ IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
     }
 
     IOLogDebug("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
-
+    currentpowerState = powerState;
     
     if (powerState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);

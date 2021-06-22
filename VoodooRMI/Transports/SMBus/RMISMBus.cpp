@@ -317,6 +317,7 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     }
     
     IOLogDebug("RMISMBus::setPowerState - whichState = %lu", whichState);
+    currentpowerState = whichState;
     
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);

@@ -195,12 +195,10 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             handleReset();
             break;
         case kIOMessageRMI4Sleep:
-            IOLogDebug("Sleep");
             messageClients(kHandleRMISleep);
             rmi_driver_clear_irq_bits(this);
             break;
         case kIOMessageRMI4Resume:
-            IOLogDebug("Wakeup");
             err = rmi_driver_set_irq_bits(this);
             if (err < 0) {
                 IOLogError("Could not wakeup device");

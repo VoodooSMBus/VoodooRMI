@@ -311,6 +311,13 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whatDevice != this)
         return kIOPMAckImplied;
     
+    if (currentpowerState == whichState) {
+        IOLogDebug("RMISMBus::setPowerState - already in state = %lu", whichState);
+        return kIOPMAckImplied;
+    }
+    
+    IOLogDebug("RMISMBus::setPowerState - whichState = %lu", whichState);
+    
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {

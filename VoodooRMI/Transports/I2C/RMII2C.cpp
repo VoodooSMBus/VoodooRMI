@@ -403,13 +403,20 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
 }
 
 IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
-    IOLogDebug("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
     if (!bus)
         return kIOPMAckImplied;
     
     if (whatDevice != this)
         return kIOReturnInvalid;
 
+    if (currentpowerState == powerState) {
+        IOLogDebug("%s::%s - already in state = %lu", getName(), name, powerState);
+        return kIOPMAckImplied;
+    }
+
+    IOLogDebug("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
+
+    
     if (powerState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
         stopInterrupt();

@@ -91,6 +91,7 @@ private:
     bool ready {false};
     int page {0};
     int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
+    unsigned long currentpowerState {1};
 
     IOACPIPlatformDevice *acpi_device {nullptr};
     VoodooI2CDeviceNub *device_nub {nullptr};

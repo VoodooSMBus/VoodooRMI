@@ -48,6 +48,7 @@ private:
     
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
     u8 table_index {0};
+    unsigned long currentpowerState {1};
     
     bool rmiStart();
     int rmi_smb_get_version();

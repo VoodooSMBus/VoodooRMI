@@ -75,6 +75,7 @@ Linux:
 | `SYNA3602` | unknown |
 | `SYNA7500` | unknown |
 | `SYNA7501` | unknown |
+| `SYNA7DAB` | F12 |
 
 ## Installation
 1) Add the required kexts to your bootloader

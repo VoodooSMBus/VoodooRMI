@@ -107,12 +107,17 @@ The values below can be edited under Info.plist within the kext itself - these c
 | ----- | ------- | ----------- |
 | `ForceTouchEmulation` | True | Allows Force Touch emulation on Clickpads |
 | `ForceTouchMinPressure` | 90 | Minimum z value to trigger Force touch when clickpad is clicked |
-| `DisableWhileTypingTimeout` | 100 | Milliseconds after typing in which to reject trackpad packets |
+| `DisableWhileTypingTimeout` | 250 | Milliseconds after typing in which to reject trackpad packets |
+| `DisableWhileTrackpointTimeout` | 250 | Milliseconds after using the trackpoint in which to reject trackpad packets |
 | `TrackpointMultiplier` | 20 | Multiplier used on trackpoint inputs (other than scrolling). This is divided by 20, so the default value of 20 will not change the output value at all |
-| `TrackpointScrollMultiplierX` | 20 | Multiplier used on the x access when middle button is held down for scrolling. This is divded by 20. |
+| `TrackpointScrollMultiplierX` | 20 | Multiplier used on the x axis when middle button is held down for scrolling. This is divided by 20. |
 | `TrackpointScrollMultiplierY` | 20 | Same as the above, except applied to the Y axis |
 | `TrackpointDeadzone` | 1 | Minimum value at which trackpoint reports will be accepted. This is subtracted from the input of the trackpoint, so setting this extremely high will reduce trackpoint resolution |
 | `MinYDiffThumbDetection` | 200 | Minimum distance between the second lowest and lowest finger in which Minimum Y logic is used to detect the thumb rather than using the z value from the trackpad. Setting this higher means that the thumb must be farther from the other fingers before the y coordinate is used to detect the thumb, rather than using finger area. Keeping this smaller is preferable as finger area logic seems to only be useful when all 4 fingers are grouped together closely, where the thumb is more likely to be pressing down more |
+| `FingerMajorMinorDiffMax` | 10 | Max difference between the width and height of a touch input before it's invalid |
+| `PalmRejectionWidth` | 10 | Percent (out of 100) width of trackpad which is used for palm rejection on the left and right side of the trackpad |
+| `PalmRejectionWidth` | 60 | Percent (out of 100) height of trackpad which is used for palm rejection on the left and right side of the trackpad (starting from the top) |
+| `PalmRejectionTrackpointHeight` | 20 | Percent (out of 100) height of trackpad which is used for palm rejection across the top of the trackpad |
 
 Note that you can use Rehabman's ioio to set properties temporarily (until the next reboot).  
 `ioio -s RMIBus ForceTouchEmulation false`
@@ -170,6 +175,6 @@ If the above are loading, next place to check is within the IORegistry and withi
     * IORegs can be be saved using `File -> Save As` in the top left
 2) Get logs from within macOS
     * If loading VoodooRMI using `kextload` or `kextutil` within macOS, you can use `sudo log show --last boot | grep VRMI`
-    * If injecting through OpenCore/Clover, you will want to add the boot arg `msgbuf=1048576` and use `sudo dmesg | grep VRMI` immediately after booting with the boot arg.
+    * If injecting through OpenCore/Clover, you will want to either use DebugEnhancer.kext or add the boot arg `msgbuf=1048576`. Once in macOS, use `sudo dmesg | grep VRMI` immediately after booting to get the logs.
 
 When creating an issue, you will need to provide log files (IORegs not required but helpful)!

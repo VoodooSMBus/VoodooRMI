@@ -75,6 +75,9 @@ private:
     int rmi_f12_config();
     
     /* F12 Data */
+    u8 *data_pkt;
+    size_t pkt_size;
+    size_t attn_size;
     RMI2DSensor *sensor;
     struct rmi_2d_sensor_platform_data sensor_pdata;
     bool has_dribble;

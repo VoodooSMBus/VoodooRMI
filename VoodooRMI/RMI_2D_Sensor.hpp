@@ -47,7 +47,7 @@ struct rmi_2d_sensor_abs_object {
 
 struct RMI2DSensorReport {
     rmi_2d_sensor_abs_object objs[10];
-    int fingers;
+    size_t fingers;
     AbsoluteTime timestamp;
 };
 
@@ -69,9 +69,6 @@ struct RMI2DSensorZone {
  * @max_x - The maximum X coordinate that will be reported by this sensor.
  * @max_y - The maximum Y coordinate that will be reported by this sensor.
  * @nbr_fingers - How many fingers can this sensor report?
- * @data_pkt - buffer for data reported by this sensor.
- * @pkt_size - number of bytes in that buffer.
- * @attn_size - Size of the HID attention report (only contains abs data).
  * position when two fingers are on the device.  When this is true, we
  * assume we have one of those sensors and report events appropriately..
  */
@@ -85,10 +82,6 @@ public:
     u8 x_mm;
     u8 y_mm;
     
-    u8 *data_pkt;
-    int pkt_size;
-    int attn_size;
-    
     u8 report_abs {0};
     u8 report_rel {0};
     
@@ -101,7 +94,6 @@ public:
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
     void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-    void free() override;
     
     bool shouldDiscardReport(AbsoluteTime timestamp);
 private:
@@ -116,21 +108,9 @@ private:
 
     MT2FingerType getFingerType();
     bool checkInZone(VoodooInputTransducer &obj);
-    void setThumbFingerType(int fingers, RMI2DSensorReport *report);
+    void setThumbFingerType(size_t fingers, RMI2DSensorReport *report);
     void handleReport(RMI2DSensorReport *report);
-
-    // TODO: move into cpp file
-    inline void invalidateFingers() {
-        for (int i = 0; i < 5; i++) {
-            VoodooInputTransducer &finger = inputEvent.transducers[i];
-            
-            if (fingerState[i] == RMI_FINGER_INVALID)
-                continue;
-            
-            if (checkInZone(finger))
-                fingerState[i] = RMI_FINGER_INVALID;
-        }
-    }
+    void invalidateFingers();
 };
 
 #endif /* RMI_2D_Sensor_hpp */

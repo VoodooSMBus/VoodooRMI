@@ -81,6 +81,10 @@ void F11::free()
 {
     clearDesc();
     OSSafeReleaseNULL(sensor);
+    if (data_pkt != nullptr) {
+        IOFree(data_pkt, pkt_size);
+        data_pkt = nullptr;
+    }
     super::free();
 }
 
@@ -104,7 +108,8 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
 
 bool F11::getReport()
 {
-    int error, fingers, abs_size;
+    int error, abs_size;
+    size_t fingers;
     u8 finger_state;
     AbsoluteTime timestamp;
     
@@ -112,7 +117,7 @@ bool F11::getReport()
         return false;
     
     error = rmiBus->readBlock(fn_descriptor->data_base_addr,
-                              sensor->data_pkt, sensor->pkt_size);
+                              data_pkt, pkt_size);
     
     if (error < 0) {
         IOLogError("Could not read F11 attention data: %d", error);
@@ -128,16 +133,16 @@ bool F11::getReport()
     
     abs_size = sensor->nbr_fingers & RMI_F11_ABS_BYTES;
     
-    if (abs_size > sensor->pkt_size)
-        fingers = sensor->pkt_size / RMI_F11_ABS_BYTES;
+    if (abs_size > pkt_size)
+        fingers = pkt_size / RMI_F11_ABS_BYTES;
     else fingers = sensor->nbr_fingers;
     
-    for (int i = 0; i < fingers; i++) {
+    for (size_t i = 0; i < fingers; i++) {
         finger_state = rmi_f11_parse_finger_state(i);
         u8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
         
         if (finger_state == F11_RESERVED) {
-            IOLogError("Invalid finger state[%d]: 0x%02x",
+            IOLogError("Invalid finger state[%ld]: 0x%02x",
                        i, finger_state);
             continue;
         }
@@ -212,46 +217,46 @@ int F11::f11_2d_construct_data()
     sensor->nbr_fingers = (query->nr_fingers == 5 ? 10 :
                            query->nr_fingers + 1);
     
-    sensor->pkt_size = DIV_ROUND_UP(sensor->nbr_fingers, 4);
+    pkt_size = DIV_ROUND_UP(sensor->nbr_fingers, 4);
     
     if (query->has_abs) {
-        sensor->pkt_size += (sensor->nbr_fingers * 5);
-        sensor->attn_size = sensor->pkt_size;
+        pkt_size += (sensor->nbr_fingers * 5);
+        attn_size = pkt_size;
     }
     
     if (query->has_rel)
-        sensor->pkt_size +=  (sensor->nbr_fingers * 2);
+        pkt_size +=  (sensor->nbr_fingers * 2);
     
     /* Check if F11_2D_Query7 is non-zero */
     if (query->query7_nonzero)
-        sensor->pkt_size += sizeof(u8);
+        pkt_size += sizeof(u8);
     
     /* Check if F11_2D_Query7 or F11_2D_Query8 is non-zero */
     if (query->query7_nonzero || query->query8_nonzero)
-        sensor->pkt_size += sizeof(u8);
+        pkt_size += sizeof(u8);
     
     if (query->has_pinch || query->has_flick || query->has_rotate) {
-        sensor->pkt_size += 3;
+        pkt_size += 3;
         if (!query->has_flick)
-            sensor->pkt_size--;
+            pkt_size--;
         if (!query->has_rotate)
-            sensor->pkt_size--;
+            pkt_size--;
     }
     
     if (query->has_touch_shapes)
-        sensor->pkt_size +=
+        pkt_size +=
             DIV_ROUND_UP(query->nr_touch_shapes + 1, 8);
     
-    sensor->data_pkt = reinterpret_cast<u8*>(IOMalloc(sensor->pkt_size));
+    data_pkt = reinterpret_cast<u8*>(IOMalloc(pkt_size));
     
-    if (!sensor->data_pkt)
+    if (!data_pkt)
         return -ENOMEM;
     
-    data->f_state = sensor->data_pkt;
+    data->f_state = data_pkt;
     i = DIV_ROUND_UP(sensor->nbr_fingers, 4);
     
     if (query->has_abs) {
-        data->abs_pos = &sensor->data_pkt[i];
+        data->abs_pos = &data_pkt[i];
     }
     
     return 0;
@@ -707,7 +712,7 @@ int F11::rmi_f11_initialize()
     }
     
     if (has_acm)
-        sensor->attn_size += sensor->nbr_fingers * 2;
+        attn_size += sensor->nbr_fingers * 2;
     
     rc = f11_read_control_regs(&dev_controls,
                                control_base_addr);

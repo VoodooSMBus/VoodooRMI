@@ -25,12 +25,8 @@ static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, in
 
 bool RMI2DSensor::start(IOService *provider)
 {
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, max_x, 16);
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, max_y, 16);
-    // Need to be in 0.01mm units
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, x_mm * 100, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
-    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+    memset(freeFingerTypes, true, sizeof(freeFingerTypes));
+    freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
     const int palmRejectWidth = max_x * cfgToPercent(conf->palmRejectionWidth);
     const int palmRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeight);
@@ -57,15 +53,15 @@ bool RMI2DSensor::start(IOService *provider)
              0, 0,
              max_x, trackpointRejectHeight);
     
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, max_x, 16);
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, max_y, 16);
+    // Need to be in 0.01mm units
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, x_mm * 100, 16);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
+    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+    
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
-    
-    memset(freeFingerTypes, true, kMT2FingerTypeCount);
-    memset(fingerState, false, sizeof(fingerState));
-    freeFingerTypes[kMT2FingerTypeUndefined] = false;
-    
-    memset(fingerState, false, 10);
-    
     setProperty("VoodooInputSupported", kOSBooleanTrue);
     registerService();
     
@@ -77,14 +73,6 @@ bool RMI2DSensor::start(IOService *provider)
     }
     
     return super::start(provider);
-}
-
-void RMI2DSensor::free()
-{
-    if (data_pkt)
-        IOFree(data_pkt, pkt_size);
-    
-    return super::free();
 }
 
 bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
@@ -178,7 +166,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     bool discardRegions = ((report->timestamp - lastKeyboardTS) < (conf->disableWhileTypingTimeout * MILLI_TO_NANO)) ||
                           ((report->timestamp - lastTrackpointTS) < (conf->disableWhileTrackpointTimeout * MILLI_TO_NANO));
     
-    int maxIdx = report->fingers > MAX_FINGERS ? MAX_FINGERS : report->fingers;
+    size_t maxIdx = report->fingers > MAX_FINGERS ? MAX_FINGERS : report->fingers;
     for (int i = 0; i < maxIdx; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
@@ -269,7 +257,7 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     }
     
     // Second loop to get finger type and allow gestures
-    for (int i = 0; i < maxIdx; i++) {
+    for (size_t i = 0; i < maxIdx; i++) {
         auto& trans = inputEvent.transducers[i];
         
         if (!discardRegions &&
@@ -297,15 +285,15 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 }
 
 // Take the most obvious lowest fingers - otherwise take finger with greatest area
-void RMI2DSensor::setThumbFingerType(int maxIdx, RMI2DSensorReport *report)
+void RMI2DSensor::setThumbFingerType(size_t maxIdx, RMI2DSensorReport *report)
 {
-    int lowestFingerIndex = -1;
-    int greatestFingerIndex = -1;
+    size_t lowestFingerIndex = -1;
+    size_t greatestFingerIndex = -1;
     UInt32 minY = 0, secondLowest = 0;
     UInt32 maxDiff = 0;
     UInt32 maxArea = 0;
     
-    for (int i = 0; i < maxIdx; i++) {
+    for (size_t i = 0; i < maxIdx; i++) {
         auto &trans = inputEvent.transducers[i];
         rmi_2d_sensor_abs_object *obj = &report->objs[i];
         
@@ -346,6 +334,7 @@ void RMI2DSensor::setThumbFingerType(int maxIdx, RMI2DSensorReport *report)
     freeFingerTypes[kMT2FingerTypeThumb] = false;
 }
 
+// Assign the first free finger (other than the thumb)
 MT2FingerType RMI2DSensor::getFingerType()
 {
     for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1)) {
@@ -356,4 +345,16 @@ MT2FingerType RMI2DSensor::getFingerType()
     }
     
     return kMT2FingerTypeUndefined;
+}
+
+void RMI2DSensor::invalidateFingers() {
+    for (size_t i = 0; i < MAX_FINGERS; i++) {
+        VoodooInputTransducer &finger = inputEvent.transducers[i];
+        
+        if (fingerState[i] == RMI_FINGER_INVALID)
+            continue;
+        
+        if (checkInZone(finger))
+            fingerState[i] = RMI_FINGER_INVALID;
+    }
 }

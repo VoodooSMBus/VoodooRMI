@@ -62,8 +62,6 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
-    mid_x = max_x / 2;
-    
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     setProperty("VoodooInputSupported", kOSBooleanTrue);

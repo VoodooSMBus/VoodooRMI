@@ -79,7 +79,6 @@ public:
     u16 min_y{0};
     u16 max_x;
     u16 max_y;
-    u16 mid_x;
     u8 x_mm;
     u8 y_mm;
     

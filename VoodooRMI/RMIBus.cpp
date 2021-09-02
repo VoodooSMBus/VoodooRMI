@@ -178,6 +178,13 @@ void RMIBus::handleReset()
     }
     
     messageClients(kHandleRMIConfig);
+    
+//    OSIterator* iter = OSCollectionIterator::withCollection(functions);
+//    if (!iter) return;
+//    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+//        messageClient(kHandleRMIConfig, func);
+//    }
+//    OSSafeReleaseNULL(iter);
 }
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
@@ -199,7 +206,7 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             messageClients(kHandleRMISleep);
             rmi_driver_clear_irq_bits(this);
             break;
-        case kIOMessageRMI4Resume:
+        case kIOMessageRMI4Resume: {
             IOLogDebug("Wakeup");
             err = rmi_driver_set_irq_bits(this);
             if (err < 0) {
@@ -207,7 +214,14 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
                 return kIOReturnError;
             }
             messageClients(kHandleRMIResume);
+//            OSIterator* iter = OSCollectionIterator::withCollection(functions);
+//            if (iter == nullptr) break;
+//            while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+//                messageClient(kHandleRMIResume, func);
+//            }
+//            OSSafeReleaseNULL(iter);
             break;
+        }
         default:
             return super::message(type, provider);
     }

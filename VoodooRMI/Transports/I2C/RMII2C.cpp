@@ -111,6 +111,7 @@ bool RMII2C::start(IOService *provider) {
         work_loop->addEventSource(interrupt_simulator);
     }
     
+    startInterrupt();
 
     PMinit();
     provider->joinPMtree(this);
@@ -175,7 +176,8 @@ int RMII2C::rmi_set_page(u8 page) {
         RMI_WRITE_REPORT_ID,
         0x01,
         RMI_PAGE_SELECT_REGISTER,
-        page };
+        page
+    };
 
     if (device_nub->writeI2C(writeReport, sizeof(writeReport)) != kIOReturnSuccess) {
         IOLogError("%s::%s failed to write request output report", getName(), name);
@@ -248,7 +250,8 @@ int RMII2C::rmi_set_mode(u8 mode) {
         0x04, // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00, // size >> 8;
         RMI_SET_RMI_MODE_REPORT_ID, // report_id = buf[0];
-        mode };
+        mode
+    };
 
     if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
         return -1;
@@ -386,14 +389,11 @@ exit:
     return retval;
 }
 
+// We are in the workloop (not interrupt context), it's OK to use IOLog, messageClient, etc
 void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int intCount) {
     if (!ready || !bus)
         return;
 
-    command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMII2C::notifyClient));
-}
-
-void RMII2C::notifyClient() {
     messageClient(reportMode == RMI_MODE_ATTN_REPORTS ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
 }
 
@@ -402,15 +402,8 @@ void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
     interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
 }
 
-IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
-    IOLogDebug("%s::%s powerState %ld : %s", getName(), name, powerState, powerState ? "on" : "off");
-    if (!bus)
-        return kIOPMAckImplied;
-    
-    if (whatDevice != this)
-        return kIOReturnInvalid;
-
-    if (powerState == 0) {
+IOReturn RMII2C::setPowerStateGated() {
+    if (currentPowerState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
         stopInterrupt();
     } else {
@@ -432,6 +425,22 @@ IOReturn RMII2C::setPowerState(unsigned long powerState, IOService *whatDevice){
         }
     }
     
+    return kIOPMAckImplied;
+}
+
+IOReturn RMII2C::setPowerState(unsigned long newPowerState, IOService *whatDevice) {
+    IOLogDebug("%s::%s powerState %ld : %s", getName(), name, newPowerState, newPowerState ? "on" : "off");
+    
+    if (whatDevice != this)
+        return kIOReturnInvalid;
+    
+    if (!bus || currentPowerState == newPowerState)
+        return kIOPMAckImplied;
+    
+    currentPowerState = newPowerState;
+    IOReturn ret = command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMII2C::setPowerStateGated));
+    
+    if (ret) IOLogDebug("%s::%s powerState ret 0x%x", getName(), name, ret);
     return kIOPMAckImplied;
 }
 

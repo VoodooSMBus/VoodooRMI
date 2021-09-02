@@ -89,6 +89,7 @@ public:
 
 private:
     bool ready {false};
+    unsigned long currentPowerState {1};
     int page {0};
     int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
 
@@ -104,7 +105,7 @@ private:
 
     void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
-    void notifyClient();
+    IOReturn setPowerStateGated();
 
     __le16 wHIDDescRegister {RMI_HID_DESC_REGISTER};
     i2c_hid_desc hdesc;

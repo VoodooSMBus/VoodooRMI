@@ -12,6 +12,10 @@
 OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 #define super IOService
 
+#define RMI_2D_MAX_Z 140
+#define RMI_MT2_MAX_PRESSURE 255
+#define cfgToPercent(val) ((double) val / 100.0)
+
 static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, int max_y) {
     zone->x_min = min_x;
     zone->y_min = min_y;
@@ -28,18 +32,15 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
-    const int palmRejectWidth = max_x * 0.05;
-    const int palmRejectHeight = max_y * 0.8;
-    const int trackpointRejectHeight = max_y * 0.2;
+    const int palmRejectWidth = max_x * cfgToPercent(conf->palmRejectionWidth);
+    const int palmRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeight);
+    const int trackpointRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeightTrackpoint);
     
     /*
      * Calculate reject zones.
      * These zones invalidate any fingers within them when typing
      * or using the trackpoint. 0, 0 is top left
      */
-    
-    // TODO: Make VoodooInput do this instead?
-    // TODO: Make configurable and update
     
     // Top left
     fillZone(&rejectZones[0],
@@ -60,13 +61,20 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
-    memset(invalidFinger, false, sizeof(invalidFinger));
+    memset(fingerState, false, sizeof(fingerState));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
-    memset(invalidFinger, false, 10);
+    memset(fingerState, false, 10);
     
     setProperty("VoodooInputSupported", kOSBooleanTrue);
     registerService();
+    
+    for (int i = 0; i < VOODOO_INPUT_MAX_TRANSDUCERS; i++) {
+        auto& transducer = inputEvent.transducers[i];
+        transducer.type = FINGER;
+        transducer.supportsPressure = true;
+        transducer.isTransducerActive = 1;
+    }
     
     return super::start(provider);
 }
@@ -138,13 +146,13 @@ bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
 }
 
 bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
-    TouchCoordinates &dimensions = obj.currentCoordinates;
+    TouchCoordinates &fingerCoords = obj.currentCoordinates;
     for (int i = 0; i < 3; i++) {
         RMI2DSensorZone &zone = rejectZones[i];
-        if (dimensions.x >= zone.x_min &&
-            dimensions.x <= zone.x_max &&
-            dimensions.y >= zone.y_min &&
-            dimensions.y <= zone.y_max) {
+        if (fingerCoords.x >= zone.x_min &&
+            fingerCoords.x <= zone.x_max &&
+            fingerCoords.y >= zone.y_min &&
+            fingerCoords.y <= zone.y_max) {
             return true;
         }
     }
@@ -152,11 +160,17 @@ bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
     return false;
 }
 
-#define RMI_2D_MAX_Z 140
-
+/**
+ * RMI2DSensor::handleReport
+ * Takes a report from F11/F12 and converts it for VoodooInput
+ * This also does some input rejection.
+ * There are three zones on the left, right, and top of the trackpad. If a touch starts in those zones, it is not counted until it exits all zones
+ * This also does some sanity checks for very wide or very big touch inputs
+ * This checks for force touch on Clickpads only, where the trackpad is able to be pressed down.
+ */
 void RMI2DSensor::handleReport(RMI2DSensorReport *report)
 {
-    int realFingerCount = 0;
+    int validFingerCount = 0;
     
     if (!voodooInputInstance || !*voodooInputInstance)
         return;
@@ -164,82 +178,105 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     bool discardRegions = ((report->timestamp - lastKeyboardTS) < (conf->disableWhileTypingTimeout * MILLI_TO_NANO)) ||
                           ((report->timestamp - lastTrackpointTS) < (conf->disableWhileTrackpointTimeout * MILLI_TO_NANO));
     
-    for (int i = 0; i < report->fingers; i++) {
+    int maxIdx = report->fingers > MAX_FINGERS ? MAX_FINGERS : report->fingers;
+    for (int i = 0; i < maxIdx; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
-        bool isValid =  obj.type == RMI_2D_OBJECT_FINGER ||
-                        obj.type == RMI_2D_OBJECT_STYLUS ||
-                        // Allow inaccurate objects to record them as an invalid finger
-                        // This can be a random finger or one which was lifted up slightly
-                        obj.type == RMI_2D_OBJECT_INACCURATE;
+        bool isValidObj = obj.type == RMI_2D_OBJECT_FINGER ||
+                          obj.type == RMI_2D_OBJECT_STYLUS ||
+                          // Allow inaccurate objects as they are likely invalid, which we want to track still
+                          // This can be a random finger or one which was lifted up slightly
+                          obj.type == RMI_2D_OBJECT_INACCURATE;
         
         auto& transducer = inputEvent.transducers[i];
-        transducer.type = FINGER;
-        transducer.isValid = isValid;
-        transducer.supportsPressure = true;
-        transducer.isTransducerActive = 1;
+        transducer.isValid = isValidObj;
         transducer.secondaryId = i;
         
-        if (isValid) {
-            realFingerCount++;
-            
-            transducer.previousCoordinates = transducer.currentCoordinates;
-            transducer.currentCoordinates.width = obj.z / 4.0;
-            transducer.timestamp = report->timestamp;
-            
-            if (realFingerCount != 1)
-                pressureLock = false;
-            
-            if (!pressureLock) {
-                transducer.currentCoordinates.x = obj.x;
-                transducer.currentCoordinates.y = max_y - obj.y;
-            } else {
-                // Lock position for force touch
-                transducer.currentCoordinates = transducer.previousCoordinates;
-            }
-            
-            int deltaWidth = abs(obj.wx - obj.wy);
-            
-            // Dissallow large objects
-            transducer.isValid = !(discardRegions && checkInZone(transducer)) &&
-                                 !invalidFinger[i] &&
-                                 obj.z < RMI_2D_MAX_Z &&
-                                 // Accidental light brushes by the palm generally are not circular
-                                 deltaWidth <= conf->fingerMajorMinorMax;
-            
-            // Invalid fingers stays invalid until lifted
-            if (!transducer.isValid)
-                invalidFinger[i] = true;
-            
-            // Force touch emulation only works with clickpads (button underneath trackpad)
-            // Lock finger in a force touch state until lifted
-            if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure)
-                pressureLock = true;
-            
-            // Force touch = 255 pressure
-            // isPhysicalButtonDown interferes with force touch
-            transducer.currentCoordinates.pressure = pressureLock ? 255 : 0;
-            transducer.isPhysicalButtonDown = clickpadState && !pressureLock;
-            
-            IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
-                       i, transducer.isValid ? "valid" : "invalid",
-                       obj.x, obj.y, obj.z, obj.wx, obj.wy,
-                       transducer.fingerType,
-                       transducer.currentCoordinates.pressure,
-                       transducer.isPhysicalButtonDown);
-        } else {
-            // Finger lifted, make finger valid
-            invalidFinger[i] = false;
+        // Finger lifted, make finger valid
+        if (!isValidObj) {
+            fingerState[i] = RMI_FINGER_LIFTED;
+            transducer.currentCoordinates.pressure = 0;
+            continue;
         }
+        
+        validFingerCount++;
+            
+        transducer.previousCoordinates = transducer.currentCoordinates;
+        transducer.currentCoordinates.width = obj.z / 2.0;
+        transducer.timestamp = report->timestamp;
+        
+        transducer.currentCoordinates.x = obj.x;
+        transducer.currentCoordinates.y = max_y - obj.y;
+        
+        int deltaWidth = abs(obj.wx - obj.wy);
+        
+        switch (fingerState[i]) {
+            case RMI_FINGER_LIFTED:
+                fingerState[i] = RMI_FINGER_STARTED_IN_ZONE;
+                
+                /* fall through */
+            case RMI_FINGER_STARTED_IN_ZONE:
+                if (!checkInZone(transducer)) {
+                    fingerState[i] = RMI_FINGER_VALID;
+                }
+                
+                /* fall through */
+            case RMI_FINGER_VALID:
+                if (obj.z > RMI_2D_MAX_Z ||
+                    deltaWidth > conf->fingerMajorMinorMax) {
+                    
+                    fingerState[i] = RMI_FINGER_INVALID;
+                }
+                
+                transducer.isPhysicalButtonDown = clickpadState;
+                
+                // Force touch emulation only works with clickpads (button underneath trackpad)
+                // Lock finger in place and in force touch until lifted
+                if (clickpadState && conf->forceTouchEmulation && obj.z > conf->forceTouchMinPressure) {
+                    fingerState[i] = RMI_FINGER_FORCE_TOUCH;
+                }
+                
+                break;
+            case RMI_FINGER_FORCE_TOUCH:
+                if (!clickpadState && obj.z < conf->forceTouchMinPressure) {
+                    fingerState[i] = RMI_FINGER_VALID;
+                    transducer.currentCoordinates.pressure = 0;
+                    break;
+                }
+                
+                transducer.isPhysicalButtonDown = false;
+                transducer.currentCoordinates = transducer.previousCoordinates;
+                transducer.currentCoordinates.pressure = RMI_MT2_MAX_PRESSURE;
+                break;
+            case RMI_FINGER_INVALID:
+                transducer.isValid = false;
+                continue;
+        }
+        
+        transducer.isValid = fingerState[i] == RMI_FINGER_VALID || fingerState[i] == RMI_FINGER_FORCE_TOUCH;
+        
+        IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
+                   i,
+                   transducer.isValid ? "valid" : "invalid",
+                   obj.x, obj.y, obj.z, obj.wx, obj.wy,
+                   transducer.fingerType,
+                   transducer.currentCoordinates.pressure,
+                   transducer.isPhysicalButtonDown);
     }
     
-    if (realFingerCount == 4 && freeFingerTypes[kMT2FingerTypeThumb]) {
-        setThumbFingerType(report->fingers, report);
+    if (validFingerCount >= 4 && freeFingerTypes[kMT2FingerTypeThumb]) {
+        setThumbFingerType(maxIdx, report);
     }
     
-    // Sencond loop to get type
-    for (int i = 0; i < report->fingers; i++) {
+    // Second loop to get finger type and allow gestures
+    for (int i = 0; i < maxIdx; i++) {
         auto& trans = inputEvent.transducers[i];
+        
+        if (!discardRegions &&
+            fingerState[i] == RMI_FINGER_STARTED_IN_ZONE &&
+            validFingerCount > 1) {
+            trans.isValid = true;
+        }
         
         if (trans.isValid) {
             if (trans.fingerType == kMT2FingerTypeUndefined) {
@@ -255,16 +292,12 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     inputEvent.contact_count = report->fingers;
     inputEvent.timestamp = report->timestamp;
     
-    if (!realFingerCount || !clickpadState) {
-        pressureLock = false;
-    }
-    
     messageClient(kIOMessageVoodooInputMessage, *voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
     memset(report, 0, sizeof(RMI2DSensorReport));
 }
 
 // Take the most obvious lowest fingers - otherwise take finger with greatest area
-void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
+void RMI2DSensor::setThumbFingerType(int maxIdx, RMI2DSensorReport *report)
 {
     int lowestFingerIndex = -1;
     int greatestFingerIndex = -1;
@@ -272,7 +305,7 @@ void RMI2DSensor::setThumbFingerType(int fingers, RMI2DSensorReport *report)
     UInt32 maxDiff = 0;
     UInt32 maxArea = 0;
     
-    for (int i = 0; i < fingers; i++) {
+    for (int i = 0; i < maxIdx; i++) {
         auto &trans = inputEvent.transducers[i];
         rmi_2d_sensor_abs_object *obj = &report->objs[i];
         

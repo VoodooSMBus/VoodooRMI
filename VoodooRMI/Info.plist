@@ -31,7 +31,7 @@
 				<key>DisableWhileTypingTimeout</key>
 				<integer>250</integer>
 				<key>FingerMajorMinorDiffMax</key>
-				<integer>3</integer>
+				<integer>10</integer>
 				<key>MinYDiffThumbDetection</key>
 				<integer>200</integer>
 				<key>ForceTouchEmulation</key>
@@ -46,6 +46,12 @@
 				<integer>30</integer>
 				<key>TrackpointScrollMultiplierY</key>
 				<integer>30</integer>
+				<key>PalmRejectionWidth</key>
+				<integer>15</integer>
+				<key>PalmRejectionHeight</key>
+				<integer>80</integer>
+				<key>PalmRejectionTrackpointHeight</key>
+				<integer>20</integer>
 			</dict>
 			<key>IOClass</key>
 			<string>RMIBus</string>

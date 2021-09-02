@@ -38,3 +38,13 @@ bool Configuration::loadUInt32Configuration(OSDictionary *dict, const char* conf
     *defaultValue = value->unsigned32BitValue();
     return true;
 }
+
+bool Configuration::loadUInt8Configuration(OSDictionary *dict, const char* configurationKey, UInt8 *defaultValue) {
+    OSNumber* value;
+    if (!dict || nullptr == (value = OSDynamicCast(OSNumber, dict->getObject(configurationKey))))
+        return false;
+
+    IOLogDebug("Config %s loaded: %x -> %x", configurationKey, *defaultValue, value->unsigned8BitValue());
+    *defaultValue = value->unsigned8BitValue();
+    return true;
+}

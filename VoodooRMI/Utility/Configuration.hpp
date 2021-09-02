@@ -39,6 +39,7 @@ class Configuration {
     
 public:
     static bool loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool *defaultValue);
+    static bool loadUInt8Configuration(OSDictionary *dict, const char* configurationKey, UInt8 *defaultValue);
     static bool loadUInt32Configuration(OSDictionary *dict, const char *configurationKey, UInt32 *defaultValue);
     static bool loadUInt64Configuration(OSDictionary *dict, const char* configurationKey, UInt64 *defaultValue);
     

@@ -17,6 +17,8 @@
 #include "VoodooInputMultitouch/VoodooInputTransducer.h"
 #include "VoodooInputMultitouch/VoodooInputMessages.h"
 
+#define MAX_FINGERS 10
+
 enum rmi_2d_sensor_object_type {
     RMI_2D_OBJECT_NONE,
     RMI_2D_OBJECT_FINGER,
@@ -24,6 +26,14 @@ enum rmi_2d_sensor_object_type {
     RMI_2D_OBJECT_PALM,
     RMI_2D_OBJECT_UNCLASSIFIED,
     RMI_2D_OBJECT_INACCURATE
+};
+
+enum finger_state {
+    RMI_FINGER_INVALID = 0,     // Invalid finger
+    RMI_FINGER_LIFTED,          // Finger is not on trackpad currently (starting state)
+    RMI_FINGER_STARTED_IN_ZONE, // Finger put down in palm rejection zone
+    RMI_FINGER_VALID,           // Valid finger to be sent to macOS
+    RMI_FINGER_FORCE_TOUCH,     // Force touch
 };
 
 struct rmi_2d_sensor_abs_object {
@@ -95,15 +105,12 @@ public:
     
     bool shouldDiscardReport(AbsoluteTime timestamp);
 private:
-    int lastFingers;
-    
     VoodooInputEvent inputEvent {};
     RMI2DSensorZone rejectZones[3];
     
     bool freeFingerTypes[kMT2FingerTypeCount];
-    bool invalidFinger[10];
+    finger_state fingerState[MAX_FINGERS] { RMI_FINGER_LIFTED };
     bool clickpadState {false};
-    bool pressureLock {false};
     bool trackpadEnable {true};
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
@@ -117,11 +124,11 @@ private:
         for (int i = 0; i < 5; i++) {
             VoodooInputTransducer &finger = inputEvent.transducers[i];
             
-            if (!finger.isValid || invalidFinger[i])
+            if (fingerState[i] == RMI_FINGER_INVALID)
                 continue;
             
             if (checkInZone(finger))
-                invalidFinger[i] = true;
+                fingerState[i] = RMI_FINGER_INVALID;
         }
     }
 };

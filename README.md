@@ -50,6 +50,7 @@ Linux:
 
 **SMBus**
 * [Acidanthera's VoodooPS2 >= 2.2.0](https://github.com/acidanthera/VoodooPS2)
+  * Version >= 2.2.5 is recommended for HP devices with multiplexed PS2 Controllers (Some of the HP Elitebook lineup for example)
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
   * VoodooRMI releases (for now) include VoodooSMBus. If you are building VoodooSMBus yourself, build from the Dev branch of the VoodooSMBus git repo.
 
@@ -82,20 +83,20 @@ Linux:
 2) Make sure VoodooPS2 is configured as below:
     * Enabled:
         * VoodooPS2Controller.kext
+        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext
     * Disabled:
-        * VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext
         * VoodooPS2Controller.kext/Contents/PlugIns/VoodooInput.kext
-4) For OpenCore users, make sure to add the below kexts to your Config.plist.
+4) For OpenCore users, make sure to add the below kexts in the order they're listed into your config.plist.
     * VoodooRMI.kext
     * VoodooRMI.kext/Contents/PlugIns/VoodooInput.kext
     * SMBus trackpads:
-        * VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
         * VoodooSMBus.kext
+        * VoodooRMI.kext/Contents/PlugIns/RMISMBus.kext
     * I2C trackpads:
-        * VoodooRMI.kext/Contents/PlugIns/RMII2C.kext
         * VoodooI2C.kext
+        * VoodooRMI.kext/Contents/PlugIns/RMII2C.kext
 
 There is no support for this kext being loaded into Library/Extensions or System/Library/Extensions. This likely won't break loading it, but test with injection first before sending in a bug report.
 

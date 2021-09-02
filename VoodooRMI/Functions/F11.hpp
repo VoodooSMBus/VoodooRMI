@@ -532,6 +532,9 @@ private:
     bool has_acm;
     struct f11_2d_ctrl dev_controls;
     u16 rezero_wait_ms;
+    u8 *data_pkt { nullptr };
+    size_t pkt_size;
+    size_t attn_size;
     RMI2DSensor *sensor;
     struct f11_2d_sensor_queries sens_query;
     struct f11_2d_data data_2d;

@@ -77,12 +77,12 @@ bool F12::attach(IOService *provider)
     }
     query_addr += 3;
     
-    sensor->pkt_size = (int) rmi_register_desc_calc_size(&data_reg_desc);
-    IOLogDebug("F12 - Data packet size: %d", sensor->pkt_size);
+    pkt_size = rmi_register_desc_calc_size(&data_reg_desc);
+    IOLogDebug("F12 - Data packet size: 0x%lx", pkt_size);
     
-    sensor->data_pkt = reinterpret_cast<u8 *>(IOMalloc(sensor->pkt_size));
+    data_pkt = reinterpret_cast<u8 *>(IOMalloc(pkt_size));
     
-    if (!sensor->data_pkt)
+    if (!data_pkt)
         return -ENOMEM;
     
     ret = rmi_f12_read_sensor_tuning();
@@ -113,7 +113,7 @@ bool F12::attach(IOService *provider)
     data_offset += item->reg_size;
     sensor->nbr_fingers = item->num_subpackets;
     sensor->report_abs = 1;
-    sensor->attn_size += item->reg_size;
+    attn_size += item->reg_size;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 2);
     if (item)
@@ -132,7 +132,7 @@ bool F12::attach(IOService *provider)
         data5 = item;
         data5_offset = data_offset;
         data_offset += item->reg_size;
-        sensor->attn_size += item->reg_size;
+        attn_size += item->reg_size;
     }
     
     // Skip 6-15 as they do not increase attention size and only gives relative info
@@ -172,6 +172,10 @@ void F12::free()
 {
     clearDesc();
     OSSafeReleaseNULL(sensor);
+    if (data_pkt != nullptr) {
+        IOFree(data_pkt, pkt_size);
+        data_pkt = nullptr;
+    }
     super::free();
 }
 
@@ -327,8 +331,8 @@ void F12::getReport()
     if (!sensor || !data1)
         return;
     
-    int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, sensor->data_pkt,
-                                   sensor->pkt_size);
+    int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, data_pkt,
+                                   pkt_size);
     
     if (retval < 0) {
         IOLogError("F12 - Failed to read object data. Code: %d", retval);
@@ -347,7 +351,7 @@ void F12::getReport()
 #endif // debug
     
     int fingers = min (sensor->nbr_fingers, 5);
-    u8 *data = &sensor->data_pkt[data1_offset];
+    u8 *data = &data_pkt[data1_offset];
     
     for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];

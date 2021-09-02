@@ -356,11 +356,17 @@ MT2FingerType RMI2DSensor::getFingerType()
     return kMT2FingerTypeUndefined;
 }
 
+/**
+ * RMI2DSensor::invalidateFingers
+ * Invalidate fingers which are in zones currently
+ * Used when keyboard or trackpoint send events
+ */
 void RMI2DSensor::invalidateFingers() {
     for (size_t i = 0; i < MAX_FINGERS; i++) {
         VoodooInputTransducer &finger = inputEvent.transducers[i];
         
-        if (fingerState[i] == RMI_FINGER_INVALID)
+        if (fingerState[i] == RMI_FINGER_LIFTED ||
+            fingerState[i] == RMI_FINGER_INVALID)
             continue;
         
         if (checkInZone(finger))

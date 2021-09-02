@@ -50,7 +50,7 @@ Linux:
 
 **SMBus**
 * [Acidanthera's VoodooPS2 >= 2.2.0](https://github.com/acidanthera/VoodooPS2)
-  * Version >= 2.2.5 is recommended for HP devices with multiplexed PS2 Controllers (Examples being some of the HP Elitebook lineup)
+  * Version >= 2.2.5 is recommended for HP devices with multiplexed PS2 Controllers (Some of the HP Elitebook lineup for example)
 * [VoodooSMBus](https://github.com/VoodooSMBus/VoodooSMBus)
   * VoodooRMI releases (for now) include VoodooSMBus. If you are building VoodooSMBus yourself, build from the Dev branch of the VoodooSMBus git repo.
 

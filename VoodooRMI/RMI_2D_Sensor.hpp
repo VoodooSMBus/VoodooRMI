@@ -79,6 +79,7 @@ public:
     u16 min_y{0};
     u16 max_x;
     u16 max_y;
+    u16 mid_x;
     u8 x_mm;
     u8 y_mm;
     
@@ -101,7 +102,7 @@ private:
     RMI2DSensorZone rejectZones[3];
     
     bool freeFingerTypes[kMT2FingerTypeCount];
-    finger_state fingerState[MAX_FINGERS] { RMI_FINGER_LIFTED };
+    finger_state fingerState[MAX_FINGERS];
     bool clickpadState {false};
     bool trackpadEnable {true};
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};

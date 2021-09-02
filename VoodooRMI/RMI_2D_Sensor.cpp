@@ -13,6 +13,7 @@ OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 #define super IOService
 
 #define RMI_2D_MAX_Z 140
+#define RMI_2D_MIN_ZONE_VEL 10
 #define RMI_MT2_MAX_PRESSURE 255
 #define cfgToPercent(val) ((double) val / 100.0)
 
@@ -25,6 +26,7 @@ static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, in
 
 bool RMI2DSensor::start(IOService *provider)
 {
+    memset(fingerState, RMI_FINGER_LIFTED, sizeof(fingerState));
     memset(freeFingerTypes, true, sizeof(freeFingerTypes));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
@@ -59,6 +61,8 @@ bool RMI2DSensor::start(IOService *provider)
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, x_mm * 100, 16);
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+    
+    mid_x = max_x / 2;
     
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
@@ -201,13 +205,20 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         switch (fingerState[i]) {
             case RMI_FINGER_LIFTED:
                 fingerState[i] = RMI_FINGER_STARTED_IN_ZONE;
+                // Current position is starting position, make sure velocity is zero
+                transducer.previousCoordinates = transducer.currentCoordinates;
                 
                 /* fall through */
-            case RMI_FINGER_STARTED_IN_ZONE:
+            case RMI_FINGER_STARTED_IN_ZONE: {
                 if (!checkInZone(transducer)) {
                     fingerState[i] = RMI_FINGER_VALID;
                 }
                 
+                int velocityX = abs((int) transducer.currentCoordinates.x - (int) transducer.previousCoordinates.x);
+                if (velocityX > RMI_2D_MIN_ZONE_VEL) {
+                    fingerState[i] = RMI_FINGER_VALID;
+                }
+            }
                 /* fall through */
             case RMI_FINGER_VALID:
                 if (obj.z > RMI_2D_MAX_Z ||
@@ -256,13 +267,14 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         setThumbFingerType(maxIdx, report);
     }
     
+    bool isGesture = !discardRegions && validFingerCount > 2;
+    
     // Second loop to get finger type and allow gestures
     for (size_t i = 0; i < maxIdx; i++) {
         auto& trans = inputEvent.transducers[i];
         
-        if (!discardRegions &&
-            fingerState[i] == RMI_FINGER_STARTED_IN_ZONE &&
-            validFingerCount > 1) {
+        if (isGesture &&
+            fingerState[i] == RMI_FINGER_STARTED_IN_ZONE) {
             trans.isValid = true;
         }
         
@@ -281,7 +293,6 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     inputEvent.timestamp = report->timestamp;
     
     messageClient(kIOMessageVoodooInputMessage, *voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
-    memset(report, 0, sizeof(RMI2DSensorReport));
 }
 
 // Take the most obvious lowest fingers - otherwise take finger with greatest area

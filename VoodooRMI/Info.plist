@@ -47,9 +47,9 @@
 				<key>TrackpointScrollMultiplierY</key>
 				<integer>30</integer>
 				<key>PalmRejectionWidth</key>
-				<integer>15</integer>
+				<integer>10</integer>
 				<key>PalmRejectionHeight</key>
-				<integer>80</integer>
+				<integer>60</integer>
 				<key>PalmRejectionTrackpointHeight</key>
 				<integer>20</integer>
 			</dict>

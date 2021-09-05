@@ -417,3 +417,20 @@ void RMIBus::getGPIOData(OSDictionary *dict) {
     
     IOLogInfo("Recieved GPIO Data");
 }
+
+IOReturn RMIBus::sendRelativePointerEvent() {
+    if (!voodooInputInstance)
+        return kIOReturnNotOpen;
+
+    clock_get_uptime(&relativeEvent.timestamp);
+    return messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooInputInstance, &relativeEvent, sizeof(RelativePointerEvent));
+}
+
+IOReturn RMIBus::sendScrollEvent() {
+    if (!voodooInputInstance)
+        return kIOReturnNotOpen;
+
+    clock_get_uptime(&scrollEvent.timestamp);
+    return messageClient(kIOMessageVoodooTrackpointScrollWheel, voodooInputInstance, &scrollEvent, sizeof(ScrollWheelEvent));
+}
+

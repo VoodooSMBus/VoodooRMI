@@ -128,7 +128,6 @@ private:
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
     
-    IOService **voodooTrackpointInstance {nullptr};
     IOTimerEventSource *timer {nullptr};
     RelativePointerEvent *relativeEvent {nullptr};
     ScrollWheelEvent *scrollEvent {nullptr};

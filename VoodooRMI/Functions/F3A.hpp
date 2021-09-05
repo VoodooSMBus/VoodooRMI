@@ -29,7 +29,6 @@ public:
 
 private:
     RMIBus *rmiBus;
-    IOService **voodooTrackpointInstance{nullptr};
     RelativePointerEvent *relativeEvent {nullptr};
     
     u16 *gpioled_key_map;

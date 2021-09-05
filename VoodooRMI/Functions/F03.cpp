@@ -108,7 +108,6 @@ bool F03::start(IOService *provider)
     timer->setTimeoutMS(100);
     timer->enable();
     
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
     relativeEvent = rmiBus->getRelativePointerEvent();
     scrollEvent = rmiBus->getScrollEvent();
 
@@ -165,13 +164,7 @@ void F03::handlePacket(u8 *packet)
     SInt32 dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
     SInt32 dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
     index = 0;
-    
-    AbsoluteTime timestamp;
-    clock_get_uptime(&timestamp);
-    
-    if (!voodooTrackpointInstance || !*voodooTrackpointInstance)
-        return;
-    
+
     // The highest dx/dy is lowered by subtracting by trackpointDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
     
@@ -195,8 +188,7 @@ void F03::handlePacket(u8 *packet)
         if (middlePressed) {
             relativeEvent->dx = relativeEvent->dy = 0;
             relativeEvent->buttons = 0x04;
-            relativeEvent->timestamp = timestamp;
-            messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
+            rmiBus->sendRelativePointerEvent();
         }
         
         middlePressed = false;
@@ -210,16 +202,12 @@ void F03::handlePacket(u8 *packet)
         scrollEvent->deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackpointScrollYMult / DEFAULT_MULT);
         scrollEvent->deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackpointScrollXMult / DEFAULT_MULT);
         scrollEvent->deltaAxis3 = 0;
-        scrollEvent->timestamp = timestamp;
-        
-        messageClient(kIOMessageVoodooTrackpointScrollWheel, *voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
+        rmiBus->sendScrollEvent();
     } else {
         relativeEvent->buttons = buttons;
         relativeEvent->dx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
         relativeEvent->dy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
-        relativeEvent->timestamp = timestamp;
-        
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
+        rmiBus->sendRelativePointerEvent();
     }
 
     if (dx || dy) {

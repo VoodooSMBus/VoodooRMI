@@ -88,6 +88,9 @@ public:
         return &scrollEvent;
     }
     
+    IOReturn sendRelativePointerEvent();
+    IOReturn sendScrollEvent();
+
     OSSet *functions;
     
     void notify(UInt32 type, unsigned int argument = 0);

@@ -37,7 +37,6 @@ bool F30::start(IOService *provider)
     int ret = rmi_f30_config();
     if (ret < 0) return false;
     
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
     relativeEvent = rmiBus->getRelativePointerEvent();
 
     registerService();
@@ -302,14 +301,9 @@ void F30::rmi_f30_report_button()
         btns |= mask;
     }
     
-    if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
-        AbsoluteTime timestamp;
-        clock_get_uptime(&timestamp);
-        
+    if (numButtons > 1) {
         relativeEvent->dx = relativeEvent->dy = 0;
         relativeEvent->buttons = btns;
-        relativeEvent->timestamp = timestamp;
-        
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
+        rmiBus->sendRelativePointerEvent();
     }
 }

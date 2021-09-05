@@ -65,8 +65,6 @@ public:
     
 private:
     RMIBus *rmiBus;
-    
-    IOService **voodooTrackpointInstance {nullptr};
     RelativePointerEvent *relativeEvent {nullptr};
     
     /* Query Data */

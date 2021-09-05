@@ -60,7 +60,6 @@ bool F3A::start(IOService *provider)
     if (!super::start(provider))
         return false;
 
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
     relativeEvent = rmiBus->getRelativePointerEvent();
 
     registerService();
@@ -114,9 +113,6 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
     
     switch (type) {
         case kHandleRMIAttention:
-            if (!voodooTrackpointInstance)
-                return kIOReturnIOError;
-            
             error = rmiBus->readBlock(fn_descriptor->data_base_addr,
                                       data_regs, registerCount);
             
@@ -146,15 +142,10 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 }
             }
             
-            if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
-                AbsoluteTime timestamp;
-                clock_get_uptime(&timestamp);
-                
+            if (numButtons > 1) {
                 relativeEvent->dx = relativeEvent->dy = 0;
                 relativeEvent->buttons = btns;
-                relativeEvent->timestamp = timestamp;
-                
-                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
+                rmiBus->sendRelativePointerEvent();
             }
             
             break;

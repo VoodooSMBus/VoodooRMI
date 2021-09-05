@@ -156,7 +156,6 @@ public:
 
 private:
     RMIBus *rmiBus;
-    IOService **voodooTrackpointInstance{nullptr};
     RelativePointerEvent *relativeEvent {nullptr};
 
     rmi_f17_device_data *f17 {nullptr};

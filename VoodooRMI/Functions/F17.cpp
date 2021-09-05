@@ -46,11 +46,11 @@ bool F17::start(IOService *provider)
 {
     if (!super::start(provider))
         return false;
-    
-    int ret = rmi_f17_config();
-    if (ret < 0) return false;
-    
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
+
+    int retval = rmi_f17_config();
+    if (retval < 0)
+        return false;
+
     relativeEvent = rmiBus->getRelativePointerEvent();
 
     registerService();
@@ -274,16 +274,9 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
             IOLogError("%s: Failed to read rel data for stick %d, code %d", __func__, stick->index, retval);
         } else {
             IOLogDebug("%s: Reporting dX: %d, dy: %d\n", __func__, stick->data.rel.x_delta, stick->data.rel.y_delta);
-            if (voodooTrackpointInstance && *voodooTrackpointInstance) {
-                AbsoluteTime timestamp;
-                clock_get_uptime(&timestamp);
-                
-                relativeEvent->dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf->trackpointMult / DEFAULT_MULT);
-                relativeEvent->dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf->trackpointMult / DEFAULT_MULT);
-                relativeEvent->timestamp = timestamp;
-                
-                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, relativeEvent, sizeof(RelativePointerEvent));
-            }
+            relativeEvent->dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf->trackpointMult / DEFAULT_MULT);
+            relativeEvent->dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf->trackpointMult / DEFAULT_MULT);
+            rmiBus->sendRelativePointerEvent();
         }
     }
 

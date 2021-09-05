@@ -15,7 +15,7 @@ bool F17::init(OSDictionary *dictionary)
 {
     if (!super::init(dictionary))
         return false;
-    
+
     f17 = reinterpret_cast<rmi_f17_device_data*>(IOMallocZero(sizeof(rmi_f17_device_data)));
     if (!f17) {
         IOLogError("%s: Failed to allocate function data", __func__);
@@ -32,14 +32,13 @@ bool F17::attach(IOService *provider)
         IOLogError("F30: No provider.");
         return false;
     }
-    
+
     int retval = rmi_f17_initialize();
-    
     if (retval < 0)
         return false;
-    
+
     super::attach(provider);
-    
+
     return true;
 }
 
@@ -77,23 +76,23 @@ IOReturn F17::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIAttention:
             for (int i = 0; i < f17->query.number_of_sticks + 1 && !retval; i++)
                 retval = rmi_f17_process_stick(&f17->sticks[i]);
-            
+
             if (retval < 0) {
                 IOLogError("%s: Could not read data: 0x%x", __func__, retval);
             }
-            
+
             break;
         case kHandleRMIConfig:
             return rmi_f17_config();
     }
-    
+
     return kIOReturnSuccess;
 }
 
 int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
               u16 *next_query_reg, u16 *next_data_reg,
               u16 *next_control_reg) {
-    int retval = 0;
+    int retval;
     retval = rmiBus->readBlock(*next_query_reg,
         stick->query.general.regs,
         sizeof(stick->query.general.regs));
@@ -111,15 +110,15 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
         case F17_MANUFACTURER_SYNAPTICS:
             setPropertyString(stickProps, "Manufacturer", "SYNAPTICS");
             break;
-            
+
         case F17_MANUFACTURER_NMB:
             setPropertyString(stickProps, "Manufacturer", "NMB");
             break;
-            
+
         case F17_MANUFACTURER_ALPS:
             setPropertyString(stickProps, "Manufacturer", "ALPS");
             break;
-            
+
         default:
             setPropertyNumber(stickProps, "Manufacturer", stick->query.general.manufacturer, 8);
             break;
@@ -242,7 +241,7 @@ int F17::rmi_f17_initialize() {
 int F17::rmi_f17_config() {
     int retval = rmiBus->blockWrite(fn_descriptor->control_base_addr,
                                    f17->controls.regs, sizeof(f17->controls.regs));
-    
+
     if (retval < 0) {
         IOLogError("%s: Could not write stick control registers at 0x%x: 0x%x",
                    __func__, fn_descriptor->control_base_addr, retval);

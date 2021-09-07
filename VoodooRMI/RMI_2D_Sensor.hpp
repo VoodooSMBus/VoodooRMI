@@ -107,7 +107,7 @@ private:
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
     MT2FingerType getFingerType();
-    bool checkInZone(VoodooInputTransducer &obj);
+    size_t checkInZone(VoodooInputTransducer &obj);
     void setThumbFingerType(size_t fingers, RMI2DSensorReport *report);
     void handleReport(RMI2DSensorReport *report);
     void invalidateFingers();

@@ -14,6 +14,7 @@ OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
 
 #define RMI_2D_MAX_Z 140
 #define RMI_2D_MIN_ZONE_VEL 10
+#define RMI_2D_MIN_ZONE_Y_VEL 6
 #define RMI_MT2_MAX_PRESSURE 255
 #define cfgToPercent(val) ((double) val / 100.0)
 
@@ -135,19 +136,20 @@ bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
     return !trackpadEnable;
 }
 
-bool RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
+// Returns zone that finger is in (or 0 if not in a zone)
+size_t RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
     TouchCoordinates &fingerCoords = obj.currentCoordinates;
-    for (int i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++) {
         RMI2DSensorZone &zone = rejectZones[i];
         if (fingerCoords.x >= zone.x_min &&
             fingerCoords.x <= zone.x_max &&
             fingerCoords.y >= zone.y_min &&
             fingerCoords.y <= zone.y_max) {
-            return true;
+            return i+1;
         }
     }
     
-    return false;
+    return 0;
 }
 
 /**
@@ -173,10 +175,10 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
         bool isValidObj = obj.type == RMI_2D_OBJECT_FINGER ||
-                          obj.type == RMI_2D_OBJECT_STYLUS ||
+                          obj.type == RMI_2D_OBJECT_STYLUS; /*||*/
                           // Allow inaccurate objects as they are likely invalid, which we want to track still
                           // This can be a random finger or one which was lifted up slightly
-                          obj.type == RMI_2D_OBJECT_INACCURATE;
+//                          obj.type == RMI_2D_OBJECT_INACCURATE;
         
         auto& transducer = inputEvent.transducers[i];
         transducer.isValid = isValidObj;
@@ -208,12 +210,17 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
                 
                 /* fall through */
             case RMI_FINGER_STARTED_IN_ZONE: {
-                if (!checkInZone(transducer)) {
+                size_t zone = checkInZone(transducer);
+                if (zone == 0) {
                     fingerState[i] = RMI_FINGER_VALID;
                 }
                 
                 int velocityX = abs((int) transducer.currentCoordinates.x - (int) transducer.previousCoordinates.x);
-                if (velocityX > RMI_2D_MIN_ZONE_VEL) {
+                int velocityY = abs((int) transducer.currentCoordinates.y - (int) transducer.previousCoordinates.y);
+
+                IOLogDebug("Velocity: %d %d Zone: %ld", velocityX, velocityY, zone);
+                if (velocityX > RMI_2D_MIN_ZONE_VEL ||
+                    (zone == 3 && velocityY > RMI_2D_MIN_ZONE_Y_VEL)) {
                     fingerState[i] = RMI_FINGER_VALID;
                 }
             }
@@ -369,7 +376,7 @@ void RMI2DSensor::invalidateFingers() {
             fingerState[i] == RMI_FINGER_INVALID)
             continue;
         
-        if (checkInZone(finger))
+        if (checkInZone(finger) > 0)
             fingerState[i] = RMI_FINGER_INVALID;
     }
 }

@@ -73,7 +73,7 @@ public:
     
     OSSet *functions;
     
-    void notify(UInt32 type, unsigned int argument = 0);
+    void notify(UInt32 type, void *argument = 0);
     int rmi_register_function(rmi_function* fn);
     int reset();
 private:
@@ -85,6 +85,9 @@ private:
     void updateConfiguration(OSDictionary *dictionary);
     rmi_configuration conf {};
     gpio_data gpio {};
+    
+    IOService *trackpadFunction {nullptr};
+    IOService *trackpointFunction {nullptr};
 
     void handleHostNotify();
     void handleHostNotifyLegacy();

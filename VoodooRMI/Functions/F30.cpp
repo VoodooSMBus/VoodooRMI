@@ -274,7 +274,7 @@ void F30::rmi_f30_report_button()
         
         if (numButtons == 1 && i == clickpad_index) {
             if (clickpadState != key_down) {
-                 bus->notify(kHandleRMIClickpadSet, key_down);
+                 bus->notify(kHandleRMIClickpadSet, (void *) key_down);
                  clickpadState = key_down;
              }
             continue;
@@ -301,5 +301,5 @@ void F30::rmi_f30_report_button()
     }
     
     if (hasTrackpointButtons)
-        bus->notify(kHandleRMITrackpointButton, trackpointBtns);
+        bus->notify(kHandleRMITrackpointButton, reinterpret_cast<void *>(trackpointBtns));
 }

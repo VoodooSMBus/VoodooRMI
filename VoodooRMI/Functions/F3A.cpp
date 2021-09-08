@@ -133,7 +133,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 
                 if (numButtons == 1 && i == clickpadIndex) {
                     if (clickpadState != key_down) {
-                         bus->notify(kHandleRMIClickpadSet, key_down);
+                         bus->notify(kHandleRMIClickpadSet, (void *)key_down);
                          clickpadState = key_down;
                      }
                     continue;

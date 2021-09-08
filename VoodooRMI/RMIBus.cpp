@@ -213,29 +213,16 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     return kIOReturnSuccess;
 }
 
-void RMIBus::notify(UInt32 type, unsigned int argument)
+void RMIBus::notify(UInt32 type, void *argument)
 {
-    OSIterator* iter = OSCollectionIterator::withCollection(functions);
-    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-        switch (type) {
-            case kHandleRMIClickpadSet:
-            case kHandleRMITrackpoint:
-                if (OSDynamicCast(RMITrackpadFunction, func)) {
-                    IOLogDebug("Sending event %u to F11/F12: %u", type, argument);
-                    messageClient(type, func, reinterpret_cast<void *>(argument));
-                    OSSafeReleaseNULL(iter);
-                    return;
-                }
-                break;
-            case kHandleRMITrackpointButton:
-                if (OSDynamicCast(RMITrackpointFunction, func)) {
-                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
-                    messageClient(type, func, reinterpret_cast<void *>(argument));
-                }
-                break;
-        }
+    if (type == kHandleRMIClickpadSet ||
+        type == kHandleRMITrackpoint) {
+        
+        messageClient(type, trackpadFunction, argument);
+    } else if (type == kHandleRMITrackpointButton) {
+        
+        messageClient(type, trackpointFunction, argument);
     }
-    OSSafeReleaseNULL(iter);
 }
 
 void RMIBus::stop(IOService *provider) {
@@ -348,6 +335,12 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
         IOLogError("Function %02X could not attach", fn->fd.function_number);
         OSSafeReleaseNULL(function);
         return -ENODEV;
+    }
+    
+    if (OSDynamicCast(RMITrackpadFunction, function)) {
+        trackpadFunction = function;
+    } else if (OSDynamicCast(RMITrackpointFunction, function)) {
+        trackpointFunction = function;
     }
     
     functions->setObject(function);

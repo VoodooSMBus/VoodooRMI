@@ -163,11 +163,11 @@
 		288561F326E80C7E00C7CBFA /* Input */ = {
 			isa = PBXGroup;
 			children = (
-				287EA3C326E8383A00CEDA8B /* RMITrackpointFunction.cpp */,
-				287EA3C426E8383A00CEDA8B /* RMITrackpointFunction.hpp */,
-				288561F426E80CDC00C7CBFA /* RMITrackpadFunction.cpp */,
-				288561F526E80CDC00C7CBFA /* RMITrackpadFunction.hpp */,
 				288561FC26E80D1400C7CBFA /* RMIFunction.hpp */,
+				288561F526E80CDC00C7CBFA /* RMITrackpadFunction.hpp */,
+				288561F426E80CDC00C7CBFA /* RMITrackpadFunction.cpp */,
+				287EA3C426E8383A00CEDA8B /* RMITrackpointFunction.hpp */,
+				287EA3C326E8383A00CEDA8B /* RMITrackpointFunction.cpp */,
 			);
 			path = Input;
 			sourceTree = "<group>";

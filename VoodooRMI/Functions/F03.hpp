@@ -16,6 +16,8 @@
 #include "../RMIBus.hpp"
 #include "../Utility/PS2.hpp"
 #include "../Utility/Configuration.hpp"
+#include <VoodooInputMessages.h>
+#include <RMITrackpointFunction.hpp>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOTimerEventSource.h>
@@ -113,7 +115,7 @@ static const char * const trackpoint_variants[] = {
     [TP_VARIANT_NXP]    = "NXP",
 };
 
-class F03 : public RMIFunction {
+class F03 : public RMITrackpointFunction {
     OSDeclareDefaultStructors(F03)
     
 public:
@@ -123,18 +125,11 @@ public:
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
 private:
-    
-    RMIBus *rmiBus;
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
-    
-    IOService **voodooTrackpointInstance {nullptr};
     IOTimerEventSource *timer {nullptr};
-    RelativePointerEvent relativeEvent {};
-    ScrollWheelEvent scrollEvent {};
     
-    bool isScrolling;
-    bool middlePressed;
+    RMITrackpointReport report {};
     
     // trackpoint
     u8 vendor {0};
@@ -143,16 +138,14 @@ private:
     unsigned int flags, cmdcnt;
     u8 cmdbuf[8];
     u8 status {0};
-    u8 reinit{0}, maxReinit{3};
+    u8 reinit {0}, maxReinit {3};
     
     // Packet storage
-    u8 emptyPkt[3];
-    u8 databuf[3];
+    u8 emptyPkt[3] {0};
+    u8 databuf[3] {0};
     u8 index;
     
     // F03 Data
-    unsigned int overwrite_buttons;
-    
     u8 device_count;
     u8 rx_queue_length;
 
@@ -165,8 +158,6 @@ private:
     void handleByte(u8);
     void initPS2();
     void initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer);
-    // TODO: Move to math file as long as with abs in rmi_driver.h
-    int signum(int value);
     
     void handlePacket(u8 *packet);
 };

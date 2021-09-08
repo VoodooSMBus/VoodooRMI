@@ -1,20 +1,18 @@
-/* SPDX-License-Identifier: GPL-2.0-only
- * Copyright (c) 2021 Avery Black
- * Ported to macOS from linux kernel, original source at
- * https://github.com/torvalds/linux/blob/master/drivers/input/rmi4/rmi_2d_sensor.h
- *
- * Copyright (c) 2011-2016 Synaptics Incorporated
- * Copyright (c) 2011 Unixphere
- */
+//
+//  RMITrackpadFunction.hpp
+//  VoodooRMI
+//
+//  Created by Sheika Slate on 9/7/21.
+//  Copyright © 2021 1Revenger1. All rights reserved.
+//
 
-#ifndef RMI_2D_Sensor_hpp
-#define RMI_2D_Sensor_hpp
+#ifndef RMITrackpadFunction_hpp
+#define RMITrackpadFunction_hpp
 
+#include "RMIFunction.hpp"
 #include <IOKit/IOService.h>
-#include "Utility/LinuxCompat.h"
-#include "Utility/Configuration.hpp"
-#include "rmi.h"
-#include "VoodooInputMultitouch/VoodooInputTransducer.h"
+#include <LinuxCompat.h>
+#include <Configuration.hpp>
 #include "VoodooInputMultitouch/VoodooInputMessages.h"
 
 #define MAX_FINGERS 10
@@ -58,11 +56,6 @@ struct RMI2DSensorZone {
     u16 y_max;
 };
 
-//struct rmi_2d_sensor {
-//    struct rmi_2d_axis_alignment axis_align;
-//    int dmax;
-//};
-
 /**
  * @axis_align - controls parameters that are useful in system prototyping
  * and bring up.
@@ -72,9 +65,15 @@ struct RMI2DSensorZone {
  * position when two fingers are on the device.  When this is true, we
  * assume we have one of those sensors and report events appropriately..
  */
-class RMI2DSensor : public IOService {
-    OSDeclareDefaultStructors(RMI2DSensor)
+class RMITrackpadFunction : public RMIFunction {
+    OSDeclareDefaultStructors(RMITrackpadFunction)
 public:
+    bool start(IOService *provider) override;
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
+    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    
+protected:
     u16 min_x{0};
     u16 min_y{0};
     u16 max_x;
@@ -86,15 +85,9 @@ public:
     u8 report_rel {0};
     
     u8 nbr_fingers;
+    IOService *voodooInputInstance {nullptr};
     
-    rmi_configuration *conf;
-    IOService **voodooInputInstance {nullptr};
-
-    bool start(IOService *provider) override;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-    
+    void handleReport(RMI2DSensorReport *report);
     bool shouldDiscardReport(AbsoluteTime timestamp);
 private:
     VoodooInputEvent inputEvent {};
@@ -109,8 +102,7 @@ private:
     MT2FingerType getFingerType();
     size_t checkInZone(VoodooInputTransducer &obj);
     void setThumbFingerType(size_t fingers, RMI2DSensorReport *report);
-    void handleReport(RMI2DSensorReport *report);
     void invalidateFingers();
 };
 
-#endif /* RMI_2D_Sensor_hpp */
+#endif /* RMITrackpadFunction_hpp */

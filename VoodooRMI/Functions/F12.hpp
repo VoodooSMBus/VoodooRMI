@@ -10,6 +10,8 @@
 #define F12_hpp
 
 #include <RMIBus.hpp>
+#include <RMIFunction.hpp>
+#include <RMITrackpadFunction.hpp>
 
 #define F12_DATA1_BYTES_PER_OBJ            8
 #define RMI_REG_DESC_PRESENSE_BITS    (32 * BITS_PER_BYTE)
@@ -49,19 +51,16 @@ enum rmi_f12_object_type {
     RMI_F12_OBJECT_SMALL_OBJECT        = 0x0D,
 };
 
-class F12 : public RMIFunction {
+class F12 : public RMITrackpadFunction {
     OSDeclareDefaultStructors(F12)
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
-    void stop(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     
 private:
-    RMIBus *rmiBus;
     IOService *voodooInputInstance {nullptr};
     
     RMI2DSensorReport report {};
@@ -78,7 +77,6 @@ private:
     u8 *data_pkt;
     size_t pkt_size;
     size_t attn_size;
-    RMI2DSensor *sensor;
     struct rmi_2d_sensor_platform_data sensor_pdata;
     bool has_dribble;
     

@@ -8,9 +8,10 @@
  */
 
 #include "F01.hpp"
+#include <Configuration.hpp>
 
 OSDefineMetaClassAndStructors(F01, RMIFunction);
-#define super IOService
+#define super RMIFunction
 
 bool F01::init(OSDictionary *dictionary)
 {
@@ -34,24 +35,18 @@ bool F01::init(OSDictionary *dictionary)
 bool F01::attach(IOService *provider)
 {
     int error;
-    u16 ctrl_base_addr = fn_descriptor->control_base_addr;
+    u16 ctrl_base_addr = desc.control_base_addr;
     u8 temp, device_status;
-
-    rmiBus = OSDynamicCast(RMIBus, provider);
-    if (!rmiBus) {
-        IOLogError("%s Could not get RMIBus instance", getName());
-        return NULL;
-    }
     
-    num_of_irq_regs = rmiBus->data->num_of_irq_regs;
+    num_of_irq_regs = bus->data->num_of_irq_regs;
     
     /*
      * Set the configured bit and (optionally) other important stuff
      * in the device control register.
      */
     
-    error = rmiBus->read(fn_descriptor->control_base_addr,
-                         &device_control->ctrl0);
+    error = bus->read(desc.control_base_addr,
+                      &device_control->ctrl0);
     if (error) {
         IOLogError("Failed to read F01 control: %d", error);
         return false;
@@ -83,7 +78,7 @@ bool F01::attach(IOService *provider)
     
     device_control->ctrl0 |= RMI_F01_CTRL0_CONFIGURED_BIT;
     
-    error = rmiBus->write(fn_descriptor->control_base_addr,
+    error = bus->write(desc.control_base_addr,
                           &device_control->ctrl0);
     if (error) {
         IOLogError("Failed to write F01 control: %d", error);
@@ -91,7 +86,7 @@ bool F01::attach(IOService *provider)
     }
     
     /* Dummy read in order to clear irqs */
-    error = rmiBus->read(fn_descriptor->data_base_addr + 1, &temp);
+    error = bus->read(desc.data_base_addr + 1, &temp);
     if (error < 0) {
         IOLogError("Failed to read Interrupt Status.");
         return false;
@@ -116,7 +111,7 @@ bool F01::attach(IOService *provider)
         doze_interval_addr = ctrl_base_addr;
         ctrl_base_addr++;
         
-        error = rmiBus->read(doze_interval_addr,
+        error = bus->read(doze_interval_addr,
                              &device_control->doze_interval);
         if (error) {
             IOLogError("Failed to read F01 doze interval register: %d",
@@ -127,7 +122,7 @@ bool F01::attach(IOService *provider)
         wakeup_threshold_addr = ctrl_base_addr;
         ctrl_base_addr++;
         
-        error = rmiBus->read(wakeup_threshold_addr,
+        error = bus->read(wakeup_threshold_addr,
                              &device_control->wakeup_threshold);
         if (error < 0) {
             IOLogError("Failed to read F01 wakeup threshold register: %d",
@@ -143,7 +138,7 @@ bool F01::attach(IOService *provider)
         doze_holdoff_addr = ctrl_base_addr;
         ctrl_base_addr++;
         
-        error = rmiBus->read(doze_holdoff_addr,
+        error = bus->read(doze_holdoff_addr,
                              &device_control->doze_holdoff);
         if (error) {
             IOLogError("Failed to read F01 doze holdoff register: %d",
@@ -152,7 +147,7 @@ bool F01::attach(IOService *provider)
         }
     }
     
-    error = rmiBus->read(fn_descriptor->data_base_addr, &device_status);
+    error = bus->read(desc.data_base_addr, &device_status);
     if (error < 0) {
         IOLogError("Failed to read device status: %d", error);
         return false;
@@ -193,8 +188,6 @@ void F01::stop(IOService *provider)
 
 void F01::free()
 {
-    clearDesc();
-
     if (properties) IOFree(properties, sizeof(f01_basic_properties));
     if (device_control) IOFree(device_control, sizeof(f01_device_control));
     super::free();
@@ -231,7 +224,7 @@ int F01::rmi_f01_config()
 {
     int error;
     
-    error = rmiBus->write(fn_descriptor->control_base_addr,
+    error = bus->write(desc.control_base_addr,
                           &device_control->ctrl0);
     if (error) {
         IOLogError("Failed to write device_control register: %d", error);
@@ -239,14 +232,14 @@ int F01::rmi_f01_config()
     }
     
     if (properties->has_adjustable_doze) {
-        error = rmiBus->write(doze_interval_addr,
+        error = bus->write(doze_interval_addr,
                               &device_control->doze_interval);
         if (error) {
             IOLogError("Failed to write doze interval: %d", error);
             return error;
         }
         
-        error = rmiBus->write(wakeup_threshold_addr,
+        error = bus->write(wakeup_threshold_addr,
                                 &device_control->wakeup_threshold);
         if (error) {
             IOLogError("Failed to write wakeup threshold: %d",
@@ -256,7 +249,7 @@ int F01::rmi_f01_config()
     }
     
     if (properties->has_adjustable_doze_holdoff) {
-        error = rmiBus->write(doze_holdoff_addr,
+        error = bus->write(doze_holdoff_addr,
                               &device_control->doze_holdoff);
         if (error) {
             IOLogError("Failed to write doze holdoff: %d", error);
@@ -269,9 +262,9 @@ int F01::rmi_f01_config()
 
 int F01::rmi_f01_read_properties()
 {
-    u8 queries[RMI_F01_BASIC_QUERY_LEN];
+    u8 queries[RMI_F01_BASIC_QUERY_LEN] = {0};
     int ret;
-    int query_offset = fn_descriptor->query_base_addr;
+    int query_offset = desc.query_base_addr;
     bool has_ds4_queries = false;
     bool has_query42 = false;
     bool has_sensor_id = false;
@@ -280,7 +273,7 @@ int F01::rmi_f01_read_properties()
     u16 prod_info_addr;
     u8 ds4_query_len;
     
-    ret = rmiBus->readBlock(query_offset,
+    ret = bus->readBlock(query_offset,
                          queries, RMI_F01_BASIC_QUERY_LEN);
     if (ret) {
         IOLogError("F01 failed to read device query registers: %d", ret);
@@ -319,7 +312,7 @@ int F01::rmi_f01_read_properties()
         query_offset++;
     
     if (has_query42) {
-        ret = rmiBus->read(query_offset, queries);
+        ret = bus->read(query_offset, queries);
         if (ret) {
             IOLogError("Failed to read query 42 register: %d", ret);
             return ret;
@@ -330,7 +323,7 @@ int F01::rmi_f01_read_properties()
     }
     
     if (has_ds4_queries) {
-        ret = rmiBus->read(query_offset, &ds4_query_len);
+        ret = bus->read(query_offset, &ds4_query_len);
         if (ret) {
             IOLogError("Failed to read DS4 queries length: %d", ret);
             return ret;
@@ -338,7 +331,7 @@ int F01::rmi_f01_read_properties()
         query_offset++;
         
         if (ds4_query_len > 0) {
-            ret = rmiBus->read(query_offset, queries);
+            ret = bus->read(query_offset, queries);
             if (ret) {
                 IOLogError("Failed to read DS4 queries: %d",
                         ret);
@@ -350,7 +343,7 @@ int F01::rmi_f01_read_properties()
         }
         
         if (has_package_id_query) {
-            ret = rmiBus->readBlock(prod_info_addr,
+            ret = bus->readBlock(prod_info_addr,
                                  queries, sizeof(__le64));
             if (ret) {
                 IOLogError("Failed to read package info: %d",
@@ -365,7 +358,7 @@ int F01::rmi_f01_read_properties()
         }
         
         if (has_build_id_query) {
-            ret = rmiBus->readBlock(prod_info_addr, queries, 3);
+            ret = bus->readBlock(prod_info_addr, queries, 3);
             if (ret) {
                 IOLogError("Failed to read product info: %d",
                         ret);
@@ -393,7 +386,7 @@ int F01::rmi_f01_suspend()
     else
         device_control->ctrl0 |= RMI_SLEEP_MODE_SENSOR_SLEEP;
     
-    error = rmiBus->write(fn_descriptor->control_base_addr,
+    error = bus->write(desc.control_base_addr,
                           &device_control->ctrl0);
     
     if (error) {
@@ -417,7 +410,7 @@ int F01::rmi_f01_resume()
     device_control->ctrl0 &= ~RMI_F01_CTRL0_SLEEP_MODE_MASK;
     device_control->ctrl0 |= RMI_SLEEP_MODE_NORMAL;
     
-    error = rmiBus->write(fn_descriptor->control_base_addr,
+    error = bus->write(desc.control_base_addr,
                           &device_control->ctrl0);
     
     if (error)
@@ -429,9 +422,9 @@ int F01::rmi_f01_resume()
 void F01::rmi_f01_attention()
 {
     int error;
-    u8 device_status;
+    u8 device_status = 0;
     
-    error = rmiBus->read(fn_descriptor->data_base_addr, &device_status);
+    error = bus->read(desc.data_base_addr, &device_status);
     
     if (error) {
         IOLogError("F01: Failed to read device status: %d", error);

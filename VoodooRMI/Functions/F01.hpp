@@ -11,6 +11,7 @@
 #define F01_hpp
 
 #include <RMIBus.hpp>
+#include <RMIFunction.hpp>
 
 #define RMI_PRODUCT_ID_LENGTH    10
 #define RMI_PRODUCT_INFO_LENGTH   2
@@ -137,8 +138,6 @@ public:
     f01_basic_properties * getProperties();
 
 private:
-    RMIBus * rmiBus;
-    
     u16 doze_interval_addr;
     u16 wakeup_threshold_addr;
     u16 doze_holdoff_addr;

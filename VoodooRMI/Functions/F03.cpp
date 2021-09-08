@@ -12,8 +12,8 @@
 
 #include "F03.hpp"
 
-OSDefineMetaClassAndStructors(F03, RMIFunction)
-#define super IOService
+OSDefineMetaClassAndStructors(F03, RMITrackpointFunction)
+#define super RMIFunction
 
 bool F03::attach(IOService *provider)
 {
@@ -21,14 +21,7 @@ bool F03::attach(IOService *provider)
     u8 query2[RMI_F03_DEVICE_COUNT * RMI_F03_BYTES_PER_DEVICE];
     size_t query2_len;
     
-    rmiBus = OSDynamicCast(RMIBus, provider);
-    
-    if (!rmiBus) {
-        IOLogError("F03: Provider not RMIBus");
-        return false;
-    }
-    
-    int error = rmiBus->read(fn_descriptor->query_base_addr, &query1);
+    int error = bus->read(desc.query_base_addr, &query1);
     
     if (error < 0) {
         IOLogError("F03: Failed to read query register: %02X", error);
@@ -49,7 +42,7 @@ bool F03::attach(IOService *provider)
         device_count = 1;
         rx_queue_length = 7;
     } else {
-        error = rmiBus->readBlock(fn_descriptor->query_base_addr + 1,
+        error = bus->readBlock(desc.query_base_addr + 1,
                                   query2, query2_len);
         if (error) {
             IOLogError("Failed to read second set of query registers (%d)",
@@ -91,7 +84,7 @@ bool F03::start(IOService *provider)
      * 0xaa 0x00 announcement which may confuse us as we try to
      * probe the device
      */
-    int error = rmiBus->readBlock(fn_descriptor->data_base_addr + RMI_F03_OB_OFFSET,
+    int error = bus->readBlock(desc.data_base_addr + RMI_F03_OB_OFFSET,
                                   obs, ob_len);
     if (!error)
         IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest",
@@ -108,7 +101,6 @@ bool F03::start(IOService *provider)
     timer->setTimeoutMS(100);
     timer->enable();
     
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
     registerService();
     
     return super::start(provider);
@@ -134,7 +126,7 @@ void F03::stop(IOService *provider)
 
 int F03::rmi_f03_pt_write(unsigned char val)
 {
-    int error = rmiBus->write(fn_descriptor->data_base_addr, &val);
+    int error = bus->write(desc.data_base_addr, &val);
     if (error) {
         IOLogError("F03 - Failed to write to F03 TX register (%d)", error);
     }
@@ -158,71 +150,12 @@ void F03::handlePacket(u8 *packet)
         timer->enable();
     }
     
-    UInt32 buttons = (packet[0] & 0x7) | overwrite_buttons;
-    SInt32 dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
-    SInt32 dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
+    report.buttons = (packet[0] & 0x7);
+    report.dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
+    report.dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
     index = 0;
     
-    AbsoluteTime timestamp;
-    clock_get_uptime(&timestamp);
-    
-    if (!voodooTrackpointInstance || !*voodooTrackpointInstance)
-        return;
-    
-    // The highest dx/dy is lowered by subtracting by trackpointDeadzone.
-    // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
-    
-    dx -= signum(dx) * min(abs(dx), conf->trackpointDeadzone);
-    dy -= signum(dy) * min(abs(dy), conf->trackpointDeadzone);
-    
-    // For middle button, we do not actually tell macOS it's been pressed until it's been released and we didn't scroll
-    // We first say that it's been pressed internally - but if we scroll at all, then instead we say we scroll
-    if (buttons & 0x04 && !isScrolling) {
-        if (dx || dy) {
-            isScrolling = true;
-            middlePressed = false;
-        } else {
-            middlePressed = true;
-        }
-    }
-    
-    // When middle button is released, if we registered a middle press w/o scrolling, send middle click as a seperate packet
-    // Otherwise just turn scrolling off and remove middle buttons from packet
-    if (!(buttons & 0x04)) {
-        if (middlePressed) {
-            relativeEvent.buttons = 0x04;
-            relativeEvent.timestamp = timestamp;
-            messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
-        }
-        
-        middlePressed = false;
-        isScrolling = false;
-    }
-
-    buttons &= ~0x04;
-    
-    // Must multiply first then divide so we don't multiply by zero
-    if (isScrolling) {
-        scrollEvent.deltaAxis1 = (SInt32)((SInt64)-dy * conf->trackpointScrollYMult / DEFAULT_MULT);
-        scrollEvent.deltaAxis2 = (SInt32)((SInt64)-dx * conf->trackpointScrollXMult / DEFAULT_MULT);
-        scrollEvent.deltaAxis3 = 0;
-        scrollEvent.timestamp = timestamp;
-        
-        messageClient(kIOMessageVoodooTrackpointScrollWheel, *voodooTrackpointInstance, &scrollEvent, sizeof(ScrollWheelEvent));
-    } else {
-        relativeEvent.buttons = buttons;
-        relativeEvent.dx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
-        relativeEvent.dy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
-        relativeEvent.timestamp = timestamp;
-        
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
-    }
-
-    if (dx || dy) {
-        rmiBus->notify(kHandleRMITrackpoint);
-    }
-
-    IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);
+    handleReport(&report);
 }
 
 IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
@@ -230,11 +163,11 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
     
     switch (type) {
         case kHandleRMIAttention: {
-            const u16 data_addr = fn_descriptor->data_base_addr + RMI_F03_OB_OFFSET;
+            const u16 data_addr = desc.data_base_addr + RMI_F03_OB_OFFSET;
             const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
             u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
             
-            int error = rmiBus->readBlock(data_addr, obs, ob_len);
+            int error = bus->readBlock(data_addr, obs, ob_len);
             if (error) {
                 IOLogError("F03 - Failed to read output buffers: %d", error);
                 return kIOReturnError;
@@ -262,17 +195,12 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             }
             break;
         }
-        case kHandleRMITrackpointButton: {
-            // We do not lose any info casting to unsigned int.
-            // This message originates in RMIBus::Notify, which sends an unsigned int
-            overwrite_buttons = (unsigned int)((intptr_t) argument);
-            handlePacket(emptyPkt);
-            break;
-        }
         case kHandleRMIResume:
             timer->setTimeoutMS(3000);
             timer->enable();
             break;
+        default:
+            return super::message(type, provider, argument);
     }
 
     return kIOReturnSuccess;
@@ -350,8 +278,6 @@ void F03::initPS2()
     if (error)
         IOLogError("Failed to set resolution: %d", error);
     
-    memset(databuf, 0, sizeof(databuf));
-    memset(emptyPkt, 0, sizeof(databuf));
     index = 0;
     
     error = ps2Command(NULL, PSMOUSE_CMD_ENABLE);
@@ -507,11 +433,4 @@ int F03::ps2Command(u8 *param, unsigned int command)
 {
     return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &F03::ps2CommandGated),
                                        param, &command);
-}
-
-int F03::signum(int value)
-{
-    if (value > 0) return 1;
-    if (value < 0) return -1;
-    return 0;
 }

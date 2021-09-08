@@ -11,6 +11,8 @@
 #define F11_hpp
 
 #include <RMIBus.hpp>
+#include <RMIFunction.hpp>
+#include <RMITrackpadFunction.hpp>
 #include <IOKit/IOMessage.h>
 
 /*
@@ -496,20 +498,16 @@ enum f11_finger_state {
     F11_RESERVED    = 0x03
 };
 
-class F11 : public RMIFunction {
+class F11 : public RMITrackpadFunction {
     OSDeclareDefaultStructors(F11)
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
-    void stop(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     
 private:
-    RMIBus *rmiBus;
-    
     RMI2DSensorReport report {};
     
     /** Data pertaining to F11 in general.  For per-sensor data, see struct
@@ -535,7 +533,6 @@ private:
     u8 *data_pkt { nullptr };
     size_t pkt_size;
     size_t attn_size;
-    RMI2DSensor *sensor;
     struct f11_2d_sensor_queries sens_query;
     struct f11_2d_data data_2d;
     struct rmi_2d_sensor_platform_data sensor_pdata;

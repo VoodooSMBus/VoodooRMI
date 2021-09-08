@@ -8,39 +8,18 @@
 
 #include "F12.hpp"
 
-OSDefineMetaClassAndStructors(F12, RMIFunction)
-#define super IOService
-
-bool F12::init(OSDictionary *dictionary)
-{
-    if (!super::init())
-        return false;
-
-    sensor = OSTypeAlloc(RMI2DSensor);
-    if (!sensor || !sensor->init())
-        return false;
-
-    return true;
-}
+OSDefineMetaClassAndStructors(F12, RMITrackpadFunction)
+#define super RMITrackpadFunction
 
 bool F12::attach(IOService *provider)
 {
     int ret;
     u8 buf;
-    u16 query_addr = fn_descriptor->query_base_addr;
+    u16 query_addr = desc.query_base_addr;
     const rmi_register_desc_item *item;
     u16 data_offset = 0;
-
-    rmiBus = OSDynamicCast(RMIBus, provider);
-    if (!rmiBus) {
-        IOLogError("F12: Provider is not RMIBus");
-        return false;
-    }
     
-    sensor->conf = conf;
-    sensor->voodooInputInstance = rmiBus->getVoodooInput();
-    
-    ret = rmiBus->read(query_addr, &buf);
+    ret = bus->read(query_addr, &buf);
     if (ret < 0) {
         IOLogError("F12 - Failed to read general info register: %d", ret);
         return false;
@@ -111,8 +90,8 @@ bool F12::attach(IOService *provider)
     data1 = item;
     data1_offset = data_offset;
     data_offset += item->reg_size;
-    sensor->nbr_fingers = item->num_subpackets;
-    sensor->report_abs = 1;
+    nbr_fingers = item->num_subpackets;
+    report_abs = 1;
     attn_size += item->reg_size;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 2);
@@ -137,8 +116,8 @@ bool F12::attach(IOService *provider)
     
     // Skip 6-15 as they do not increase attention size and only gives relative info
     
-    setProperty("Number of fingers", sensor->nbr_fingers, 8);
-    IOLogDebug("F12 - Number of fingers %u", sensor->nbr_fingers);
+    setProperty("Number of fingers", nbr_fingers, 8);
+    IOLogDebug("F12 - Number of fingers %u", nbr_fingers);
     
     
     return super::attach(provider);
@@ -150,28 +129,15 @@ bool F12::start(IOService *provider)
     if (ret < 0)
         return false;
     
+    bool start = super::start(provider);
+    
     registerService();
     
-    if (!sensor->attach(this))
-        return false;
-    
-    if (!sensor->start(this))
-        return false;
-    
-    return super::start(provider);
-}
-
-void F12::stop(IOService *provider)
-{
-    sensor->detach(this);
-    sensor->stop(this);
-    super::stop(provider);
+    return start;
 }
 
 void F12::free()
 {
-    clearDesc();
-    OSSafeReleaseNULL(sensor);
     if (data_pkt != nullptr) {
         IOFree(data_pkt, pkt_size);
         data_pkt = nullptr;
@@ -186,11 +152,10 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIAttention:
             getReport();
             break;
-        case kHandleRMIClickpadSet:
-        case kHandleRMITrackpoint:
-            return messageClient(type, sensor, argument);
         case kHandleRMIConfig:
             return rmi_f12_config();
+        default:
+            return super::message(type, provider, argument);
     }
     
     return kIOReturnSuccess;
@@ -216,7 +181,7 @@ int F12::rmi_f12_config()
              */
             control_size = min(item->reg_size, 3UL);
             
-            int ret = rmiBus->readBlock(fn_descriptor->control_base_addr
+            int ret = bus->readBlock(desc.control_base_addr
                                     + control_offset, (u8 *) buf, control_size);
             if (ret)
                 return ret;
@@ -236,7 +201,7 @@ int F12::rmi_f12_config()
                     break;
             }
             
-            ret = rmiBus->blockWrite(fn_descriptor->control_base_addr + control_offset,
+            ret = bus->blockWrite(desc.control_base_addr + control_offset,
                                      (u8 *) buf, control_size);
             if (ret)
                 return ret;
@@ -271,15 +236,15 @@ int F12::rmi_f12_read_sensor_tuning()
         return -ENODEV;
     }
     
-    ret = rmiBus->readBlock(fn_descriptor->control_base_addr + offset, buf,
+    ret = bus->readBlock(desc.control_base_addr + offset, buf,
                             item->reg_size);
     if (ret)
         return ret;
     
     offset = 0;
     if (rmi_register_desc_has_subpacket(item, 0)) {
-        sensor->max_x = (buf[offset + 1] << 8) | buf[offset];
-        sensor->max_y = (buf[offset + 3] << 8) | buf[offset + 2];
+        max_x = (buf[offset + 1] << 8) | buf[offset];
+        max_y = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
         IOLogError("F12 - No size register");
@@ -318,8 +283,8 @@ int F12::rmi_f12_read_sensor_tuning()
     if (rmi_register_desc_has_subpacket(item, 4))
         offset += 1;
     
-    sensor->x_mm = (pitch_x * rx_receivers) >> 12;
-    sensor->y_mm = (pitch_y * tx_receivers) >> 12;
+    x_mm = (pitch_x * rx_receivers) >> 12;
+    y_mm = (pitch_y * tx_receivers) >> 12;
     
     return 0;
 }
@@ -328,10 +293,10 @@ void F12::getReport()
 {
     AbsoluteTime timestamp;
     
-    if (!sensor || !data1)
+    if (!data1)
         return;
     
-    int retval = rmiBus->readBlock(fn_descriptor->data_base_addr, data_pkt,
+    int retval = bus->readBlock(desc.data_base_addr, data_pkt,
                                    pkt_size);
     
     if (retval < 0) {
@@ -340,17 +305,17 @@ void F12::getReport()
     }
     
     clock_get_uptime(&timestamp);
-    if (sensor->shouldDiscardReport(timestamp))
+    if (shouldDiscardReport(timestamp))
         return;
     
     IOLogDebug("F12 Packet");
 #if DEBUG
-    if (sensor->nbr_fingers > 5) {
+    if (nbr_fingers > 5) {
         IOLogDebug("More than 5 fingers!");
     }
 #endif // debug
     
-    int fingers = min (sensor->nbr_fingers, 5);
+    int fingers = min (nbr_fingers, 5);
     u8 *data = &data_pkt[data1_offset];
     
     for (int i = 0; i < fingers; i++) {
@@ -379,7 +344,7 @@ void F12::getReport()
     report.timestamp = timestamp;
     report.fingers = fingers;
     
-    messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
+    handleReport(&report);
 }
 
 int F12::rmi_read_register_desc(u16 addr,
@@ -400,7 +365,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * The first register of the register descriptor is the size of
      * the register descriptor's presense register.
      */
-    ret = rmiBus->read(addr, &size_presence_reg);
+    ret = bus->read(addr, &size_presence_reg);
     if (ret)
         return ret;
     ++addr;
@@ -415,7 +380,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * and a bitmap which identified which packet registers are present
      * for this particular register type (ie query, control, or data).
      */
-    ret = rmiBus->readBlock(addr, buf, size_presence_reg);
+    ret = bus->readBlock(addr, buf, size_presence_reg);
     if (ret)
         return ret;
     ++addr;
@@ -459,7 +424,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * register and a bitmap of all subpackets contained in the packet
      * register.
      */
-    ret = rmiBus->readBlock(addr, struct_buf, rdesc->struct_size);
+    ret = bus->readBlock(addr, struct_buf, rdesc->struct_size);
     if (ret)
         goto free_struct_buff;
     

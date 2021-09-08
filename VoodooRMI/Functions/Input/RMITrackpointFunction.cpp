@@ -6,6 +6,8 @@
 
 OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
 
+#define MIDDLE_MOUSE_MASK 0x04
+
 bool RMITrackpointFunction::shouldDiscardReport() {
     return bus->getVoodooInput() != nullptr;
 }
@@ -26,7 +28,7 @@ void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
 
     // For middle button, we do not actually tell macOS it's been pressed until it's been released and we didn't scroll
     // We first say that it's been pressed internally - but if we scroll at all, then instead we say we scroll
-    if (buttons & 0x04 && !isScrolling) {
+    if (buttons & MIDDLE_MOUSE_MASK && !isScrolling) {
         if (dx || dy) {
             isScrolling = true;
             middlePressed = false;
@@ -39,16 +41,16 @@ void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
 
     // When middle button is released, if we registered a middle press w/o scrolling, send middle click as a seperate packet
     // Otherwise just turn scrolling off and remove middle buttons from packet
-    if (!(buttons & 0x04)) {
+    if (!(buttons & MIDDLE_MOUSE_MASK)) {
         if (middlePressed) {
-            dispatchPointerEvent(voodooInputInstance, dx, dy, 0x04, timestamp);
+            dispatchPointerEvent(voodooInputInstance, dx, dy, MIDDLE_MOUSE_MASK, timestamp);
         }
         
         middlePressed = false;
         isScrolling = false;
     }
 
-    buttons &= ~0x04;
+    buttons &= ~MIDDLE_MOUSE_MASK;
 
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {

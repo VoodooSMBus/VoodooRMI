@@ -69,7 +69,6 @@ bool RMITrackpadFunction::start(IOService *provider)
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     setProperty("VoodooInputSupported", kOSBooleanTrue);
-    registerService();
     
     for (int i = 0; i < VOODOO_INPUT_MAX_TRANSDUCERS; i++) {
         auto& transducer = inputEvent.transducers[i];

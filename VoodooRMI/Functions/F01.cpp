@@ -302,10 +302,10 @@ int F01::rmi_f01_read_properties()
     has_sensor_id = queries[1] & RMI_F01_QRY1_HAS_SENSOR_ID;
     
     snprintf(properties->dom, sizeof(properties->dom),
-             "20%02d/%02d/%02d",
-             queries[5] & RMI_F01_QRY5_YEAR_MASK,
-             queries[6] & RMI_F01_QRY6_MONTH_MASK,
-             queries[7] & RMI_F01_QRY7_DAY_MASK);
+             "%02d/%02d/20%02d",
+             queries[6] & RMI_F01_QRY7_DAY_MASK,
+             queries[5] & RMI_F01_QRY6_MONTH_MASK,
+             queries[4] & RMI_F01_QRY5_YEAR_MASK);
     
     memcpy(properties->product_id, &queries[11],
            RMI_PRODUCT_ID_LENGTH);

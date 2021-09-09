@@ -96,7 +96,7 @@ err:
 
 void RMIBus::handleHostNotify()
 {
-    unsigned long mask, irqStatus, movingMask = 1;
+    unsigned long mask, irqStatus;
     if (!data) {
         IOLogError("Interrupt - No data");
         return;
@@ -121,24 +121,15 @@ void RMIBus::handleHostNotify()
     IOLockUnlock(data->irq_mutex);
     
     OSIterator* iter = OSCollectionIterator::withCollection(functions);
+    if (!iter) {
+        IOLogDebug("RMIBus::handleHostNotify: No Iter");
+        return;
+    }
     
-    while (mask) {
-        if (!(mask & movingMask)) {
-            mask &= ~movingMask;
-            movingMask <<=1;
-            continue;
+    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+        if (func->getIRQ() & mask) {
+            messageClient(kHandleRMIAttention, func);
         }
-        
-        while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-            if (func->getIRQ() & movingMask) {
-                messageClient(kHandleRMIAttention, func);
-                break;
-            }
-        }
-        
-        mask &= ~movingMask;
-        iter->reset();
-        movingMask <<= 1;
     }
     
     OSSafeReleaseNULL(iter);

@@ -13,9 +13,10 @@ OSDefineMetaClassAndStructors(RMIGPIOFunction, RMIFunction)
 
 bool RMIGPIOFunction::attach(IOService *provider)
 {
-    int retval = initialize();
+    int error;
 
-    if (retval < 0)
+    error = initialize();
+    if (error)
         return false;
 
     super::attach(provider);
@@ -57,9 +58,6 @@ int RMIGPIOFunction::mapGpios()
     int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
     const gpio_data *gpio = bus->getGPIOData();
     setProperty("Button Count", buttonArrLen, 32);
-
-//    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(gpioled_key_map[0])));
-//    memset(gpioled_key_map, 0, buttonArrLen * sizeof(gpioled_key_map[0]));
 
     for (int i = 0; i < buttonArrLen; i++) {
         if (!is_valid_button(i))

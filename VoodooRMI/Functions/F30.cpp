@@ -12,15 +12,21 @@ OSDefineMetaClassAndStructors(F30, RMIGPIOFunction)
 #define super RMIGPIOFunction
 
 bool F30::init(OSDictionary *dictionary) {
-    if (!super::init(dictionary)) {
+    if (!super::init(dictionary))
         return false;
-    }
 
-    query_regs = reinterpret_cast<uint8_t *>(IOMallocZero(RMI_F30_QUERY_SIZE * sizeof(uint8_t)));
-    ctrl_regs = reinterpret_cast<uint8_t *>(IOMallocZero(RMI_F30_CTRL_REGS_MAX_SIZE * sizeof(uint8_t)));
-    data_regs = reinterpret_cast<uint8_t *>(IOMallocZero(RMI_F30_CTRL_MAX_BYTES * sizeof(uint8_t)));
+    query_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F30_QUERY_SIZE * sizeof(uint8_t)));
+    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F30_CTRL_REGS_MAX_SIZE * sizeof(uint8_t)));
+    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F30_CTRL_MAX_BYTES * sizeof(uint8_t)));
 
-    return (query_regs && ctrl_regs && data_regs);
+    if (!(query_regs && ctrl_regs && data_regs))
+        return false;
+
+    memset(query_regs, 0, RMI_F30_QUERY_SIZE * sizeof(uint8_t));
+    memset(ctrl_regs, 0, RMI_F30_CTRL_REGS_MAX_SIZE * sizeof(uint8_t));
+    memset(data_regs, 0, RMI_F30_CTRL_MAX_BYTES * sizeof(uint8_t));
+
+    return true;
 }
 
 void F30::free() {
@@ -36,8 +42,9 @@ bool F30::start(IOService *provider)
     if (!super::start(provider))
         return false;
     
-    int ret = config();
-    if (ret < 0) return false;
+    int error = config();
+    if (error)
+        return false;
     
     registerService();
     return true;

@@ -7,7 +7,6 @@
  */
 
 #include "F30.hpp"
-#include <Configuration.hpp>
 
 OSDefineMetaClassAndStructors(F30, RMIGPIOFunction)
 #define super RMIGPIOFunction

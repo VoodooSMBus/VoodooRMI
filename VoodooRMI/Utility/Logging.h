@@ -1,5 +1,5 @@
 /*
- * Configuration.hpp
+ * Logging.h
  * RMI4 Driver for macOS X
  *
  * Copyright (c) 2021 Avery Black <1Revenger1>
@@ -7,6 +7,8 @@
 
 #ifndef Logging_h
 #define Logging_h
+
+#include <IOKit/IOLib.h>
 
 #define IOLogInfo(format, ...) do { IOLog("VRMI - Info:  " format "\n", ## __VA_ARGS__); } while(0)
 #define IOLogError(format, ...) do { IOLog("VRMI - Error: " format "\n", ## __VA_ARGS__); } while(0)

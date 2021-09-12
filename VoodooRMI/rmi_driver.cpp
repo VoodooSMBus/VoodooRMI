@@ -15,7 +15,7 @@
  */
 
 #include "rmi_driver.hpp"
-#include <RMITrackpadFunction.hpp>
+#include "RMIFunction.hpp"
 
 #define HAS_NONSTANDARD_PDT_MASK 0x40
 #define RMI4_MAX_PAGE 0xff

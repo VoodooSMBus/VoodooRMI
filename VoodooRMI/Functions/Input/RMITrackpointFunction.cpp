@@ -5,6 +5,7 @@
 #include "RMITrackpointFunction.hpp"
 
 OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
+#define super RMIFunction
 
 #define MIDDLE_MOUSE_MASK 0x04
 
@@ -108,8 +109,10 @@ IOReturn RMITrackpointFunction::message(UInt32 type, IOService *provider, void *
     switch (type) {
         case kHandleRMITrackpointButton:
             // This message originates in RMIBus::Notify, which sends an unsigned int
-            overwrite_buttons = (unsigned int)((intptr_t) argument);
-            handleReport(&emptyReport);
+            if (overwrite_buttons != (unsigned int)((intptr_t) argument)) {
+                overwrite_buttons = (unsigned int)((intptr_t) argument);
+                handleReport(&emptyReport);
+            }
             break;
     }
     

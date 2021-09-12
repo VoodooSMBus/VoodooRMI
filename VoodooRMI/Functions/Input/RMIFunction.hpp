@@ -9,6 +9,8 @@
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
 #include <RMIBus.hpp>
+#include <Configuration.hpp>
+#include <VoodooInputMessages.h>
 
 /*
  *  Wrapper class for functions
@@ -20,7 +22,7 @@ public:
     inline bool initData(IOService *provider, rmi_configuration *conf, rmi_function *fn) {
         bus = OSDynamicCast(RMIBus, provider);
         if (bus == nullptr) {
-            IOLog("RMIFunction: Failed to cast bus");
+            IOLog("%s: Failed to cast bus", getName());
             return false;
         }
         

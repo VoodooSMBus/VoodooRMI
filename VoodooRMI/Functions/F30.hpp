@@ -9,9 +9,7 @@
 #ifndef F30_hpp
 #define F30_hpp
 
-#include <RMIBus.hpp>
-#include <RMIFunction.hpp>
-#include <VoodooInputMessages.h>
+#include <RMIGPIOFunction.hpp>
 
 #define RMI_F30_QUERY_SIZE            2
 
@@ -55,52 +53,30 @@ struct rmi_f30_ctrl_data {
     uint8_t *regs;
 };
 
-class F30 : public RMIFunction {
+class F30 : public RMIGPIOFunction {
     OSDeclareDefaultStructors(F30)
     
 public:
-    bool attach(IOService *provider) override;
+    bool init(OSDictionary *dictionary) override;
     bool start(IOService *provider) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-    
-private:
-    RelativePointerEvent relativeEvent {};
-    
+    void free() override;
+
+private:    
     /* Query Data */
     bool has_extended_pattern;
     bool has_mappable_buttons;
     bool has_led;
-    bool has_gpio;
     bool has_haptic;
     bool has_gpio_driver_control;
     bool has_mech_mouse_btns;
-    uint8_t gpioled_count;
-    uint8_t clickpad_index {0};
-    uint8_t numButtons {0};
-    
-    bool clickpadState {false};
-    uint8_t register_count;
     
     /* Control Register Data */
     rmi_f30_ctrl_data ctrl[RMI_F30_CTRL_MAX_REG_BLOCKS];
-    uint8_t ctrl_regs[RMI_F30_CTRL_REGS_MAX_SIZE];
-    uint32_t ctrl_regs_size;
-    
-    uint8_t data_regs[RMI_F30_CTRL_MAX_BYTES];
-    uint16_t *gpioled_key_map;
-    
-    struct input_dev *input;
-    
-    bool hasTrackpointButtons;
-    
-    int rmi_f30_initialize();
-    int rmi_f30_config();
+
+    int initialize() override;
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
                                int *ctrl_addr, int len, u8 **reg);
-    int rmi_f30_read_control_parameters();
-    int rmi_f30_map_gpios();
-    int rmi_f30_is_valid_button(int button);
-    void rmi_f30_report_button();
+    bool is_valid_button(int button) override;
 };
 
 #endif /* F30_hpp */

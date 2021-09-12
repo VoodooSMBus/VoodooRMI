@@ -72,7 +72,7 @@ int F30::initialize()
     has_mech_mouse_btns = query_regs[0] & RMI_F30_HAS_MECH_MOUSE_BTNS;
 
     gpioled_count = query_regs[1] & RMI_F30_GPIO_LED_COUNT;
-    registerCount = DIV_ROUND_UP(gpioled_count, 8);
+    register_count = DIV_ROUND_UP(gpioled_count, 8);
 
     OSNumber *value;
     OSDictionary * attribute = OSDictionary::withCapacity(9);
@@ -84,28 +84,28 @@ int F30::initialize()
     setPropertyBoolean(attribute, "gpio_driver_control", has_gpio_driver_control);
     setPropertyBoolean(attribute, "mech_mouse_btns", has_mech_mouse_btns);
     setPropertyNumber(attribute, "gpioled_count", gpioled_count, 8);
-    setPropertyNumber(attribute, "register_count", registerCount, 8);
+    setPropertyNumber(attribute, "register_count", register_count, 8);
     setProperty("Attibute", attribute);
     OSSafeReleaseNULL(attribute);
 
     if (has_gpio && has_led)
         rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
-                              registerCount, &ctrl_reg);
+                              register_count, &ctrl_reg);
     
     rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
                           sizeof(u8), &ctrl_reg);
     
     if (has_gpio) {
         rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
-                              registerCount, &ctrl_reg);
+                              register_count, &ctrl_reg);
         
         rmi_f30_set_ctrl_data(&ctrl[3], &control_address,
-                              registerCount, &ctrl_reg);
+                              register_count, &ctrl_reg);
     }
     
     if (has_led) {
         rmi_f30_set_ctrl_data(&ctrl[4], &control_address,
-                              registerCount, &ctrl_reg);
+                              register_count, &ctrl_reg);
         
         rmi_f30_set_ctrl_data(&ctrl[5], &control_address,
                               has_extended_pattern ? 6 : 2,
@@ -126,7 +126,7 @@ int F30::initialize()
     
     if (has_haptic) {
         rmi_f30_set_ctrl_data(&ctrl[8], &control_address,
-                              registerCount, &ctrl_reg);
+                              register_count, &ctrl_reg);
         
         rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
                               sizeof(u8), &ctrl_reg);

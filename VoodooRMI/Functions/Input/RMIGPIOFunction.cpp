@@ -90,7 +90,7 @@ IOReturn RMIGPIOFunction::message(UInt32 type, IOService *provider, void *argume
     switch (type) {
         case kHandleRMIAttention:
             error = bus->readBlock(desc.data_base_addr,
-                                          data_regs, registerCount);
+                                          data_regs, register_count);
 
             if (error < 0) {
                 IOLogError("Could not read %s data: %d", getName(), error);

@@ -29,8 +29,7 @@ protected:
     uint8_t *data_regs {nullptr};
 //    uint32_t data_regs_size {0};
 
-    u8 registerCount {0};
-
+    u8 register_count {0};
     u8 gpioled_count {0};
     u16 gpioled_key_map[TRACKPOINT_RANGE_END];
 

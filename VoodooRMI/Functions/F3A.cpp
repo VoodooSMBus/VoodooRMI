@@ -48,16 +48,16 @@ int F3A::initialize()
     }
 
     gpioled_count = query_regs[0] & RMI_F3A_GPIO_COUNT;
-    registerCount = DIV_ROUND_UP(gpioled_count, 8);
+    register_count = DIV_ROUND_UP(gpioled_count, 8);
 
     /* Query1 -> gpio exist */
-    error = bus->readBlock(desc.query_base_addr + 1, query_regs + 1, registerCount);
+    error = bus->readBlock(desc.query_base_addr + 1, query_regs + 1, register_count);
     if (error) {
         IOLogError("%s - Failed to read query1 registers: %d", getName(), error);
         return error;
     }
 
-    ctrl_regs_size = registerCount + 1;
+    ctrl_regs_size = register_count + 1;
 
     /* Ctrl1 -> gpio direction */
     error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);

@@ -114,7 +114,6 @@ void RMIGPIOFunction::reportButton()
 {
     unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
-    bool sendBtns = false;
     u16 key_code;
     bool key_down;
 
@@ -147,12 +146,11 @@ void RMIGPIOFunction::reportButton()
             trackpointBtns |= mask;
         } else {
             btns |= mask;
-            sendBtns = true;
         }
     }
 
     IOService *voodooInputInstance = bus->getVoodooInput();
-    if (numButtons > 1 && voodooInputInstance && sendBtns) {
+    if (numButtons > 1 && voodooInputInstance) {
         AbsoluteTime timestamp;
         clock_get_uptime(&timestamp);
 

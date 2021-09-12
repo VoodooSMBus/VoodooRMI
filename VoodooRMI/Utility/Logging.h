@@ -8,7 +8,7 @@
 #ifndef Logging_h
 #define Logging_h
 
-#define IOLogInfo(format, ...) do { IOLog("VRMI - Info: " format "\n", ## __VA_ARGS__); } while(0)
+#define IOLogInfo(format, ...) do { IOLog("VRMI - Info:  " format "\n", ## __VA_ARGS__); } while(0)
 #define IOLogError(format, ...) do { IOLog("VRMI - Error: " format "\n", ## __VA_ARGS__); } while(0)
 
 #ifdef DEBUG

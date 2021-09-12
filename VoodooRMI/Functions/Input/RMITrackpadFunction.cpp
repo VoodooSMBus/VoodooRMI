@@ -8,6 +8,9 @@
  */
 
 #include "RMITrackpadFunction.hpp"
+#include <IOKit/IOLib.h>
+#include "rmi.h"
+#include "VoodooInputMultitouch/VoodooInputTransducer.h"
 
 OSDefineMetaClassAndStructors(RMITrackpadFunction, RMIFunction)
 #define super RMIFunction
@@ -29,11 +32,11 @@ bool RMITrackpadFunction::start(IOService *provider)
 {
     memset(freeFingerTypes, true, sizeof(freeFingerTypes));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
-
+ 
     for (size_t i = 0; i < MAX_FINGERS; i++) {
         fingerState[i] = RMI_FINGER_LIFTED;
     }
-
+    
     const int palmRejectWidth = max_x * cfgToPercent(conf->palmRejectionWidth);
     const int palmRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeight);
     const int trackpointRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeightTrackpoint);

@@ -6,6 +6,7 @@
 #define RMITrackpointFunction_hpp
 
 #include "RMIFunction.hpp"
+#include <VoodooInputMessages.h>
 
 struct RMITrackpointReport {
     SInt32 dx;
@@ -20,10 +21,7 @@ class RMITrackpointFunction : public RMIFunction {
     void handleReport(RMITrackpointReport *report);
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-
-protected:
-    RMITrackpointReport report {};
-
+    
 private:
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};

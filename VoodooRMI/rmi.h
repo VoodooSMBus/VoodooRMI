@@ -10,8 +10,8 @@
 #ifndef rmi_h
 #define rmi_h
 
-#include <IOKit/IOLocks.h>
 #include <IOKit/IOMessage.h>
+#include <IOKit/IOLocks.h>
 #include "Utility/LinuxCompat.h"
 
 // macOS kernel/math has absolute value in it. It's only for doubles though

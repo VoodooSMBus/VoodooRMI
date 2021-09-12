@@ -10,6 +10,7 @@
 #ifndef F01_hpp
 #define F01_hpp
 
+#include <RMIBus.hpp>
 #include <RMIFunction.hpp>
 
 #define RMI_PRODUCT_ID_LENGTH    10
@@ -123,9 +124,12 @@ class F01 : public RMIFunction {
     OSDeclareDefaultStructors(F01);
     
 public:
+    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
     bool start(IOService *provider) override;
-
+    void stop(IOService *provider) override;
+    void free() override;
+    
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
     /**
@@ -141,8 +145,8 @@ private:
     bool suspend;
     bool old_nosleep;
     
-    f01_basic_properties properties;
-    f01_device_control device_control;
+    f01_basic_properties *properties;
+    f01_device_control *device_control;
     
     unsigned int num_of_irq_regs;
     

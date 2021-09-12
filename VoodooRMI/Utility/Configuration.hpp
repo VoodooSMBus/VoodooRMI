@@ -10,6 +10,8 @@
 #define Configuration_hpp 
 
 #include <IOKit/IOService.h>
+#include <IOKit/IOLib.h>
+#include "./Logging.h"
 
 #define setPropertyBoolean(dict, name, boolean) \
     do { dict->setObject(name, boolean ? kOSBooleanTrue : kOSBooleanFalse); } while (0)

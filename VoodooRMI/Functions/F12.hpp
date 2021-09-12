@@ -9,6 +9,8 @@
 #ifndef F12_hpp
 #define F12_hpp
 
+#include <RMIBus.hpp>
+#include <RMIFunction.hpp>
 #include <RMITrackpadFunction.hpp>
 
 #define F12_DATA1_BYTES_PER_OBJ            8

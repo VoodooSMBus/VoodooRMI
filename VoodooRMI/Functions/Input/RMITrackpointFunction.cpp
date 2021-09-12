@@ -5,7 +5,6 @@
 #include "RMITrackpointFunction.hpp"
 
 OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
-#define super RMIFunction
 
 #define MIDDLE_MOUSE_MASK 0x04
 

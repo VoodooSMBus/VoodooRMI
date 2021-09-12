@@ -11,7 +11,10 @@
 #define RMITrackpadFunction_hpp
 
 #include "RMIFunction.hpp"
+#include <IOKit/IOService.h>
 #include <LinuxCompat.h>
+#include <Configuration.hpp>
+#include "VoodooInputMultitouch/VoodooInputMessages.h"
 
 #define MAX_FINGERS 10
 

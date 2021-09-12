@@ -10,7 +10,10 @@
 #ifndef F11_hpp
 #define F11_hpp
 
+#include <RMIBus.hpp>
+#include <RMIFunction.hpp>
 #include <RMITrackpadFunction.hpp>
+#include <IOKit/IOMessage.h>
 
 /*
  *  Aren't we glad that header files exist?

@@ -7,7 +7,7 @@
  */
 
 #include "Configuration.hpp"
-#include "Logging.h"
+
 
 bool Configuration::loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool *defaultValue) {
     OSBoolean* value;

@@ -58,15 +58,15 @@ int F3A::initialize()
     }
 
     ctrl_regs_size = register_count + 1;
-
     /* Ctrl1 -> gpio direction */
     error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
     if (error) {
         IOLogError("%s - Failed to read control registers: %d", getName(), error);
         return error;
     }
+#ifdef DEBUG
     setProperty("Control register 0", ctrl_regs[0], 8);
-
+#endif
     has_gpio = true;
     if (has_gpio) {
         error = mapGpios();

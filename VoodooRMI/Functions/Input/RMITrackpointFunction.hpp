@@ -21,7 +21,10 @@ class RMITrackpointFunction : public RMIFunction {
     void handleReport(RMITrackpointReport *report);
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-    
+
+public:
+    RMITrackpointReport report {};
+
 private:
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};

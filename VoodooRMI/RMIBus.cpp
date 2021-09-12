@@ -9,6 +9,7 @@
 #include <F03.hpp>
 #include <F11.hpp>
 #include <F12.hpp>
+#include <F17.hpp>
 #include <F30.hpp>
 #include <F3A.hpp>
 
@@ -294,6 +295,9 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
             break;
         case 0x12: /* multifinger pointing */
             function = OSTypeAlloc(F12);
+            break;
+        case 0x17: /* trackpoints */
+            function = OSTypeAlloc(F17);
             break;
         case 0x30: /* GPIO and LED controls */
             function = OSTypeAlloc(F30);

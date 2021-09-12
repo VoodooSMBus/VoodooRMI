@@ -30,9 +30,12 @@ static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, in
 
 bool RMITrackpadFunction::start(IOService *provider)
 {
-    memset(fingerState, RMI_FINGER_LIFTED, sizeof(fingerState));
     memset(freeFingerTypes, true, sizeof(freeFingerTypes));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
+ 
+    for (size_t i = 0; i < MAX_FINGERS; i++) {
+        fingerState[i] = RMI_FINGER_LIFTED;
+    }
     
     const int palmRejectWidth = max_x * cfgToPercent(conf->palmRejectionWidth);
     const int palmRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeight);
@@ -105,7 +108,7 @@ IOReturn RMITrackpadFunction::message(UInt32 type, IOService *provider, void *ar
     switch (type)
     {
         case kHandleRMIInputReport:
-            handleReport(reinterpret_cast<RMI2DSensorReport *>(argument));
+            handleReport(static_cast<RMI2DSensorReport *>(argument));
             break;
         case kHandleRMIClickpadSet:
             clickpadState = !!(argument);

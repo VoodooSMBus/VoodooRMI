@@ -109,10 +109,8 @@ IOReturn RMITrackpointFunction::message(UInt32 type, IOService *provider, void *
     switch (type) {
         case kHandleRMITrackpointButton:
             // This message originates in RMIBus::Notify, which sends an unsigned int
-            if (overwrite_buttons != (unsigned int)((intptr_t) argument)) {
-                overwrite_buttons = (unsigned int)((intptr_t) argument);
-                handleReport(&emptyReport);
-            }
+            overwrite_buttons = (unsigned int)((intptr_t) argument);
+            handleReport(&emptyReport);
             break;
     }
     

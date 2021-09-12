@@ -7,18 +7,13 @@
  */
 
 #include "F30.hpp"
+#include <Configuration.hpp>
 
 OSDefineMetaClassAndStructors(F30, RMIFunction)
-#define super IOService
+#define super RMIFunction
 
 bool F30::attach(IOService *provider)
 {
-    rmiBus = OSDynamicCast(RMIBus, provider);
-    if (!rmiBus) {
-        IOLogError("F30: No provider.");
-        return false;
-    }
-    
     int retval = rmi_f30_initialize();
     
     if (retval < 0)
@@ -37,21 +32,8 @@ bool F30::start(IOService *provider)
     int ret = rmi_f30_config();
     if (ret < 0) return false;
     
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
-    
     registerService();
     return true;
-}
-
-void F30::stop(IOService *provider)
-{
-    super::stop(provider);
-}
-
-void F30::free()
-{
-    clearDesc();
-    super::free();
 }
 
 IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
@@ -59,7 +41,7 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
     int error;
     switch (type) {
         case kHandleRMIAttention:
-            error = rmiBus->readBlock(fn_descriptor->data_base_addr,
+            error = bus->readBlock(desc.data_base_addr,
                                           data_regs, register_count);
             
             if (error < 0) {
@@ -80,12 +62,12 @@ IOReturn F30::message(UInt32 type, IOService *provider, void *argument)
 
 int F30::rmi_f30_config()
 {
-    int error = rmiBus->blockWrite(fn_descriptor->control_base_addr,
+    int error = bus->blockWrite(desc.control_base_addr,
                                    ctrl_regs, ctrl_regs_size);
     
     if (error) {
         IOLogError("%s: Could not write control registers at 0x%x: 0x%x",
-                   __func__, fn_descriptor->control_base_addr, error);
+                   __func__, desc.control_base_addr, error);
     }
     return error;
 }
@@ -93,11 +75,11 @@ int F30::rmi_f30_config()
 int F30::rmi_f30_initialize()
 {
     u8 *ctrl_reg = ctrl_regs;
-    int control_address = fn_descriptor->control_base_addr;
+    int control_address = desc.control_base_addr;
     u8 buf[RMI_F30_QUERY_SIZE];
     int error;
     
-    error = rmiBus->readBlock(fn_descriptor->query_base_addr,
+    error = bus->readBlock(desc.query_base_addr,
                               buf, RMI_F30_QUERY_SIZE);
     if (error) {
         IOLogError("F30: Failed to read query register");
@@ -213,7 +195,7 @@ int F30::rmi_f30_map_gpios()
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
     int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
-    const gpio_data *gpio = rmiBus->getGPIOData();
+    const gpio_data *gpio = bus->getGPIOData();
     setProperty("Button Count", buttonArrLen, 32);
     
     gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(gpioled_key_map[0])));
@@ -258,11 +240,11 @@ int F30::rmi_f30_read_control_parameters()
 {
     int error;
     
-    error = rmiBus->readBlock(fn_descriptor->control_base_addr,
+    error = bus->readBlock(desc.control_base_addr,
                               ctrl_regs, ctrl_regs_size);
     if (error) {
         IOLogError("%s: Could not read control registers at 0x%x: %d",
-                   __func__, fn_descriptor->control_base_addr, error);
+                   __func__, desc.control_base_addr, error);
         return error;
     }
     
@@ -292,7 +274,7 @@ void F30::rmi_f30_report_button()
         
         if (numButtons == 1 && i == clickpad_index) {
             if (clickpadState != key_down) {
-                 rmiBus->notify(kHandleRMIClickpadSet, key_down);
+                 bus->notify(kHandleRMIClickpadSet, reinterpret_cast<void *>(key_down));
                  clickpadState = key_down;
              }
             continue;
@@ -306,7 +288,8 @@ void F30::rmi_f30_report_button()
         }
     }
     
-    if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
+    IOService *voodooInputInstance = bus->getVoodooInput();
+    if (numButtons > 1 && voodooInputInstance) {
         AbsoluteTime timestamp;
         clock_get_uptime(&timestamp);
         
@@ -314,9 +297,9 @@ void F30::rmi_f30_report_button()
         relativeEvent.buttons = btns;
         relativeEvent.timestamp = timestamp;
         
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooInputInstance, &relativeEvent, sizeof(RelativePointerEvent));
     }
     
     if (hasTrackpointButtons)
-        rmiBus->notify(kHandleRMITrackpointButton, trackpointBtns);
+        bus->notify(kHandleRMITrackpointButton, reinterpret_cast<void *>(trackpointBtns));
 }

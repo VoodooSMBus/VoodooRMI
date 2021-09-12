@@ -9,36 +9,14 @@
 
 #include "F11.hpp"
 
-OSDefineMetaClassAndStructors(F11, RMIFunction)
-#define super IOService
+OSDefineMetaClassAndStructors(F11, RMITrackpadFunction)
+#define super RMITrackpadFunction
 
 #define REZERO_WAIT_MS 100
-
-bool F11::init(OSDictionary *dictionary)
-{
-    if (!super::init())
-        return false;
-    
-    sensor = OSTypeAlloc(RMI2DSensor);
-    if (!sensor || !sensor->init())
-        return false;
-
-    return true;
-}
 
 bool F11::attach(IOService *provider)
 {
     int error;
-
-
-    rmiBus = OSDynamicCast(RMIBus, provider);
-    if (!rmiBus) {
-        IOLogError("F11: Provider is not RMIBus");
-        return false;
-    }
-
-    sensor->conf = conf;
-    sensor->voodooInputInstance = rmiBus->getVoodooInput();
     
     error = rmi_f11_initialize();
     if (error)
@@ -51,36 +29,20 @@ bool F11::attach(IOService *provider)
 
 bool F11::start(IOService *provider)
 {
-    if (!super::start(provider))
-        return false;
-    
     int rc = rmi_f11_config();
-    
     if (rc < 0)
+        return false;
+ 
+    if (!super::start(provider))
         return false;
     
     registerService();
     
-    if(!sensor->attach(this))
-        return false;
-    
-    if(!sensor->start(this))
-        return false;
-    
     return true;
-}
-
-void F11::stop(IOService *provider)
-{
-    sensor->detach(this);
-    sensor->stop(this);
-    super::stop(provider);
 }
 
 void F11::free()
 {
-    clearDesc();
-    OSSafeReleaseNULL(sensor);
     if (data_pkt != nullptr) {
         IOFree(data_pkt, pkt_size);
         data_pkt = nullptr;
@@ -95,12 +57,11 @@ IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIAttention:
             getReport();
             break;
-        case kHandleRMIClickpadSet:
-        case kHandleRMITrackpoint:
-            return messageClient(type, sensor, argument);
         case kHandleRMIConfig:
             rmi_f11_config();
             break;
+        default:
+            return super::message(type, provider, argument);
     }
     
     return kIOReturnSuccess;
@@ -113,10 +74,7 @@ bool F11::getReport()
     u8 finger_state;
     AbsoluteTime timestamp;
     
-    if (!sensor)
-        return false;
-    
-    error = rmiBus->readBlock(fn_descriptor->data_base_addr,
+    error = bus->readBlock(desc.data_base_addr,
                               data_pkt, pkt_size);
     
     if (error < 0) {
@@ -126,16 +84,16 @@ bool F11::getReport()
     
     clock_get_uptime(&timestamp);
     
-    if (sensor->shouldDiscardReport(timestamp))
+    if (shouldDiscardReport(timestamp))
         return true;
     
     IOLogDebug("F11 Packet");
     
-    abs_size = sensor->nbr_fingers & RMI_F11_ABS_BYTES;
+    abs_size = nbr_fingers & RMI_F11_ABS_BYTES;
     
     if (abs_size > pkt_size)
         fingers = pkt_size / RMI_F11_ABS_BYTES;
-    else fingers = sensor->nbr_fingers;
+    else fingers = nbr_fingers;
     
     for (size_t i = 0; i < fingers; i++) {
         finger_state = rmi_f11_parse_finger_state(i);
@@ -168,7 +126,7 @@ bool F11::getReport()
     report.timestamp = timestamp;
     report.fingers = fingers;
     
-    messageClient(kHandleRMIInputReport, sensor, &report, sizeof(RMI2DSensorReport));
+    handleReport(&report);
     
     return true;
 }
@@ -176,7 +134,7 @@ bool F11::getReport()
 int F11::rmi_f11_config()
 {
     return f11_write_control_regs(&sens_query, &dev_controls,
-                                fn_descriptor->query_base_addr);
+                                desc.query_base_addr);
 }
 
 int F11::f11_read_control_regs(f11_2d_ctrl *ctrl, u16 ctrl_base_addr)
@@ -184,7 +142,7 @@ int F11::f11_read_control_regs(f11_2d_ctrl *ctrl, u16 ctrl_base_addr)
     int error = 0;
     
     ctrl->ctrl0_11_address = ctrl_base_addr;
-    error = rmiBus->readBlock(ctrl_base_addr, ctrl->ctrl0_11,
+    error = bus->readBlock(ctrl_base_addr, ctrl->ctrl0_11,
                            RMI_F11_CTRL_REG_COUNT);
     if (error < 0) {
         IOLogError("Failed to read ctrl0, code: %d.", error);
@@ -200,7 +158,7 @@ int F11::f11_write_control_regs(f11_2d_sensor_queries *query,
 {
     int error;
     
-    error = rmiBus->blockWrite(ctrl_base_addr, ctrl->ctrl0_11,
+    error = bus->blockWrite(ctrl_base_addr, ctrl->ctrl0_11,
                             RMI_F11_CTRL_REG_COUNT);
     if (error < 0)
         return error;
@@ -214,18 +172,18 @@ int F11::f11_2d_construct_data()
     f11_2d_data *data = &data_2d;
     int i;
     
-    sensor->nbr_fingers = (query->nr_fingers == 5 ? 10 :
+    nbr_fingers = (query->nr_fingers == 5 ? 10 :
                            query->nr_fingers + 1);
     
-    pkt_size = DIV_ROUND_UP(sensor->nbr_fingers, 4);
+    pkt_size = DIV_ROUND_UP(nbr_fingers, 4);
     
     if (query->has_abs) {
-        pkt_size += (sensor->nbr_fingers * 5);
+        pkt_size += (nbr_fingers * 5);
         attn_size = pkt_size;
     }
     
     if (query->has_rel)
-        pkt_size +=  (sensor->nbr_fingers * 2);
+        pkt_size += (nbr_fingers * 2);
     
     /* Check if F11_2D_Query7 is non-zero */
     if (query->query7_nonzero)
@@ -253,7 +211,7 @@ int F11::f11_2d_construct_data()
         return -ENOMEM;
     
     data->f_state = data_pkt;
-    i = DIV_ROUND_UP(sensor->nbr_fingers, 4);
+    i = DIV_ROUND_UP(nbr_fingers, 4);
     
     if (query->has_abs) {
         data->abs_pos = &data_pkt[i];
@@ -273,7 +231,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     u8 query_buf[RMI_F11_QUERY_SIZE];
     bool has_query36 = false;
     
-    rc = rmiBus->readBlock(query_base_addr, query_buf,
+    rc = bus->readBlock(query_base_addr, query_buf,
                         RMI_F11_QUERY_SIZE);
     if (rc < 0)
         return rc;
@@ -306,7 +264,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     query_size = RMI_F11_QUERY_SIZE;
     OSNumber *value;
     if (sensor_query->has_abs) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -339,7 +297,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (sensor_query->has_rel) {
-        rc = rmiBus->read(query_base_addr + query_size,
+        rc = bus->read(query_base_addr + query_size,
                       &sensor_query->f11_2d_query6);
         if (rc < 0)
             return rc;
@@ -347,7 +305,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (sensor_query->has_gestures) {
-        rc = rmiBus->readBlock(query_base_addr + query_size,
+        rc = bus->readBlock(query_base_addr + query_size,
                             query_buf, RMI_F11_QUERY_GESTURE_SIZE);
         if (rc < 0)
             return rc;
@@ -415,7 +373,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (has_query9) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -452,7 +410,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (sensor_query->has_touch_shapes) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -465,7 +423,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (has_query11) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -502,7 +460,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (has_query12) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -538,7 +496,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
 
     if (sensor_query->has_jitter_filter) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -557,7 +515,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (sensor_query->has_info2) {
-        rc = rmiBus->read(query_base_addr + query_size, query_buf);
+        rc = bus->read(query_base_addr + query_size, query_buf);
         if (rc < 0)
             return rc;
         
@@ -586,7 +544,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     }
     
     if (sensor_query->has_physical_props) {
-        rc = rmiBus->readBlock(query_base_addr
+        rc = bus->readBlock(query_base_addr
                             + query_size, query_buf, 4);
         if (rc < 0)
             return rc;
@@ -618,7 +576,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
      * The check for has_query36 in here suggests not though
      */
     if (has_query28) {
-        rc = rmiBus->read(query_base_addr + query_size,
+        rc = bus->read(query_base_addr + query_size,
                       query_buf);
         if (rc < 0)
             return rc;
@@ -628,7 +586,7 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
     
     if (has_query36) {
         query_size += 2;
-        rc = rmiBus->read(query_base_addr + query_size,
+        rc = bus->read(query_base_addr + query_size,
                           query_buf);
         if (rc < 0)
             return rc;
@@ -651,10 +609,10 @@ int F11::rmi_f11_initialize()
     // Going to assume 100ms as in other places
     rezero_wait_ms = REZERO_WAIT_MS;
     
-    query_base_addr = fn_descriptor->query_base_addr;
-    control_base_addr = fn_descriptor->control_base_addr;
+    query_base_addr = desc.query_base_addr;
+    control_base_addr = desc.control_base_addr;
     
-    rc = rmiBus->read(query_base_addr, &buf);
+    rc = bus->read(query_base_addr, &buf);
     if (rc < 0) {
         IOLogError("F11: Could not read Query Base Addr");
         return rc;
@@ -676,8 +634,8 @@ int F11::rmi_f11_initialize()
     query_offset += rc;
     
     if (sens_query.has_physical_props) {
-        sensor->x_mm = sens_query.x_sensor_size_mm;
-        sensor->y_mm = sens_query.y_sensor_size_mm;
+        x_mm = sens_query.x_sensor_size_mm;
+        y_mm = sens_query.y_sensor_size_mm;
     } else {
         IOLogError("No size data from Device.");
         return -ENODEV;
@@ -688,22 +646,22 @@ int F11::rmi_f11_initialize()
         return -ENODEV;
     }
     
-    rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_X_POS_OFFSET,
+    rc = bus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_X_POS_OFFSET,
                            (u8 *)&max_x_pos, sizeof(max_x_pos));
     if (rc < 0) {
         IOLogError("F11: Could not read max x");
         return rc;
     }
     
-    rc = rmiBus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_Y_POS_OFFSET,
+    rc = bus->readBlock(control_base_addr + F11_CTRL_SENSOR_MAX_Y_POS_OFFSET,
                            (u8 *)&max_y_pos, sizeof(max_y_pos));
     if (rc < 0) {
         IOLogError("F11: Could not read max y");
         return rc;
     }
         
-    sensor->max_x = max_x_pos;
-    sensor->max_y = max_y_pos;
+    max_x = max_x_pos;
+    max_y = max_y_pos;
     
     rc = f11_2d_construct_data();
     if (rc < 0) {
@@ -712,7 +670,7 @@ int F11::rmi_f11_initialize()
     }
     
     if (has_acm)
-        attn_size += sensor->nbr_fingers * 2;
+        attn_size += nbr_fingers * 2;
     
     rc = f11_read_control_regs(&dev_controls,
                                control_base_addr);
@@ -732,7 +690,7 @@ int F11::rmi_f11_initialize()
     }
     
     rc = f11_write_control_regs(&sens_query,
-                                &dev_controls, fn_descriptor->control_base_addr);
+                                &dev_controls, desc.control_base_addr);
     if (rc)
         IOLogError("F11: Failed to write control registers");
     

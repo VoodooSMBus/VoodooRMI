@@ -9,24 +9,18 @@
 #include "F3A.hpp"
 
 OSDefineMetaClassAndStructors(F3A, RMIFunction)
-#define super IOService
+#define super RMIFunction
 
 bool F3A::attach(IOService *provider)
 {
     if (!super::attach(provider))
         return false;
     
-    rmiBus = OSDynamicCast(RMIBus, provider);
-    if (!rmiBus) {
-        IOLogError("F3A - Could not cast RMIBus");
-        return false;
-    }
-    
     u8 query1[RMI_F3A_MAX_REG_SIZE];
     u8 ctrl1[RMI_F3A_MAX_REG_SIZE];
     u8 buf;
     
-    IOReturn status = rmiBus->read(fn_descriptor->query_base_addr, &buf);
+    IOReturn status = bus->read(desc.query_base_addr, &buf);
     if (status != kIOReturnSuccess) {
         IOLogError("F3A - Failed to read general info register!");
         return false;
@@ -35,13 +29,13 @@ bool F3A::attach(IOService *provider)
     gpioCount = buf & RMI_F3A_GPIO_COUNT;
     registerCount = DIV_ROUND_UP(gpioCount, 8);
     
-    status = rmiBus->readBlock(fn_descriptor->query_base_addr + 1, query1, registerCount);
+    status = bus->readBlock(desc.query_base_addr + 1, query1, registerCount);
     if (status != kIOReturnSuccess) {
         IOLogError("F3A - Failed to read query1 registers");
         return false;
     }
     
-    status = rmiBus->readBlock(fn_descriptor->control_base_addr + 1, ctrl1, registerCount);
+    status = bus->readBlock(desc.control_base_addr + 1, ctrl1, registerCount);
     if (status != kIOReturnSuccess) {
         IOLogError("F3A - Failed to read control1 register");
         return false;
@@ -57,7 +51,6 @@ bool F3A::attach(IOService *provider)
 
 bool F3A::start(IOService *provider)
 {
-    voodooTrackpointInstance = rmiBus->getVoodooInput();
     registerService();
     return super::start(provider);
 }
@@ -66,7 +59,7 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
 {
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
-    const gpio_data *gpio = rmiBus->getGPIOData();
+    const gpio_data *gpio = bus->getGPIOData();
     numButtons = min(gpioCount, TRACKPOINT_RANGE_END);
     
     setProperty("Button Count", gpioCount, 32);
@@ -106,13 +99,14 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
     unsigned int mask, trackpointBtns = 0, btns = 0;
     u16 key_code;
     bool key_down;
+    IOService *voodooInputInstance = bus->getVoodooInput();
     
     switch (type) {
         case kHandleRMIAttention:
-            if (!voodooTrackpointInstance)
+            if (!voodooInputInstance)
                 return kIOReturnIOError;
             
-            error = rmiBus->readBlock(fn_descriptor->data_base_addr,
+            error = bus->readBlock(desc.data_base_addr,
                                       data_regs, registerCount);
             
             if (error < 0) {
@@ -139,14 +133,14 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 
                 if (numButtons == 1 && i == clickpadIndex) {
                     if (clickpadState != key_down) {
-                         rmiBus->notify(kHandleRMIClickpadSet, key_down);
+                         bus->notify(kHandleRMIClickpadSet, reinterpret_cast<void *>(key_down));
                          clickpadState = key_down;
                      }
                     continue;
                 }
             }
             
-            if (numButtons > 1 && voodooTrackpointInstance && *voodooTrackpointInstance) {
+            if (numButtons > 1 && voodooInputInstance) {
                 AbsoluteTime timestamp;
                 clock_get_uptime(&timestamp);
                 
@@ -154,7 +148,7 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 relativeEvent.buttons = btns;
                 relativeEvent.timestamp = timestamp;
                 
-                messageClient(kIOMessageVoodooTrackpointRelativePointer, *voodooTrackpointInstance, &relativeEvent, sizeof(RelativePointerEvent));
+                messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooInputInstance, &relativeEvent, sizeof(RelativePointerEvent));
             }
             
             break;
@@ -167,9 +161,9 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
 
 void F3A::free()
 {
-    clearDesc();
     if (gpioled_key_map) {
         IOFree(gpioled_key_map, gpioCount * sizeof(gpioled_key_map[0]));
+        gpioled_key_map = nullptr;
     }
     
     super::free();

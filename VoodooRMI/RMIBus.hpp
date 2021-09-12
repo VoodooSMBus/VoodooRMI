@@ -17,17 +17,8 @@ class RMIFunction;
 #include "LinuxCompat.h"
 #include "Logging.h"
 #include "RMITransport.hpp"
-#include "rmi.h"
 #include "rmi_driver.hpp"
-#include "RMI_2D_Sensor.hpp"
 #include <Availability.h>
-
-#include <F01.hpp>
-#include <F03.hpp>
-#include <F11.hpp>
-#include <F12.hpp>
-#include <F30.hpp>
-#include <F3A.hpp>
 
 #ifndef __ACIDANTHERA_MAC_SDK
 #error "This kext SDK is unsupported. Download from https://github.com/acidanthera/MacKernelSDK"
@@ -50,7 +41,6 @@ public:
 
     rmi_driver_data *data;
     RMITransport *transport;
-    gpio_data gpio;
     
     // rmi_read
     inline int read(u16 addr, u8 *buf) {
@@ -69,10 +59,12 @@ public:
         return transport->blockWrite(rmiaddr, buf, len);
     }
     
-    // Return pointer to voodooInput variable as this likely won't init
-    // until all other Function services start
-    inline IOService **getVoodooInput() {
-        return &voodooInputInstance;
+    inline IOService *getVoodooInput() {
+        return voodooInputInstance;
+    }
+    
+    inline void setVoodooInput(IOService *service) {
+        voodooInputInstance = service;
     }
     
     inline const gpio_data* getGPIOData() {
@@ -81,7 +73,7 @@ public:
     
     OSSet *functions;
     
-    void notify(UInt32 type, unsigned int argument = 0);
+    void notify(UInt32 type, void *argument = 0);
     int rmi_register_function(rmi_function* fn);
     int reset();
 private:
@@ -92,6 +84,10 @@ private:
     void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);
     rmi_configuration conf {};
+    gpio_data gpio {};
+    
+    IOService *trackpadFunction {nullptr};
+    IOService *trackpointFunction {nullptr};
 
     void handleHostNotify();
     void handleHostNotifyLegacy();

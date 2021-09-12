@@ -10,6 +10,8 @@
 #define F3A_hpp
 
 #include <RMIBus.hpp>
+#include <RMIFunction.hpp>
+#include <VoodooInputMessages.h>
 
 #define RMI_F3A_MAX_GPIO_COUNT       128
 #define RMI_F3A_MAX_REG_SIZE        DIV_ROUND_UP(RMI_F3A_MAX_GPIO_COUNT, 8)
@@ -28,8 +30,6 @@ public:
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
 private:
-    RMIBus *rmiBus;
-    IOService **voodooTrackpointInstance{nullptr};
     RelativePointerEvent relativeEvent {};
     
     u16 *gpioled_key_map;

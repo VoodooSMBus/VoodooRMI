@@ -10,6 +10,11 @@
 		286587BD24C13D9600E74848 /* RMISMBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560F0B247F406F0009CBE0 /* RMISMBus.cpp */; };
 		286587C224C13D9600E74848 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
 		286587D924C13EAD00E74848 /* RMISMBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 286587AE24C13D0B00E74848 /* RMISMBus.hpp */; };
+		287EA3C526E8383A00CEDA8B /* RMITrackpointFunction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 287EA3C326E8383A00CEDA8B /* RMITrackpointFunction.cpp */; };
+		287EA3C626E8383A00CEDA8B /* RMITrackpointFunction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 287EA3C426E8383A00CEDA8B /* RMITrackpointFunction.hpp */; };
+		288561F626E80CDC00C7CBFA /* RMITrackpadFunction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 288561F426E80CDC00C7CBFA /* RMITrackpadFunction.cpp */; };
+		288561F726E80CDC00C7CBFA /* RMITrackpadFunction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 288561F526E80CDC00C7CBFA /* RMITrackpadFunction.hpp */; };
+		288561FE26E80D1400C7CBFA /* RMIFunction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 288561FC26E80D1400C7CBFA /* RMIFunction.hpp */; };
 		6F4B4A9024C1A0B80018F1F0 /* RMII2C.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */; };
 		6F4B4A9224C1A0B80018F1F0 /* RMII2C.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */; };
 		6F4B4A9C24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */; };
@@ -21,10 +26,8 @@
 		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
 		A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */; };
 		A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED6247F2A650009CBE0 /* RMIBus.hpp */; };
-		A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560ED7247F2A650009CBE0 /* RMI_2D_Sensor.cpp */; };
 		A4560EE2247F2A660009CBE0 /* rmi.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED8247F2A650009CBE0 /* rmi.h */; };
 		A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */; };
-		A4560EE4247F2A660009CBE0 /* RMI_2D_Sensor.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDA247F2A650009CBE0 /* RMI_2D_Sensor.hpp */; };
 		A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EDB247F2A660009CBE0 /* RMIBus.cpp */; };
 		A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDD247F2A660009CBE0 /* LinuxCompat.h */; };
 		A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
@@ -70,6 +73,11 @@
 		286587AE24C13D0B00E74848 /* RMISMBus.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMISMBus.hpp; sourceTree = "<group>"; };
 		286587D724C13D9600E74848 /* RMISMBus.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMISMBus.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		286587D824C13D9600E74848 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		287EA3C326E8383A00CEDA8B /* RMITrackpointFunction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMITrackpointFunction.cpp; sourceTree = "<group>"; };
+		287EA3C426E8383A00CEDA8B /* RMITrackpointFunction.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMITrackpointFunction.hpp; sourceTree = "<group>"; };
+		288561F426E80CDC00C7CBFA /* RMITrackpadFunction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMITrackpadFunction.cpp; sourceTree = "<group>"; };
+		288561F526E80CDC00C7CBFA /* RMITrackpadFunction.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMITrackpadFunction.hpp; sourceTree = "<group>"; };
+		288561FC26E80D1400C7CBFA /* RMIFunction.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMIFunction.hpp; sourceTree = "<group>"; };
 		6F4B4A8D24C1A0B80018F1F0 /* RMII2C.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RMII2C.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F4B4A8F24C1A0B80018F1F0 /* RMII2C.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMII2C.hpp; sourceTree = "<group>"; };
 		6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMII2C.cpp; sourceTree = "<group>"; };
@@ -82,10 +90,8 @@
 		A4560ECE247F29EC0009CBE0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = rmi_driver.hpp; sourceTree = "<group>"; };
 		A4560ED6247F2A650009CBE0 /* RMIBus.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMIBus.hpp; sourceTree = "<group>"; };
-		A4560ED7247F2A650009CBE0 /* RMI_2D_Sensor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RMI_2D_Sensor.cpp; sourceTree = "<group>"; };
 		A4560ED8247F2A650009CBE0 /* rmi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rmi.h; sourceTree = "<group>"; };
 		A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rmi_driver.cpp; sourceTree = "<group>"; };
-		A4560EDA247F2A650009CBE0 /* RMI_2D_Sensor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMI_2D_Sensor.hpp; sourceTree = "<group>"; };
 		A4560EDB247F2A660009CBE0 /* RMIBus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RMIBus.cpp; sourceTree = "<group>"; };
 		A4560EDD247F2A660009CBE0 /* LinuxCompat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LinuxCompat.h; sourceTree = "<group>"; };
 		A4560EEB247F32600009CBE0 /* RMITransport.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMITransport.hpp; sourceTree = "<group>"; };
@@ -154,6 +160,18 @@
 			path = SMBus;
 			sourceTree = "<group>";
 		};
+		288561F326E80C7E00C7CBFA /* Input */ = {
+			isa = PBXGroup;
+			children = (
+				288561FC26E80D1400C7CBFA /* RMIFunction.hpp */,
+				288561F526E80CDC00C7CBFA /* RMITrackpadFunction.hpp */,
+				288561F426E80CDC00C7CBFA /* RMITrackpadFunction.cpp */,
+				287EA3C426E8383A00CEDA8B /* RMITrackpointFunction.hpp */,
+				287EA3C326E8383A00CEDA8B /* RMITrackpointFunction.cpp */,
+			);
+			path = Input;
+			sourceTree = "<group>";
+		};
 		6F4B4A8E24C1A0B80018F1F0 /* I2C */ = {
 			isa = PBXGroup;
 			children = (
@@ -202,8 +220,6 @@
 				A41323EA2492078A00907B0D /* Utility */,
 				A4560EF0247F32760009CBE0 /* Functions */,
 				A4560EE9247F32600009CBE0 /* Transports */,
-				A4560EDA247F2A650009CBE0 /* RMI_2D_Sensor.hpp */,
-				A4560ED7247F2A650009CBE0 /* RMI_2D_Sensor.cpp */,
 				A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */,
 				A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */,
 				A4560ED8247F2A650009CBE0 /* rmi.h */,
@@ -227,6 +243,7 @@
 		A4560EF0247F32760009CBE0 /* Functions */ = {
 			isa = PBXGroup;
 			children = (
+				288561F326E80C7E00C7CBFA /* Input */,
 				A4560EF6247F32760009CBE0 /* F01.hpp */,
 				A4560EF1247F32760009CBE0 /* F01.cpp */,
 				A4560F0F2480757F0009CBE0 /* F03.hpp */,
@@ -281,8 +298,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				287EA3C626E8383A00CEDA8B /* RMITrackpointFunction.hpp in Headers */,
 				A41323E92492077C00907B0D /* Configuration.hpp in Headers */,
 				A4560EFE247F32760009CBE0 /* F01.hpp in Headers */,
+				288561F726E80CDC00C7CBFA /* RMITrackpadFunction.hpp in Headers */,
 				A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */,
 				A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */,
 				A4560F112480757F0009CBE0 /* F03.hpp in Headers */,
@@ -293,12 +312,12 @@
 				A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */,
 				A4560F07247F38670009CBE0 /* MultitouchHelpers.h in Headers */,
 				A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */,
-				A4560EE4247F2A660009CBE0 /* RMI_2D_Sensor.hpp in Headers */,
 				A4560EFB247F32760009CBE0 /* F30.hpp in Headers */,
 				A4560EE2247F2A660009CBE0 /* rmi.h in Headers */,
 				A4560F08247F38670009CBE0 /* VoodooInputMessages.h in Headers */,
 				A4560F0A247F38670009CBE0 /* VoodooInputEvent.h in Headers */,
 				A4560EFF247F32760009CBE0 /* F11.hpp in Headers */,
+				288561FE26E80D1400C7CBFA /* RMIFunction.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,11 +489,12 @@
 			files = (
 				A41323E82492077C00907B0D /* Configuration.cpp in Sources */,
 				A4560F102480757F0009CBE0 /* F03.cpp in Sources */,
+				288561F626E80CDC00C7CBFA /* RMITrackpadFunction.cpp in Sources */,
+				287EA3C526E8383A00CEDA8B /* RMITrackpointFunction.cpp in Sources */,
 				A4560EFC247F32760009CBE0 /* F11.cpp in Sources */,
 				A4560F00247F32760009CBE0 /* F30.cpp in Sources */,
 				A4560EFD247F32760009CBE0 /* F12.cpp in Sources */,
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
-				A4560EE1247F2A660009CBE0 /* RMI_2D_Sensor.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,
 				A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */,
 				A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */,

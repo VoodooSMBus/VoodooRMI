@@ -10,7 +10,9 @@
 #ifndef rmi_h
 #define rmi_h
 
-#include <IOKit/IOService.h>
+#include <IOKit/IOMessage.h>
+#include <IOKit/IOLocks.h>
+#include "Utility/LinuxCompat.h"
 
 // macOS kernel/math has absolute value in it. It's only for doubles though
 #define abs(x) ((x < 0) ? -(x) : (x))
@@ -149,48 +151,6 @@ struct rmi_configuration {
 struct gpio_data {
     bool clickpad {false};
     bool trackpointButtons {true}; // Does not affect F03
-};
-
-/*
- *  Wrapper class for functions
- */
-class RMIFunction : public IOService {
-    OSDeclareDefaultStructors(RMIFunction)
-    
-public:
-    inline void setFunctionDesc(rmi_function_descriptor *desc) {
-        this->fn_descriptor = desc;
-    }
-    
-    inline void setMask(unsigned long irqMask) {
-        irq_mask = irqMask;
-    }
-    
-    inline void setIrqPos(unsigned int irqPos) {
-        irqPos = irqPos;
-    }
-    
-    inline unsigned long getIRQ() {
-        return irq_mask;
-    }
-    
-    inline unsigned int getIRQPos() {
-        return irqPos;
-    }
-    
-    inline void clearDesc() {
-        if(this->fn_descriptor)
-            IOFree(this->fn_descriptor, sizeof(rmi_function_descriptor));
-        return;
-    }
-
-    rmi_configuration *conf;
-
-private:
-    unsigned long irq_mask;
-    unsigned int irqPos;
-protected:
-    rmi_function_descriptor *fn_descriptor;
 };
 
 /**

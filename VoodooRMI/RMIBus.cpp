@@ -5,6 +5,12 @@
  */
 
 #include "RMIBus.hpp"
+#include <F01.hpp>
+#include <F03.hpp>
+#include <F11.hpp>
+#include <F12.hpp>
+#include <F30.hpp>
+#include <F3A.hpp>
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
 OSDefineMetaClassAndStructors(RMIFunction, IOService)
@@ -97,6 +103,7 @@ err:
 void RMIBus::handleHostNotify()
 {
     unsigned long mask, irqStatus;
+    
     if (!data) {
         IOLogError("Interrupt - No data");
         return;
@@ -206,29 +213,16 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     return kIOReturnSuccess;
 }
 
-void RMIBus::notify(UInt32 type, unsigned int argument)
+void RMIBus::notify(UInt32 type, void *argument)
 {
-    OSIterator* iter = OSCollectionIterator::withCollection(functions);
-    while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-        switch (type) {
-            case kHandleRMIClickpadSet:
-            case kHandleRMITrackpoint:
-                if (OSDynamicCast(F11, func) || OSDynamicCast(F12, func)) {
-                    IOLogDebug("Sending event %u to F11/F12: %u", type, argument);
-                    messageClient(type, func, reinterpret_cast<void *>(argument));
-                    OSSafeReleaseNULL(iter);
-                    return;
-                }
-                break;
-            case kHandleRMITrackpointButton:
-                if (OSDynamicCast(F03, func)) {
-                    IOLogDebug("Sending trackpoint button to F03: %u", argument);
-                    messageClient(type, func, reinterpret_cast<void *>(argument));
-                }
-                break;
-        }
+    if (type == kHandleRMIClickpadSet ||
+        type == kHandleRMITrackpoint) {
+        
+        messageClient(type, trackpadFunction, argument);
+    } else if (type == kHandleRMITrackpointButton) {
+        
+        messageClient(type, trackpointFunction, argument);
     }
-    OSSafeReleaseNULL(iter);
 }
 
 void RMIBus::stop(IOService *provider) {
@@ -331,29 +325,22 @@ int RMIBus::rmi_register_function(rmi_function *fn) {
         OSSafeReleaseNULL(function);
         return -ENODEV;
     }
-
-    function->conf = &conf;
-
-    // Duplicate to store in function
-    rmi_function_descriptor* desc =
-        reinterpret_cast<rmi_function_descriptor*>(IOMalloc(sizeof(rmi_function_descriptor)));
     
-    desc->command_base_addr = fn->fd.command_base_addr;
-    desc->control_base_addr = fn->fd.control_base_addr;
-    desc->data_base_addr = fn->fd.data_base_addr;
-    desc->function_number = fn->fd.function_number;
-    desc->function_version = fn->fd.function_version;
-    desc->interrupt_source_count = fn->fd.interrupt_source_count;
-    desc->query_base_addr = fn->fd.query_base_addr;
-    
-    function->setFunctionDesc(desc);
-    function->setMask(fn->irq_mask[0]);
-    function->setIrqPos(fn->irq_pos);
+    if (!function->initData(this, &conf, fn)) {
+        OSSafeReleaseNULL(function);
+        return -ENODEV;
+    }
     
     if (!function->attach(this)) {
         IOLogError("Function %02X could not attach", fn->fd.function_number);
         OSSafeReleaseNULL(function);
         return -ENODEV;
+    }
+    
+    if (OSDynamicCast(RMITrackpadFunction, function)) {
+        trackpadFunction = function;
+    } else if (OSDynamicCast(RMITrackpointFunction, function)) {
+        trackpointFunction = function;
     }
     
     functions->setObject(function);

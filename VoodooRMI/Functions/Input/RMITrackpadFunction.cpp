@@ -7,10 +7,13 @@
  * Copyright (c) 2011 Unixphere
  */
 
-#include "RMI_2D_Sensor.hpp"
+#include "RMITrackpadFunction.hpp"
+#include <IOKit/IOLib.h>
+#include "rmi.h"
+#include "VoodooInputMultitouch/VoodooInputTransducer.h"
 
-OSDefineMetaClassAndStructors(RMI2DSensor, IOService)
-#define super IOService
+OSDefineMetaClassAndStructors(RMITrackpadFunction, RMIFunction)
+#define super RMIFunction
 
 #define RMI_2D_MAX_Z 140
 #define RMI_2D_MIN_ZONE_VEL 10
@@ -25,11 +28,14 @@ static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, in
     zone->y_max = max_y;
 }
 
-bool RMI2DSensor::start(IOService *provider)
+bool RMITrackpadFunction::start(IOService *provider)
 {
-    memset(fingerState, RMI_FINGER_LIFTED, sizeof(fingerState));
     memset(freeFingerTypes, true, sizeof(freeFingerTypes));
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
+ 
+    for (size_t i = 0; i < MAX_FINGERS; i++) {
+        fingerState[i] = RMI_FINGER_LIFTED;
+    }
     
     const int palmRejectWidth = max_x * cfgToPercent(conf->palmRejectionWidth);
     const int palmRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeight);
@@ -66,7 +72,6 @@ bool RMI2DSensor::start(IOService *provider)
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
     setProperty("VoodooInputSupported", kOSBooleanTrue);
-    registerService();
     
     for (int i = 0; i < VOODOO_INPUT_MAX_TRANSDUCERS; i++) {
         auto& transducer = inputEvent.transducers[i];
@@ -78,31 +83,32 @@ bool RMI2DSensor::start(IOService *provider)
     return super::start(provider);
 }
 
-bool RMI2DSensor::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
+bool RMITrackpadFunction::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
 {
     if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
         && super::handleOpen(forClient, options, arg)) {
-        *voodooInputInstance = forClient;
-        (*voodooInputInstance)->retain();
-        
+        voodooInputInstance = forClient;
+        voodooInputInstance->retain();
+        bus->setVoodooInput(voodooInputInstance);
         return true;
     }
     
     return false;
 }
 
-void RMI2DSensor::handleClose(IOService *forClient, IOOptionBits options)
+void RMITrackpadFunction::handleClose(IOService *forClient, IOOptionBits options)
 {
-    OSSafeReleaseNULL(*voodooInputInstance);
+    bus->setVoodooInput(nullptr);
+    OSSafeReleaseNULL(voodooInputInstance);
     super::handleClose(forClient, options);
 }
 
-IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
+IOReturn RMITrackpadFunction::message(UInt32 type, IOService *provider, void *argument)
 {
     switch (type)
     {
         case kHandleRMIInputReport:
-            handleReport(reinterpret_cast<RMI2DSensorReport *>(argument));
+            handleReport(static_cast<RMI2DSensorReport *>(argument));
             break;
         case kHandleRMIClickpadSet:
             clickpadState = !!(argument);
@@ -131,13 +137,13 @@ IOReturn RMI2DSensor::message(UInt32 type, IOService *provider, void *argument)
     return kIOReturnSuccess;
 }
 
-bool RMI2DSensor::shouldDiscardReport(AbsoluteTime timestamp)
+bool RMITrackpadFunction::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return !trackpadEnable;
+    return !trackpadEnable || voodooInputInstance == nullptr;
 }
 
 // Returns zone that finger is in (or 0 if not in a zone)
-size_t RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
+size_t RMITrackpadFunction::checkInZone(VoodooInputTransducer &obj) {
     TouchCoordinates &fingerCoords = obj.currentCoordinates;
     for (size_t i = 0; i < 3; i++) {
         RMI2DSensorZone &zone = rejectZones[i];
@@ -160,12 +166,9 @@ size_t RMI2DSensor::checkInZone(VoodooInputTransducer &obj) {
  * This also does some sanity checks for very wide or very big touch inputs
  * This checks for force touch on Clickpads only, where the trackpad is able to be pressed down.
  */
-void RMI2DSensor::handleReport(RMI2DSensorReport *report)
+void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
 {
     int validFingerCount = 0;
-    
-    if (!voodooInputInstance || !*voodooInputInstance)
-        return;
     
     bool discardRegions = ((report->timestamp - lastKeyboardTS) < (conf->disableWhileTypingTimeout * MILLI_TO_NANO)) ||
                           ((report->timestamp - lastTrackpointTS) < (conf->disableWhileTrackpointTimeout * MILLI_TO_NANO));
@@ -297,11 +300,11 @@ void RMI2DSensor::handleReport(RMI2DSensorReport *report)
     inputEvent.contact_count = report->fingers;
     inputEvent.timestamp = report->timestamp;
     
-    messageClient(kIOMessageVoodooInputMessage, *voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
+    messageClient(kIOMessageVoodooInputMessage, voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
 }
 
 // Take the most obvious lowest fingers - otherwise take finger with greatest area
-void RMI2DSensor::setThumbFingerType(size_t maxIdx, RMI2DSensorReport *report)
+void RMITrackpadFunction::setThumbFingerType(size_t maxIdx, RMI2DSensorReport *report)
 {
     size_t lowestFingerIndex = -1;
     size_t greatestFingerIndex = -1;
@@ -351,7 +354,7 @@ void RMI2DSensor::setThumbFingerType(size_t maxIdx, RMI2DSensorReport *report)
 }
 
 // Assign the first free finger (other than the thumb)
-MT2FingerType RMI2DSensor::getFingerType()
+MT2FingerType RMITrackpadFunction::getFingerType()
 {
     for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1)) {
         if (freeFingerTypes[i]) {
@@ -368,7 +371,7 @@ MT2FingerType RMI2DSensor::getFingerType()
  * Invalidate fingers which are in zones currently
  * Used when keyboard or trackpoint send events
  */
-void RMI2DSensor::invalidateFingers() {
+void RMITrackpadFunction::invalidateFingers() {
     for (size_t i = 0; i < MAX_FINGERS; i++) {
         VoodooInputTransducer &finger = inputEvent.transducers[i];
         

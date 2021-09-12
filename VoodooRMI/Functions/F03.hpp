@@ -13,10 +13,7 @@
 #ifndef F03_hpp
 #define F03_hpp
 
-#include "../RMIBus.hpp"
 #include "../Utility/PS2.hpp"
-#include "../Utility/Configuration.hpp"
-#include <VoodooInputMessages.h>
 #include <RMITrackpointFunction.hpp>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
@@ -128,8 +125,6 @@ private:
     IOWorkLoop *work_loop;
     IOCommandGate *command_gate;
     IOTimerEventSource *timer {nullptr};
-    
-    RMITrackpointReport report {};
     
     // trackpoint
     u8 vendor {0};

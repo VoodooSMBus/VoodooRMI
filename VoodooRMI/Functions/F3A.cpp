@@ -93,7 +93,7 @@ bool F3A::is_valid_button(int button)
     int bit_position = button & 0x07;
 
     /* gpio exist && direction input */
-    // was simplified as
+    // was simplified as:
     // return (query1_regs[0] & BIT(button)) && !(ctrl1_regs[0] & BIT(button));
     return !(ctrl_regs[byte_position + 1] & BIT(bit_position)) &&
             (query_regs[byte_position + 1] & BIT(bit_position));

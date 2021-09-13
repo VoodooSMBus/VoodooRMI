@@ -41,6 +41,7 @@ int RMIGPIOFunction::readControlParameters()
 
 int RMIGPIOFunction::config()
 {
+    /* Write Control Register values back to device */
     int error = bus->blockWrite(desc.control_base_addr,
                                    ctrl_regs, ctrl_regs_size);
 
@@ -123,7 +124,7 @@ void RMIGPIOFunction::reportButton()
         reg_num = i >> 3;
         bit_num = i & 0x07;
         key_down = !(data_regs[reg_num] & BIT(bit_num));
-        // simplified version for i <= 6 from F3A:
+        // simplified in F3A:
         // key_down = !(BIT(i) & data_regs[0]);
         key_code = gpioled_key_map[i];
         // Key code is one above the value we need to bitwise shift left, as key code 0 is "Reserved" or "not present"

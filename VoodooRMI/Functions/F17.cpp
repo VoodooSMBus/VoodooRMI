@@ -180,9 +180,10 @@ int F17::rmi_f17_initialize() {
     setProperty("rezero", f17.commands.rezero);
 #endif
 
-    retval = rmi_f17_read_control_parameters();
+    retval = bus->readBlock(desc.control_base_addr,
+                               f17.controls.regs, sizeof(f17.controls.regs));
     if (retval < 0) {
-        IOLogError("%s: Failed to initialize control params", __func__);
+        IOLogError("%s: Failed to read control register", __func__);
         return retval;
     }
 
@@ -271,12 +272,5 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
         }
     }
 
-    return retval;
-}
-
-int F17::rmi_f17_read_control_parameters() {
-    int retval = 0;
-    retval = bus->readBlock(desc.control_base_addr,
-                               f17.controls.regs, sizeof(f17.controls.regs));
     return retval;
 }

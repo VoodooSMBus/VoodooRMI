@@ -36,7 +36,7 @@ int F30::initialize()
         IOLogError("%s - Failed to allocate %d query registers", getName(), query_regs_size);
         return -1;
     }
-    memset(query_regs, 0, query_regs_size * sizeof(uint8_t));
+    bzero(query_regs, query_regs_size * sizeof(uint8_t));
 
     error = bus->readBlock(desc.query_base_addr,
                               query_regs, RMI_F30_QUERY_SIZE);
@@ -62,7 +62,7 @@ int F30::initialize()
         IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size);
         return -1;
     }
-    memset(ctrl_regs, 0, ctrl_regs_size * sizeof(uint8_t));
+    bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
 
     data_regs_size = register_count;
     data_regs = reinterpret_cast<uint8_t *>(IOMalloc(data_regs_size * sizeof(uint8_t)));
@@ -70,7 +70,7 @@ int F30::initialize()
         IOLogError("%s - Failed to allocate %d query registers", getName(), query_regs_size);
         return -1;
     }
-    memset(data_regs, 0, data_regs_size * sizeof(uint8_t));
+    bzero(data_regs, data_regs_size * sizeof(uint8_t));
 
     OSNumber *value;
     OSDictionary * attribute = OSDictionary::withCapacity(9);

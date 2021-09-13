@@ -36,9 +36,9 @@ int F3A::initialize()
         IOLogError("%s - Failed to allocate %d registers", getName(), register_count);
         return -1;
     }
-    memset(query_regs, 0, query_regs_size * sizeof(uint8_t));
-    memset(ctrl_regs, 0, ctrl_regs_size * sizeof(uint8_t));
-    memset(data_regs, 0, data_regs_size * sizeof(uint8_t));
+    bzero(query_regs, query_regs_size * sizeof(uint8_t));
+    bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+    bzero(data_regs, data_regs_size * sizeof(uint8_t));
 
     /* Query1 -> gpio exist */
     error = bus->readBlock(desc.query_base_addr, query_regs, query_regs_size);

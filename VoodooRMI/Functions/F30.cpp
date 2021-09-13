@@ -26,7 +26,7 @@ bool F30::start(IOService *provider)
 
 int F30::initialize()
 {
-    u8 *ctrl_reg = ctrl_regs;
+    u8 *ctrl_reg;
     int control_address = desc.control_base_addr;
     int error;
 
@@ -63,6 +63,7 @@ int F30::initialize()
         return -1;
     }
     bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+    ctrl_reg = ctrl_regs;
 
     data_regs_size = register_count;
     data_regs = reinterpret_cast<uint8_t *>(IOMalloc(data_regs_size * sizeof(uint8_t)));

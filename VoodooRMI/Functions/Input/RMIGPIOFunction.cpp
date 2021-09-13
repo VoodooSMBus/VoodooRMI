@@ -164,3 +164,11 @@ void RMIGPIOFunction::reportButton()
         bus->notify(kHandleRMITrackpointButton, reinterpret_cast<void *>(trackpointBtns));
     }
 }
+
+void RMIGPIOFunction::free() {
+    IOFree(query_regs, query_regs_size * sizeof(uint8_t));
+    IOFree(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+    IOFree(data_regs, data_regs_size * sizeof(uint8_t));
+
+    super::free();
+}

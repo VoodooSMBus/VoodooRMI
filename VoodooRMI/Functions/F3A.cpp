@@ -40,18 +40,34 @@ void F3A::free() {
 int F3A::initialize()
 {
     int error;
+    uint8_t temp;
 
-    error = bus->read(desc.query_base_addr, query_regs);
+    error = bus->read(desc.query_base_addr, &temp);
     if (error) {
         IOLogError("%s - Failed to read general info register: %d", getName(), error);
         return error;
     }
 
-    gpioled_count = query_regs[0] & RMI_F3A_GPIO_COUNT;
+    gpioled_count = temp & RMI_F3A_GPIO_COUNT;
     register_count = DIV_ROUND_UP(gpioled_count, 8);
 
+    query_regs_size = register_count + 1;
+    data_regs_size = register_count;
+    ctrl_regs_size = register_count + 1;
+
+    query_regs = reinterpret_cast<uint8_t *>(IOMalloc(query_regs_size * sizeof(uint8_t)));
+    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
+    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(data_regs_size * sizeof(uint8_t)));
+    if (!(query_regs && ctrl_regs && data_regs)) {
+        IOLogError("%s - Failed to allocate %d registers", getName(), register_count);
+        return -1;
+    }
+    memset(query_regs, 0, query_regs_size * sizeof(uint8_t));
+    memset(ctrl_regs, 0, ctrl_regs_size * sizeof(uint8_t));
+    memset(data_regs, 0, data_regs_size * sizeof(uint8_t));
+
     /* Query1 -> gpio exist */
-    error = bus->readBlock(desc.query_base_addr + 1, query_regs + 1, register_count);
+    error = bus->readBlock(desc.query_base_addr, query_regs, query_regs_size);
     if (error) {
         IOLogError("%s - Failed to read query1 registers: %d", getName(), error);
         return error;
@@ -67,7 +83,6 @@ int F3A::initialize()
 #ifdef DEBUG
     setProperty("Control register 0", ctrl_regs[0], 8);
 #endif
-    has_gpio = true;
     if (has_gpio) {
         error = mapGpios();
         if (error) {

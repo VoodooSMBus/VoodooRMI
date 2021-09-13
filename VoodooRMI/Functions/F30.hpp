@@ -57,9 +57,7 @@ class F30 : public RMIGPIOFunction {
     OSDeclareDefaultStructors(F30)
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool start(IOService *provider) override;
-    void free() override;
 
 private:    
     /* Query Data */

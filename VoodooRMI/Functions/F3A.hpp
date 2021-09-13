@@ -21,9 +21,7 @@ class F3A : public RMIGPIOFunction {
     OSDeclareDefaultStructors(F3A)
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool start(IOService *provider) override;
-    void free() override;
 
 private:    
     int initialize() override;

@@ -11,32 +11,6 @@
 OSDefineMetaClassAndStructors(F30, RMIGPIOFunction)
 #define super RMIGPIOFunction
 
-bool F30::init(OSDictionary *dictionary) {
-    if (!super::init(dictionary))
-        return false;
-
-    query_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F30_QUERY_SIZE * sizeof(uint8_t)));
-    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F30_CTRL_REGS_MAX_SIZE * sizeof(uint8_t)));
-    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F30_CTRL_MAX_BYTES * sizeof(uint8_t)));
-
-    if (!(query_regs && ctrl_regs && data_regs))
-        return false;
-
-    memset(query_regs, 0, RMI_F30_QUERY_SIZE * sizeof(uint8_t));
-    memset(ctrl_regs, 0, RMI_F30_CTRL_REGS_MAX_SIZE * sizeof(uint8_t));
-    memset(data_regs, 0, RMI_F30_CTRL_MAX_BYTES * sizeof(uint8_t));
-
-    return true;
-}
-
-void F30::free() {
-    IOFree(query_regs, RMI_F30_QUERY_SIZE * sizeof(uint8_t));
-    IOFree(ctrl_regs, RMI_F30_CTRL_REGS_MAX_SIZE * sizeof(uint8_t));
-    IOFree(data_regs, RMI_F30_CTRL_MAX_BYTES * sizeof(uint8_t));
-
-    super::free();
-}
-
 bool F30::start(IOService *provider)
 {
     if (!super::start(provider))
@@ -55,12 +29,20 @@ int F30::initialize()
     u8 *ctrl_reg = ctrl_regs;
     int control_address = desc.control_base_addr;
     int error;
-    
+
+    query_regs_size = RMI_F30_QUERY_SIZE;
+    query_regs = reinterpret_cast<uint8_t *>(IOMalloc(query_regs_size * sizeof(uint8_t)));
+    if (!query_regs) {
+        IOLogError("%s - Failed to allocate %d query registers", getName(), query_regs_size);
+        return -1;
+    }
+    memset(query_regs, 0, query_regs_size * sizeof(uint8_t));
+
     error = bus->readBlock(desc.query_base_addr,
                               query_regs, RMI_F30_QUERY_SIZE);
     if (error) {
-        IOLogError("F30: Failed to read query register");
-        return error;
+        IOLogError("%s: Failed to read query register: %d", getName(), error);
+        return -1;
     }
     
     has_extended_pattern = query_regs[0] & RMI_F30_EXTENDED_PATTERNS;
@@ -73,6 +55,22 @@ int F30::initialize()
 
     gpioled_count = query_regs[1] & RMI_F30_GPIO_LED_COUNT;
     register_count = DIV_ROUND_UP(gpioled_count, 8);
+
+    ctrl_regs_size = RMI_F30_CTRL_REGS_MAX_SIZE;
+    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
+    if (!ctrl_regs) {
+        IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size);
+        return -1;
+    }
+    memset(ctrl_regs, 0, ctrl_regs_size * sizeof(uint8_t));
+
+    data_regs_size = register_count;
+    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(data_regs_size * sizeof(uint8_t)));
+    if (!query_regs) {
+        IOLogError("%s - Failed to allocate %d query registers", getName(), query_regs_size);
+        return -1;
+    }
+    memset(data_regs, 0, data_regs_size * sizeof(uint8_t));
 
     OSNumber *value;
     OSDictionary * attribute = OSDictionary::withCapacity(9);

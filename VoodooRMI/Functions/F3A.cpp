@@ -11,32 +11,6 @@
 OSDefineMetaClassAndStructors(F3A, RMIGPIOFunction)
 #define super RMIGPIOFunction
 
-bool F3A::init(OSDictionary *dictionary) {
-    if (!super::init(dictionary))
-        return false;
-
-    query_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F3A_MAX_REG_SIZE * sizeof(uint8_t)));
-    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F3A_MAX_REG_SIZE * sizeof(uint8_t)));
-    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(RMI_F3A_DATA_REGS_MAX_SIZE * sizeof(uint8_t)));
-
-    if (!(query_regs && ctrl_regs && data_regs))
-        return false;
-
-    memset(query_regs, 0, RMI_F3A_MAX_REG_SIZE * sizeof(uint8_t));
-    memset(ctrl_regs, 0, RMI_F3A_MAX_REG_SIZE * sizeof(uint8_t));
-    memset(data_regs, 0, RMI_F3A_DATA_REGS_MAX_SIZE * sizeof(uint8_t));
-
-    return true;
-}
-
-void F3A::free() {
-    IOFree(query_regs, RMI_F3A_MAX_REG_SIZE * sizeof(uint8_t));
-    IOFree(ctrl_regs, RMI_F3A_MAX_REG_SIZE * sizeof(uint8_t));
-    IOFree(data_regs, RMI_F3A_DATA_REGS_MAX_SIZE * sizeof(uint8_t));
-
-    super::free();
-}
-
 int F3A::initialize()
 {
     int error;

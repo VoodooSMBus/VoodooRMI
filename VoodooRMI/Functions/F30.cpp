@@ -42,7 +42,7 @@ int F30::initialize()
                               query_regs, RMI_F30_QUERY_SIZE);
     if (error) {
         IOLogError("%s: Failed to read query register: %d", getName(), error);
-        return -1;
+        return error;
     }
     
     has_extended_pattern = query_regs[0] & RMI_F30_EXTENDED_PATTERNS;

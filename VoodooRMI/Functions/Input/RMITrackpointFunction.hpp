@@ -22,7 +22,7 @@ class RMITrackpointFunction : public RMIFunction {
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
-public:
+protected:
     RMITrackpointReport report {};
 
 private:

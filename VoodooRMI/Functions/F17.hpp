@@ -154,7 +154,6 @@ public:
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
 private:
-//    RMIBus *bus;
     RelativePointerEvent relativeEvent {};
 
     rmi_f17_device_data f17;

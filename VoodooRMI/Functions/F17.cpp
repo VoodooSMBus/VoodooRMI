@@ -34,7 +34,7 @@ bool F17::start(IOService *provider)
 void F17::free()
 {
     if (f17.sticks)
-        IOFree(f17.sticks, (f17.query.number_of_sticks+1) * sizeof(struct rmi_f17_stick_data));
+        IOFree(f17.sticks, (f17.query.number_of_sticks + 1) * sizeof(struct rmi_f17_stick_data));
     super::free();
 }
 
@@ -160,11 +160,12 @@ int F17::rmi_f17_initialize() {
 
     IOLogInfo("%s: Found %d sticks", __func__, f17.query.number_of_sticks + 1);
 
-    f17.sticks = reinterpret_cast<rmi_f17_stick_data*>(IOMallocZero((f17.query.number_of_sticks+1) * sizeof(struct rmi_f17_stick_data)));
-    if (!(f17.sticks)) {
+    f17.sticks = reinterpret_cast<rmi_f17_stick_data*>(IOMalloc((f17.query.number_of_sticks + 1) * sizeof(struct rmi_f17_stick_data)));
+    if (!f17.sticks) {
         IOLogError("%s: Failed to allocate per stick data", __func__);
         return -1;
     }
+    bzero(f17.sticks, (f17.query.number_of_sticks + 1) * sizeof(struct rmi_f17_stick_data));
 
     next_query_reg += sizeof(f17.query.regs);
 

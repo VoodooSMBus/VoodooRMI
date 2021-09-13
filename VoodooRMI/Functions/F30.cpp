@@ -56,13 +56,13 @@ int F30::initialize()
     gpioled_count = query_regs[1] & RMI_F30_GPIO_LED_COUNT;
     register_count = DIV_ROUND_UP(gpioled_count, 8);
 
-    ctrl_regs_size = RMI_F30_CTRL_REGS_MAX_SIZE;
-    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
+    ctrl_regs_size_original = RMI_F30_CTRL_REGS_MAX_SIZE;
+    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size_original * sizeof(uint8_t)));
     if (!ctrl_regs) {
-        IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size);
+        IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size_original);
         return -1;
     }
-    bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+    bzero(ctrl_regs, ctrl_regs_size_original * sizeof(uint8_t));
     ctrl_reg = ctrl_regs;
 
     data_regs_size = register_count;

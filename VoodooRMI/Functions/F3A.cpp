@@ -47,7 +47,6 @@ int F3A::initialize()
         return error;
     }
 
-    ctrl_regs_size = register_count + 1;
     /* Ctrl1 -> gpio direction */
     error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
     if (error) {

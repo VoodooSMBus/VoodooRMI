@@ -43,7 +43,6 @@ protected:
     virtual inline int initialize() {return -1;};
     virtual inline bool is_valid_button(int button) {return false;};
 
-    int readControlParameters();
     int config();
     int mapGpios();
     void reportButton();

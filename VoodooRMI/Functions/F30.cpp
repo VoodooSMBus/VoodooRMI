@@ -137,9 +137,9 @@ int F30::initialize()
     ctrl_regs_size = (uint32_t) (ctrl_reg -
         ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
     
-    error = readControlParameters();
+    error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
     if (error) {
-        IOLogError("%s - Failed to initialize control params: %d", getName(), error);
+        IOLogError("%s - Failed to read control registers: %d", getName(), error);
         return error;
     }
     

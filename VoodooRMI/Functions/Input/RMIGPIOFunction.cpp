@@ -24,21 +24,6 @@ bool RMIGPIOFunction::attach(IOService *provider)
     return true;
 }
 
-int RMIGPIOFunction::readControlParameters()
-{
-    int error;
-
-    error = bus->readBlock(desc.control_base_addr,
-                              ctrl_regs, ctrl_regs_size);
-    if (error) {
-        IOLogError("%s: Could not read control registers at 0x%x: %d",
-                   getName(), desc.control_base_addr, error);
-        return error;
-    }
-
-    return 0;
-}
-
 int RMIGPIOFunction::config()
 {
     /* Write Control Register values back to device */

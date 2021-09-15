@@ -23,7 +23,7 @@ class F3A : public RMIGPIOFunction {
 public:
     bool start(IOService *provider) override;
 
-private:    
+private:
     int initialize() override;
     bool is_valid_button(int button) override;
 };

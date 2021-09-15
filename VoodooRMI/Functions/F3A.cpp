@@ -26,19 +26,16 @@ int F3A::initialize()
     register_count = DIV_ROUND_UP(gpioled_count, 8);
 
     query_regs_size = register_count + 1;
-    data_regs_size = register_count;
     ctrl_regs_size = register_count + 1;
 
     query_regs = reinterpret_cast<uint8_t *>(IOMalloc(query_regs_size * sizeof(uint8_t)));
     ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
-    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(data_regs_size * sizeof(uint8_t)));
-    if (!(query_regs && ctrl_regs && data_regs)) {
+    if (!(query_regs && ctrl_regs)) {
         IOLogError("%s - Failed to allocate %d registers", getName(), register_count);
         return -1;
     }
     bzero(query_regs, query_regs_size * sizeof(uint8_t));
     bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
-    bzero(data_regs, data_regs_size * sizeof(uint8_t));
 
     /* Query1 -> gpio exist */
     error = bus->readBlock(desc.query_base_addr, query_regs, query_regs_size);
@@ -56,12 +53,10 @@ int F3A::initialize()
 #ifdef DEBUG
     setProperty("Control register 0", ctrl_regs[0], 8);
 #endif
-    if (has_gpio) {
-        error = mapGpios();
-        if (error) {
-            IOLogError("%s - Failed to map GPIO: %d", getName(), error);
-            return error;
-        }
+    error = mapGpios();
+    if (error) {
+        IOLogError("%s - Failed to map GPIO: %d", getName(), error);
+        return error;
     }
     return 0;
 }

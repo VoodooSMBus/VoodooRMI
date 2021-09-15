@@ -26,7 +26,7 @@ bool F30::start(IOService *provider)
 
 int F30::initialize()
 {
-    u8 *ctrl_reg;
+    u8 *ctrl_reg = ctrl_regs;
     int control_address = desc.control_base_addr;
     int error;
 
@@ -56,23 +56,6 @@ int F30::initialize()
     gpioled_count = query_regs[1] & RMI_F30_GPIO_LED_COUNT;
     register_count = DIV_ROUND_UP(gpioled_count, 8);
 
-    ctrl_regs_size_original = RMI_F30_CTRL_REGS_MAX_SIZE;
-    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size_original * sizeof(uint8_t)));
-    if (!ctrl_regs) {
-        IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size_original);
-        return -1;
-    }
-    bzero(ctrl_regs, ctrl_regs_size_original * sizeof(uint8_t));
-    ctrl_reg = ctrl_regs;
-
-    data_regs_size = register_count;
-    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(data_regs_size * sizeof(uint8_t)));
-    if (!query_regs) {
-        IOLogError("%s - Failed to allocate %d query registers", getName(), query_regs_size);
-        return -1;
-    }
-    bzero(data_regs, data_regs_size * sizeof(uint8_t));
-
     OSNumber *value;
     OSDictionary * attribute = OSDictionary::withCapacity(9);
     setPropertyBoolean(attribute, "extended_pattern", has_extended_pattern);
@@ -87,71 +70,81 @@ int F30::initialize()
     setProperty("Attibute", attribute);
     OSSafeReleaseNULL(attribute);
 
-    if (has_gpio && has_led)
-        rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
-                              register_count, &ctrl_reg);
-    
-    rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
-                          sizeof(u8), &ctrl_reg);
-    
-    if (has_gpio) {
-        rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
-                              register_count, &ctrl_reg);
-        
-        rmi_f30_set_ctrl_data(&ctrl[3], &control_address,
-                              register_count, &ctrl_reg);
+    while (true) {
+        if (has_gpio && has_led)
+            rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
+                                  register_count, &ctrl_reg);
+
+        rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
+                                  sizeof(u8), &ctrl_reg);
+
+        if (has_gpio) {
+            rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
+                                  register_count, &ctrl_reg);
+
+            rmi_f30_set_ctrl_data(&ctrl[3], &control_address,
+                                  register_count, &ctrl_reg);
+        }
+
+        if (has_led) {
+            rmi_f30_set_ctrl_data(&ctrl[4], &control_address,
+                                  register_count, &ctrl_reg);
+
+            rmi_f30_set_ctrl_data(&ctrl[5], &control_address,
+                                  has_extended_pattern ? 6 : 2,
+                                  &ctrl_reg);
+        }
+
+        if (has_led || has_gpio_driver_control) {
+            /* control 6 uses a byte per gpio/led */
+            rmi_f30_set_ctrl_data(&ctrl[6], &control_address,
+                                  gpioled_count, &ctrl_reg);
+        }
+
+        if (has_mappable_buttons) {
+            /* control 7 uses a byte per gpio/led */
+            rmi_f30_set_ctrl_data(&ctrl[7], &control_address,
+                                  gpioled_count, &ctrl_reg);
+        }
+
+        if (has_haptic) {
+            rmi_f30_set_ctrl_data(&ctrl[8], &control_address,
+                                  register_count, &ctrl_reg);
+
+            rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
+                                  sizeof(u8), &ctrl_reg);
+        }
+
+        if (has_mech_mouse_btns)
+            rmi_f30_set_ctrl_data(&ctrl[10], &control_address,
+                                  sizeof(u8), &ctrl_reg);
+
+        ctrl_regs_size = (uint32_t) (ctrl_reg -
+            ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
+
+        if (ctrl_regs != nullptr)
+            break;
+
+        ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
+        if (!ctrl_regs) {
+            IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size);
+            return -1;
+        }
+        bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+        ctrl_reg = ctrl_regs;
     }
-    
-    if (has_led) {
-        rmi_f30_set_ctrl_data(&ctrl[4], &control_address,
-                              register_count, &ctrl_reg);
-        
-        rmi_f30_set_ctrl_data(&ctrl[5], &control_address,
-                              has_extended_pattern ? 6 : 2,
-                              &ctrl_reg);
-    }
-    
-    if (has_led || has_gpio_driver_control) {
-        /* control 6 uses a byte per gpio/led */
-        rmi_f30_set_ctrl_data(&ctrl[6], &control_address,
-                              gpioled_count, &ctrl_reg);
-    }
-    
-    if (has_mappable_buttons) {
-        /* control 7 uses a byte per gpio/led */
-        rmi_f30_set_ctrl_data(&ctrl[7], &control_address,
-                              gpioled_count, &ctrl_reg);
-    }
-    
-    if (has_haptic) {
-        rmi_f30_set_ctrl_data(&ctrl[8], &control_address,
-                              register_count, &ctrl_reg);
-        
-        rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
-                              sizeof(u8), &ctrl_reg);
-    }
-    
-    if (has_mech_mouse_btns)
-        rmi_f30_set_ctrl_data(&ctrl[10], &control_address,
-                              sizeof(u8), &ctrl_reg);
-    
-    ctrl_regs_size = (uint32_t) (ctrl_reg -
-        ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
-    
+
     error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
     if (error) {
         IOLogError("%s - Failed to read control registers: %d", getName(), error);
         return error;
     }
     
-    if (has_gpio) {
-        error = mapGpios();
-        if (error) {
-            IOLogError("%s - Failed to map GPIO: %d", getName(), error);
-            return error;
-        }
+    error = mapGpios();
+    if (error) {
+        IOLogError("%s - Failed to map GPIO: %d", getName(), error);
+        return error;
     }
-    
     return 0;
 }
 

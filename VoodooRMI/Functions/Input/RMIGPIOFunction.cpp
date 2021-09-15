@@ -39,6 +39,16 @@ int RMIGPIOFunction::config()
 
 int RMIGPIOFunction::mapGpios()
 {
+    if (!has_gpio)
+        return -1;
+
+    data_regs = reinterpret_cast<uint8_t *>(IOMalloc(register_count * sizeof(uint8_t)));
+    if (!data_regs) {
+        IOLogError("%s - Failed to allocate %d query registers", getName(), register_count);
+        return -1;
+    }
+    bzero(data_regs, register_count * sizeof(uint8_t));
+
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
     int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
@@ -152,8 +162,8 @@ void RMIGPIOFunction::reportButton()
 
 void RMIGPIOFunction::free() {
     IOFree(query_regs, query_regs_size * sizeof(uint8_t));
-    IOFree(ctrl_regs, (ctrl_regs_size_original ?: ctrl_regs_size) * sizeof(uint8_t));
-    IOFree(data_regs, data_regs_size * sizeof(uint8_t));
+    IOFree(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+    IOFree(data_regs, register_count * sizeof(uint8_t));
 
     super::free();
 }

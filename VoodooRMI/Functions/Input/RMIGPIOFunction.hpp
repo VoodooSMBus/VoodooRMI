@@ -24,12 +24,10 @@ protected:
     RelativePointerEvent relativeEvent {};
 
     uint8_t *query_regs {nullptr};
-    uint32_t query_regs_size {0};
+    uint8_t query_regs_size {0};
     uint8_t *ctrl_regs {nullptr};
-    uint32_t ctrl_regs_size {0};
-    uint32_t ctrl_regs_size_original {0};
+    uint8_t ctrl_regs_size {0};
     uint8_t *data_regs {nullptr};
-    uint32_t data_regs_size {0};
 
     u8 register_count {0};
     u8 gpioled_count {0};

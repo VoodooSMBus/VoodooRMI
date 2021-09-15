@@ -127,7 +127,7 @@ int F30::initialize()
 
         ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
         if (!ctrl_regs) {
-            IOLogError("%s - Failed to allocate %d query registers", getName(), ctrl_regs_size);
+            IOLogError("%s - Failed to allocate %d control registers", getName(), ctrl_regs_size);
             return -1;
         }
         bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));

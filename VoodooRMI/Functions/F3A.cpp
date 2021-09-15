@@ -29,12 +29,17 @@ int F3A::initialize()
     ctrl_regs_size = register_count + 1;
 
     query_regs = reinterpret_cast<uint8_t *>(IOMalloc(query_regs_size * sizeof(uint8_t)));
-    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
-    if (!(query_regs && ctrl_regs)) {
-        IOLogError("%s - Failed to allocate %d registers", getName(), register_count);
+    if (!query_regs) {
+        IOLogError("%s - Failed to allocate %d query registers", getName(), query_regs_size);
         return -1;
     }
     bzero(query_regs, query_regs_size * sizeof(uint8_t));
+
+    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
+    if (!ctrl_regs) {
+        IOLogError("%s - Failed to allocate %d control registers", getName(), ctrl_regs_size);
+        return -1;
+    }
     bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
 
     /* Query1 -> gpio exist */

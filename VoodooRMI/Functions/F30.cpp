@@ -24,10 +24,64 @@ bool F30::start(IOService *provider)
     return true;
 }
 
-int F30::initialize()
-{
+void F30::rmi_f30_calc_ctrl_data() {
     u8 *ctrl_reg = ctrl_regs;
     int control_address = desc.control_base_addr;
+
+    if (has_gpio && has_led)
+        rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
+                              register_count, &ctrl_reg);
+
+    rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
+                          sizeof(u8), &ctrl_reg);
+
+    if (has_gpio) {
+        rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
+                              register_count, &ctrl_reg);
+
+        rmi_f30_set_ctrl_data(&ctrl[3], &control_address,
+                              register_count, &ctrl_reg);
+    }
+
+    if (has_led) {
+        rmi_f30_set_ctrl_data(&ctrl[4], &control_address,
+                              register_count, &ctrl_reg);
+
+        rmi_f30_set_ctrl_data(&ctrl[5], &control_address,
+                              has_extended_pattern ? 6 : 2,
+                              &ctrl_reg);
+    }
+
+    if (has_led || has_gpio_driver_control) {
+        /* control 6 uses a byte per gpio/led */
+        rmi_f30_set_ctrl_data(&ctrl[6], &control_address,
+                              gpioled_count, &ctrl_reg);
+    }
+
+    if (has_mappable_buttons) {
+        /* control 7 uses a byte per gpio/led */
+        rmi_f30_set_ctrl_data(&ctrl[7], &control_address,
+                              gpioled_count, &ctrl_reg);
+    }
+
+    if (has_haptic) {
+        rmi_f30_set_ctrl_data(&ctrl[8], &control_address,
+                              register_count, &ctrl_reg);
+
+        rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
+                              sizeof(u8), &ctrl_reg);
+    }
+
+    if (has_mech_mouse_btns)
+        rmi_f30_set_ctrl_data(&ctrl[10], &control_address,
+                              sizeof(u8), &ctrl_reg);
+
+    ctrl_regs_size = (uint32_t) (ctrl_reg -
+                                 ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
+}
+
+int F30::initialize()
+{
     int error;
 
     query_regs_size = RMI_F30_QUERY_SIZE;
@@ -70,69 +124,17 @@ int F30::initialize()
     setProperty("Attibute", attribute);
     OSSafeReleaseNULL(attribute);
 
-    while (true) {
-        if (has_gpio && has_led)
-            rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
-                                  register_count, &ctrl_reg);
+    // get correct ctrl_regs_size only
+    rmi_f30_calc_ctrl_data();
 
-        rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
-                                  sizeof(u8), &ctrl_reg);
-
-        if (has_gpio) {
-            rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
-                                  register_count, &ctrl_reg);
-
-            rmi_f30_set_ctrl_data(&ctrl[3], &control_address,
-                                  register_count, &ctrl_reg);
-        }
-
-        if (has_led) {
-            rmi_f30_set_ctrl_data(&ctrl[4], &control_address,
-                                  register_count, &ctrl_reg);
-
-            rmi_f30_set_ctrl_data(&ctrl[5], &control_address,
-                                  has_extended_pattern ? 6 : 2,
-                                  &ctrl_reg);
-        }
-
-        if (has_led || has_gpio_driver_control) {
-            /* control 6 uses a byte per gpio/led */
-            rmi_f30_set_ctrl_data(&ctrl[6], &control_address,
-                                  gpioled_count, &ctrl_reg);
-        }
-
-        if (has_mappable_buttons) {
-            /* control 7 uses a byte per gpio/led */
-            rmi_f30_set_ctrl_data(&ctrl[7], &control_address,
-                                  gpioled_count, &ctrl_reg);
-        }
-
-        if (has_haptic) {
-            rmi_f30_set_ctrl_data(&ctrl[8], &control_address,
-                                  register_count, &ctrl_reg);
-
-            rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
-                                  sizeof(u8), &ctrl_reg);
-        }
-
-        if (has_mech_mouse_btns)
-            rmi_f30_set_ctrl_data(&ctrl[10], &control_address,
-                                  sizeof(u8), &ctrl_reg);
-
-        ctrl_regs_size = (uint32_t) (ctrl_reg -
-            ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
-
-        if (ctrl_regs != nullptr)
-            break;
-
-        ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
-        if (!ctrl_regs) {
-            IOLogError("%s - Failed to allocate %d control registers", getName(), ctrl_regs_size);
-            return -1;
-        }
-        bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
-        ctrl_reg = ctrl_regs;
+    ctrl_regs = reinterpret_cast<uint8_t *>(IOMalloc(ctrl_regs_size * sizeof(uint8_t)));
+    if (!ctrl_regs) {
+        IOLogError("%s - Failed to allocate %d control registers", getName(), ctrl_regs_size);
+        return -1;
     }
+    bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
+
+    rmi_f30_calc_ctrl_data();
 
     error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
     if (error) {

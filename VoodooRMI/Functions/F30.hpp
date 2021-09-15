@@ -72,6 +72,7 @@ private:
     rmi_f30_ctrl_data ctrl[RMI_F30_CTRL_MAX_REG_BLOCKS];
 
     int initialize() override;
+    void rmi_f30_calc_ctrl_data();
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
                                int *ctrl_addr, int len, u8 **reg);
     bool is_valid_button(int button) override;

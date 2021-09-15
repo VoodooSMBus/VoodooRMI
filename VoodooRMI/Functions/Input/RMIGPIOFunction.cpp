@@ -44,7 +44,7 @@ int RMIGPIOFunction::mapGpios()
 
     data_regs = reinterpret_cast<uint8_t *>(IOMalloc(register_count * sizeof(uint8_t)));
     if (!data_regs) {
-        IOLogError("%s - Failed to allocate %d query registers", getName(), register_count);
+        IOLogError("%s - Failed to allocate %d data registers", getName(), register_count);
         return -1;
     }
     bzero(data_regs, register_count * sizeof(uint8_t));

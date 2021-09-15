@@ -31,7 +31,7 @@ protected:
 
     u8 register_count {0};
     u8 gpioled_count {0};
-    u16 gpioled_key_map[TRACKPOINT_RANGE_END];
+    u16 *gpioled_key_map {nullptr};
 
     bool has_gpio {true};
     u8 numButtons {0};

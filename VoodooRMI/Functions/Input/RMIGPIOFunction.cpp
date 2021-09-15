@@ -55,6 +55,13 @@ int RMIGPIOFunction::mapGpios()
     const gpio_data *gpio = bus->getGPIOData();
     setProperty("Button Count", buttonArrLen, 32);
 
+    gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(uint16_t)));
+    if (!gpioled_key_map) {
+        IOLogError("%s - Failed to allocate %d gpioled map memory", getName(), buttonArrLen);
+        return -1;
+    }
+    bzero(gpioled_key_map, buttonArrLen * sizeof(gpioled_key_map[0]));
+
     for (int i = 0; i < buttonArrLen; i++) {
         if (!is_valid_button(i))
             continue;
@@ -161,6 +168,7 @@ void RMIGPIOFunction::reportButton()
 }
 
 void RMIGPIOFunction::free() {
+    IOFree(gpioled_key_map, min(gpioled_count, TRACKPOINT_RANGE_END) * sizeof(uint16_t));
     IOFree(query_regs, query_regs_size * sizeof(uint8_t));
     IOFree(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
     IOFree(data_regs, register_count * sizeof(uint8_t));

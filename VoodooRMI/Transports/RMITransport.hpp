@@ -40,9 +40,9 @@ class RMITransport : public IOService {
     
 public:
     // rmi_read_block
-    virtual int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {return 0;};
+    virtual int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {return -1;};
     // rmi_block_write
-    virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {return 0;};
+    virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {return -1;};
     
     virtual int reset() {return 0;};
     

@@ -115,14 +115,13 @@ void RMIBus::handleHostNotify()
     
     int error = readBlock(data->f01_container->fd.data_base_addr + 1,
                           reinterpret_cast<u8*>(&irqStatus), data->num_of_irq_regs);
-    
-    data->irq_status = irqStatus;
-    
     if (error < 0){
         IOLogError("Unable to read IRQ");
         return;
     }
     
+    data->irq_status = irqStatus;
+
     IOLockLock(data->irq_mutex);
     mask = data->irq_status & data->fn_irq_bits;
     IOLockUnlock(data->irq_mutex);

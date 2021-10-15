@@ -71,6 +71,7 @@ Linux:
 | `SYNA2B33` | F11 |
 | `SYNA2B61` | F11 |
 | `SYNA2B34` | unknown |
+| `SYNA3083` | F12 |
 | `SYNA3105` | unknown |
 | `SYNA328E` | F12 |
 | `SYNA3602` | unknown |

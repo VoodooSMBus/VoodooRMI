@@ -129,8 +129,6 @@ private:
     IOCommandGate *command_gate;
     IOTimerEventSource *timer {nullptr};
     
-    RMITrackpointReport report {};
-    
     // trackpoint
     u8 vendor {0};
     

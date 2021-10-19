@@ -87,7 +87,8 @@ bool F3A::mapGpios(u8 *query1_regs, u8 *ctrl1_regs)
         }
     }
     
-    setProperty("Trackpoint Buttons through F3A", trackpoint_button != BTN_LEFT);
+    hasTrackpointButtons = trackpoint_button != BTN_LEFT;
+    setProperty("Trackpoint Buttons through F3A", hasTrackpointButtons);
     setProperty("Clickpad", numButtons == 1);
     return true;
 }
@@ -150,6 +151,9 @@ IOReturn F3A::message(UInt32 type, IOService *provider, void *argument)
                 
                 messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooInputInstance, &relativeEvent, sizeof(RelativePointerEvent));
             }
+            
+            if (hasTrackpointButtons)
+                bus->notify(kHandleRMITrackpointButton, reinterpret_cast<void *>(trackpointBtns));
             
             break;
         default:

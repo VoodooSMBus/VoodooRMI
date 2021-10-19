@@ -39,6 +39,7 @@ private:
     u8 numButtons {0};
     u8 clickpadIndex {0};
     bool clickpadState {false};
+    bool hasTrackpointButtons {false};
     
     bool mapGpios(u8 *query1_regs, u8 *ctrl1_regs);
     inline bool is_valid_button(int button, u8 *query1_regs, u8 *ctrl1_regs) {

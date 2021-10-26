@@ -51,7 +51,7 @@ bool RMISMBus::start(IOService *provider)
     // Do a reset over PS2 if possible
     // If ApplePS2Synaptics isn't there, we can *likely* assume that they did not inject VoodooPS2Trackpad
     // In which case, resetting isn't important unless it's a broken HP machine
-    auto ps2 = waitForMatchingService(dict, UInt64 (5) * kSecondScale);
+    auto ps2 = waitForMatchingService(dict, UInt64 (6) * kSecondScale);
     
     if (ps2) {
         // VoodooPS2Trackpad is currently initializing.

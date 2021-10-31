@@ -49,6 +49,8 @@
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
 		A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A46D70D92517CB6800A60B75 /* F3A.cpp */; };
 		A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A46D70DA2517CB6800A60B75 /* F3A.hpp */; };
+		6FA2918826EC7F1700496388 /* F17.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6FA2918626EC7F1700496388 /* F17.cpp */; };
+		6FA2918926EC7F1700496388 /* F17.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6FA2918726EC7F1700496388 /* F17.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +118,8 @@
 		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
 		A46D70D92517CB6800A60B75 /* F3A.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F3A.cpp; sourceTree = "<group>"; };
 		A46D70DA2517CB6800A60B75 /* F3A.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F3A.hpp; sourceTree = "<group>"; };
+		6FA2918626EC7F1700496388 /* F17.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F17.cpp; sourceTree = "<group>"; };
+		6FA2918726EC7F1700496388 /* F17.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F17.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -258,6 +262,8 @@
 				A4560EF4247F32760009CBE0 /* F11.cpp */,
 				A4560EF2247F32760009CBE0 /* F12.hpp */,
 				A4560EF5247F32760009CBE0 /* F12.cpp */,
+				6FA2918726EC7F1700496388 /* F17.hpp */,
+				6FA2918626EC7F1700496388 /* F17.cpp */,
 				A4560EF3247F32760009CBE0 /* F30.hpp */,
 				A4560EF8247F32760009CBE0 /* F30.cpp */,
 				A46D70DA2517CB6800A60B75 /* F3A.hpp */,
@@ -317,6 +323,7 @@
 				6FA2918D26EDC41000496388 /* RMIGPIOFunction.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
 				A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */,
+				6FA2918926EC7F1700496388 /* F17.hpp in Headers */,
 				A4560F07247F38670009CBE0 /* MultitouchHelpers.h in Headers */,
 				A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */,
 				A4560EFB247F32760009CBE0 /* F30.hpp in Headers */,
@@ -394,7 +401,7 @@
 		A4560EBE247F29EC0009CBE0 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1240;
+				LastUpgradeCheck = 1250;
 				ORGANIZATIONNAME = 1Revenger1;
 				TargetAttributes = {
 					6F4B4A8C24C1A0B80018F1F0 = {
@@ -501,6 +508,7 @@
 				287EA3C526E8383A00CEDA8B /* RMITrackpointFunction.cpp in Sources */,
 				A4560EFC247F32760009CBE0 /* F11.cpp in Sources */,
 				A4560F00247F32760009CBE0 /* F30.cpp in Sources */,
+				6FA2918826EC7F1700496388 /* F17.cpp in Sources */,
 				A4560EFD247F32760009CBE0 /* F12.cpp in Sources */,
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,

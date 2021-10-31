@@ -71,12 +71,14 @@ Linux:
 | `SYNA2B33` | F11 |
 | `SYNA2B61` | F11 |
 | `SYNA2B34` | unknown |
+| `SYNA3083` | F12 |
 | `SYNA3105` | unknown |
 | `SYNA328E` | F12 |
 | `SYNA3602` | unknown |
 | `SYNA7500` | unknown |
 | `SYNA7501` | unknown |
 | `SYNA7DAB` | F12 |
+| `SYNA7DB5` | F12 |
 
 ## Installation
 1) Add the required kexts to your bootloader

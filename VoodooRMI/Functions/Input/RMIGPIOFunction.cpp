@@ -19,9 +19,7 @@ bool RMIGPIOFunction::attach(IOService *provider)
     if (error)
         return false;
 
-    super::attach(provider);
-
-    return true;
+    return super::attach(provider);
 }
 
 int RMIGPIOFunction::config()

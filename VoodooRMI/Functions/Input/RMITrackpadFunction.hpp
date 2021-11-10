@@ -98,12 +98,14 @@ private:
     finger_state fingerState[MAX_FINGERS];
     bool clickpadState {false};
     bool trackpadEnable {true};
+    
     uint64_t lastKeyboardTS {0}, lastTrackpointTS {0};
 
     MT2FingerType getFingerType();
     size_t checkInZone(VoodooInputTransducer &obj);
     void setThumbFingerType(size_t fingers, RMI2DSensorReport *report);
     void invalidateFingers();
+    bool isForceTouch(u8 pressure);
 };
 
 #endif /* RMITrackpadFunction_hpp */

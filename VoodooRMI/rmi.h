@@ -127,6 +127,13 @@ struct __kfifo {
     void        *data;
 };
 
+// Force touch types
+enum ForceTouchType {
+    RMI_FT_DISABLE = 0,
+    RMI_FT_CLICK = 1,
+    RMI_FT_PRESS = 2,
+};
+
 struct rmi_configuration {
     /* F03 */
     uint32_t trackpointMult {DEFAULT_MULT};
@@ -134,7 +141,6 @@ struct rmi_configuration {
     uint32_t trackpointScrollYMult {DEFAULT_MULT};
     uint32_t trackpointDeadzone {1};
     /* RMI2DSensor */
-    bool forceTouchEmulation {true};
     uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
     uint32_t fingerMajorMinorMax {10};
@@ -145,6 +151,7 @@ struct rmi_configuration {
     uint8_t palmRejectionWidth {15};
     uint8_t palmRejectionHeight {80};
     uint8_t palmRejectionHeightTrackpoint {20};
+    ForceTouchType forceTouchType {RMI_FT_CLICK};
 };
 
 // Data for F30 and F3A

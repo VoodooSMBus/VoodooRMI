@@ -25,6 +25,10 @@ struct mapping_table_entry {
     u8 flags;
 };
 
+enum {
+    kPS2C_wakeCompleted = iokit_vendor_specific_msg(301),       // PS2 Wakeup completed
+};
+    
 class RMISMBus : public RMITransport {
     OSDeclareDefaultStructors(RMISMBus);
     
@@ -51,6 +55,7 @@ private:
     u8 table_index {0};
     unsigned long currentState {1};
     
+    int rmi_smb_wake();
     int rmi_smb_get_version();
     int rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
                                  bool isread, u8 *commandcode);

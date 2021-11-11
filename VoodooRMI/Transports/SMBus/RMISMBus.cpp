@@ -252,10 +252,37 @@ IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
         case kIOMessageVoodooSMBusHostNotify:
             return messageClient(kIOMessageVoodooSMBusHostNotify, bus);
+        case kPS2C_wakeCompleted:
+            return rmi_smb_wake();
         default:
             return IOService::message(type, provider, argument);
     }
 };
+
+int RMISMBus::rmi_smb_wake() {
+    // Put trackpad in SMBus mode again
+    int retval = reset();
+    if (retval < 0) {
+        IOLogError("Failed to reset trackpad!");
+        return kIOReturnError;
+    }
+    
+    // Reconfigure device
+    retval = messageClient(kIOMessageRMI4ResetHandler, bus);
+    if (retval < 0) {
+        IOLogError("Failed to config trackpad!");
+        return kIOReturnError;
+    }
+    
+    // Enable trackpad again
+    retval = messageClient(kIOMessageRMI4Resume, bus);
+    if (retval < 0) {
+        IOLogError("Failed to resume trackpad!");
+        return kIOReturnError;
+    }
+    
+    return 0;
+}
 
 IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
     if (whatDevice != this)
@@ -269,29 +296,13 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
-        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
-        IOSleep(1000);
-        
-        // Put trackpad in SMBus mode again
-        int retval = reset();
-        if (retval < 0) {
-            IOLogError("Failed to reset trackpad!");
+        if (vps2Control) {
             return kIOPMAckImplied;
+        } else {
+            IOSleep(1000);
+            return rmi_smb_wake();
         }
         
-        // Reconfigure device
-        retval = messageClient(kIOMessageRMI4ResetHandler, bus);
-        if (retval < 0) {
-            IOLogError("Failed to config trackpad!");
-            return kIOPMAckImplied;
-        }
-        
-        // Enable trackpad again
-        retval = messageClient(kIOMessageRMI4Resume, bus);
-        if (retval < 0) {
-            IOLogError("Failed to resume trackpad!");
-            return kIOPMAckImplied;
-        }
     }
 
     return kIOPMAckImplied;

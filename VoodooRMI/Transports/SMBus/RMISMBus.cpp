@@ -22,6 +22,7 @@ bool RMISMBus::init(OSDictionary *dictionary)
 
 RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 {
+    int retval = 0, attempts = 0;
     if (!super::probe(provider, score)) {
         IOLogError("Failed probe");
         return NULL;
@@ -36,69 +37,6 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
     device_nub->wakeupController();
     device_nub->setSlaveDeviceFlags(I2C_CLIENT_HOST_NOTIFY);
     
-    return this;
-}
-
-bool RMISMBus::start(IOService *provider)
-{
-    auto dict = IOService::nameMatching("ApplePS2SynapticsTouchPad");
-    if (!dict) {
-        IOLogError("Unable to create name matching dictionary");
-        return false;
-    }
-    
-    
-    // Do a reset over PS2 if possible
-    // If ApplePS2Synaptics isn't there, we can *likely* assume that they did not inject VoodooPS2Trackpad
-    // In which case, resetting isn't important unless it's a broken HP machine
-    auto ps2 = waitForMatchingService(dict, UInt64 (7) * kSecondScale);
-    
-    if (ps2) {
-        // VoodooPS2Trackpad is currently initializing.
-        // We don't know what state it is in, so wait for registerService()
-        IOLogInfo("Found PS2 Trackpad driver! Waiting for registerService()");
-        
-        IONotifier *notifierStatus = addMatchingNotification(gIOMatchedNotification,
-                                                             dict, 0,
-                                                             ^bool (IOService *newService, IONotifier *notifier) {
-            if (!newService->getProperty("VoodooInputSupported")) {
-                IOLogDebug("Too early notification - No VoodooInput on PS2 yet");
-                return true;
-            }
-            
-            if (OSObject *gpio = newService->getProperty("GPIO Data")) {
-                IOLogDebug("Found GPIO data!");
-                setProperty("GPIO Data", gpio);
-            }
-            
-            IOLogInfo("VoodooPS2Trackpad finished init, starting...");
-            messageClient(kPS2M_SMBusStart, newService);
-            notifier->remove();
-            rmiStart();
-            
-            return true;
-        });
-        
-        if (!notifierStatus) {
-            IOLogError("Notifier not installed");
-        }
-        
-        // Retained by addMatchingNotification
-        OSSafeReleaseNULL(dict);
-        OSSafeReleaseNULL(ps2);
-        return !!notifierStatus;
-    }
-    
-    OSSafeReleaseNULL(dict);
-    
-    // No VoodooPS2Trackpad, start now
-    return rmiStart();
-}
-
-bool RMISMBus::rmiStart()
-{
-    int retval = 0, attempts = 0;
-    
     do {
         retval = rmi_smb_get_version();
         IOSleep(500);
@@ -106,23 +44,35 @@ bool RMISMBus::rmiStart()
     
     if (retval < 0) {
         IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", retval);
-        return false;
+        return nullptr;
     }
     
     if (retval != 2 && retval != 3) {
         IOLogError("Unrecognized SMB Version %d", retval);
-        return false;
+        return nullptr;
     }
     
     setProperty("SMBus Version", retval, 32);
     IOLogInfo("SMBus version %u", retval);
     
+    return this;
+}
+
+bool RMISMBus::start(IOService *provider)
+{
+    auto data = device_nub->getDeviceProps();
+    if (data != nullptr) {
+        vps2Control = true;
+        setProperty("GPIO Data", data);
+    }
+
     PMinit();
     device_nub->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);
     
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
+    
     return true;
 }
 
@@ -310,6 +260,11 @@ IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
 IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice) {
     if (whatDevice != this)
         return kIOPMAckImplied;
+    
+    if (whichState == currentState)
+        return kIOPMAckImplied;
+    
+    currentState = whichState;
     
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);

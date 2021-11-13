@@ -46,6 +46,8 @@ public:
     
     virtual int reset() {return 0;};
     
+    virtual OSArray *getConfig() {return nullptr;};
+
     /*
      * IMPORTANT: These handleClose/handleOpen must be called. These can be overriden,
      * but said implementation must call the ones below.

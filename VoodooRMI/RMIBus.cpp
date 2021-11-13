@@ -94,6 +94,14 @@ bool RMIBus::start(IOService *provider) {
     if (!transport->open(this))
         return false;
 
+    if (OSArray *config = transport->getConfig()) {
+        if (OSDictionary *dict = Configuration::mapArrayToDict(transport->getConfig())) {
+            updateConfiguration(dict);
+            dict->release();
+        }
+//        config->release();
+    }
+
     registerService();
     return true;
 err:

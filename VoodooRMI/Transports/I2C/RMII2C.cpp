@@ -39,6 +39,12 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
         return NULL;
     }
 
+    acpi_device = OSDynamicCast(IOACPIPlatformDevice, device_nub->getProperty("acpi-device"));
+    if (!acpi_device) {
+        IOLogError("%s::%s Could not retrieve acpi device", getName(), name);
+        return NULL;
+    }
+
     if (getHIDDescriptorAddress() != kIOReturnSuccess)
         IOLogInfo("%s::%s Could not get HID descriptor address\n", getName(), name);
 
@@ -460,4 +466,14 @@ void RMII2C::stopInterrupt() {
     } else if (interrupt_source) {
         interrupt_source->disable();
     }
+}
+
+OSArray *RMII2C::getConfig() {
+    OSArray *config = nullptr;
+    OSObject *ret = nullptr;
+    if (acpi_device->evaluateObject("RCFG", &ret) == kIOReturnSuccess)
+        config = OSDynamicCast(OSArray, ret);
+    if (config) config->retain();
+    OSSafeReleaseNULL(ret);
+    return config;
 }

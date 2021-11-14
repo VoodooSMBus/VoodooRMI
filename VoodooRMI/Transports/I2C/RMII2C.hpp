@@ -94,7 +94,6 @@ private:
     int page {0};
     int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
 
-    IOACPIPlatformDevice *acpi_device {nullptr};
     VoodooI2CDeviceNub *device_nub {nullptr};
 
     IOLock *page_mutex {nullptr};

@@ -21,6 +21,8 @@
 		6F7B0EFC25303F60001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
 		6F7B0EFD25303F64001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
 		6F7B0EFE25303FC8001616D6 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 283DDAD6251D7E89007F45E0 /* libkmod.a */; };
+		6FA2918826EC7F1700496388 /* F17.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6FA2918626EC7F1700496388 /* F17.cpp */; };
+		6FA2918926EC7F1700496388 /* F17.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6FA2918726EC7F1700496388 /* F17.hpp */; };
 		6FA2918C26EDC41000496388 /* RMIGPIOFunction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6FA2918A26EDC40F00496388 /* RMIGPIOFunction.cpp */; };
 		6FA2918D26EDC41000496388 /* RMIGPIOFunction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6FA2918B26EDC41000496388 /* RMIGPIOFunction.hpp */; };
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
@@ -49,8 +51,6 @@
 		A4560F112480757F0009CBE0 /* F03.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560F0F2480757F0009CBE0 /* F03.hpp */; };
 		A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A46D70D92517CB6800A60B75 /* F3A.cpp */; };
 		A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A46D70DA2517CB6800A60B75 /* F3A.hpp */; };
-		6FA2918826EC7F1700496388 /* F17.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6FA2918626EC7F1700496388 /* F17.cpp */; };
-		6FA2918926EC7F1700496388 /* F17.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6FA2918726EC7F1700496388 /* F17.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +87,8 @@
 		6F4B4A9124C1A0B80018F1F0 /* RMII2C.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMII2C.cpp; sourceTree = "<group>"; };
 		6F4B4A9324C1A0B80018F1F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6F4B4A9B24C1A4010018F1F0 /* VoodooI2CDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooI2CDeviceNub.hpp; path = Dependencies/VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CDevice/VoodooI2CDeviceNub.hpp; sourceTree = "<group>"; };
+		6FA2918626EC7F1700496388 /* F17.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F17.cpp; sourceTree = "<group>"; };
+		6FA2918726EC7F1700496388 /* F17.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F17.hpp; sourceTree = "<group>"; };
 		6FA2918A26EDC40F00496388 /* RMIGPIOFunction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMIGPIOFunction.cpp; sourceTree = "<group>"; };
 		6FA2918B26EDC41000496388 /* RMIGPIOFunction.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMIGPIOFunction.hpp; sourceTree = "<group>"; };
 		A41323E62492077C00907B0D /* Configuration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
@@ -118,8 +120,6 @@
 		A4560F0F2480757F0009CBE0 /* F03.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F03.hpp; sourceTree = "<group>"; };
 		A46D70D92517CB6800A60B75 /* F3A.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F3A.cpp; sourceTree = "<group>"; };
 		A46D70DA2517CB6800A60B75 /* F3A.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F3A.hpp; sourceTree = "<group>"; };
-		6FA2918626EC7F1700496388 /* F17.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = F17.cpp; sourceTree = "<group>"; };
-		6FA2918726EC7F1700496388 /* F17.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F17.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -761,7 +761,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.3.5;
+				CURRENT_PROJECT_VERSION = 1.3.6;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
@@ -772,7 +772,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
-				MARKETING_VERSION = 1.3.5;
+				MARKETING_VERSION = 1.3.6;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.VoodooRMI;
@@ -789,7 +789,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.3.5;
+				CURRENT_PROJECT_VERSION = 1.3.6;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources",
@@ -800,7 +800,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
-				MARKETING_VERSION = 1.3.5;
+				MARKETING_VERSION = 1.3.6;
 				MODULE_NAME = com.1Revenger1.VoodooRMI;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.1Revenger1.VoodooRMI;

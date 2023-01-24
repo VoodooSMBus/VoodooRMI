@@ -86,7 +86,7 @@ public:
     int reset() APPLE_KEXT_OVERRIDE;
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
-    OSArray *getConfig() APPLE_KEXT_OVERRIDE;
+    OSDictionary *createConfig() APPLE_KEXT_OVERRIDE;
 
 private:
     bool ready {false};

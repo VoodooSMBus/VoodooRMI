@@ -63,5 +63,6 @@ OSDictionary *Configuration::mapArrayToDict(OSArray *arr) {
             break;
         }
     }
+    
     return dict;
 }

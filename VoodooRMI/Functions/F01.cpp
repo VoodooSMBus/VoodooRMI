@@ -82,7 +82,7 @@ bool F01::attach(IOService *provider)
                           &device_control->ctrl0);
     if (error) {
         IOLogError("Failed to write F01 control: %d", error);
-        return NULL;
+        return false;
     }
     
     /* Dummy read in order to clear irqs */

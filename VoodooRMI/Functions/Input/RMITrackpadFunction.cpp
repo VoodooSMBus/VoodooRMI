@@ -396,9 +396,9 @@ bool RMITrackpadFunction::isForceTouch(u8 pressure) {
     switch (conf->forceTouchType) {
         case RMI_FT_DISABLE:
             return false;
-        case RMI_FT_CLICK:
+        case RMI_FT_CLICK_AND_SIZE:
             return clickpadState && pressure > conf->forceTouchMinPressure;
-        case RMI_FT_PRESS:
+        case RMI_FT_SIZE:
             return pressure > conf->forceTouchMinPressure;
     }
 }

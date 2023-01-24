@@ -8,6 +8,8 @@
  */
 
 #include "RMISMBus.hpp"
+#include "Configuration.hpp"
+#include <IOKit/acpi/IOACPIPlatformDevice.h>
 
 OSDefineMetaClassAndStructors(RMISMBus, RMITransport)
 #define super IOService
@@ -340,4 +342,36 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     }
 
     return kIOPMAckImplied;
+}
+
+OSDictionary *RMISMBus::createConfig() {
+    OSDictionary *config = nullptr;
+    OSArray *acpiArray = nullptr;
+    OSObject *acpiReturn = nullptr;
+    
+    // Unlike VoodooI2C, VoodooSMBusNubs are not ACPI Devices directly. Grab the device that the controller is attached too
+    IORegistryEntry *controller = device_nub->getParentEntry(gIOServicePlane);
+    if (controller == nullptr) return nullptr;
+    
+    IORegistryEntry *pciNub = controller->getParentEntry(gIOServicePlane);
+    if (pciNub == nullptr || pciNub->getProperty("acpi-device") == nullptr) {
+        IOLogError("%s Could not retrieve controller for config", getName());
+        return nullptr;
+    }
+    
+    IOACPIPlatformDevice *acpi_device = OSDynamicCast(IOACPIPlatformDevice, pciNub->getProperty("acpi-device"));
+    if (!acpi_device) {
+        IOLogError("%s Could not retrieve acpi device", getName());
+        return nullptr;
+    };
+
+    if (acpi_device->evaluateObject("RCFG", &acpiReturn) != kIOReturnSuccess) {
+        return nullptr;
+    }
+    
+    acpiArray = OSDynamicCast(OSArray, acpiReturn);
+    config = Configuration::mapArrayToDict(acpiArray);
+    OSSafeReleaseNULL(acpiReturn);
+    
+    return config;
 }

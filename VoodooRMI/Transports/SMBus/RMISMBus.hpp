@@ -41,6 +41,7 @@ public:
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
     
     int reset() override;
+    virtual OSDictionary *createConfig() APPLE_KEXT_OVERRIDE;
 private:
     VoodooSMBusDeviceNub *device_nub;
     IOLock *page_mutex;

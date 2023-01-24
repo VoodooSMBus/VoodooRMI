@@ -48,3 +48,21 @@ bool Configuration::loadUInt8Configuration(OSDictionary *dict, const char* confi
     *defaultValue = value->unsigned8BitValue();
     return true;
 }
+
+OSDictionary *Configuration::mapArrayToDict(OSArray *arr) {
+    if (!arr)
+        return nullptr;
+
+    int pairs = arr->getCount() / 2;
+    OSDictionary *dict = OSDictionary::withCapacity(pairs);
+
+    for (int index = 0; index < pairs; index ++) {
+        if (OSString *key = OSDynamicCast(OSString, arr->getObject(index * 2))) {
+            dict->setObject(key, arr->getObject(index * 2 + 1));
+        } else {
+            break;
+        }
+    }
+    
+    return dict;
+}

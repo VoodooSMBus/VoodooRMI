@@ -70,6 +70,7 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
 
 bool RMIBus::start(IOService *provider) {
     int retval;
+    OSDictionary *config;
     
     if (!super::start(provider))
         return false;
@@ -93,6 +94,12 @@ bool RMIBus::start(IOService *provider) {
     
     if (!transport->open(this))
         return false;
+
+    config = transport->createConfig();
+    if (config != nullptr) {
+        updateConfiguration(config);
+        OSSafeReleaseNULL(config);
+    }
 
     registerService();
     return true;

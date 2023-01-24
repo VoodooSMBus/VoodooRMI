@@ -86,6 +86,7 @@ public:
     int reset() APPLE_KEXT_OVERRIDE;
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
     int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
+    OSDictionary *createConfig() APPLE_KEXT_OVERRIDE;
 
 private:
     bool ready {false};
@@ -93,7 +94,6 @@ private:
     int page {0};
     int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
 
-    IOACPIPlatformDevice *acpi_device {nullptr};
     VoodooI2CDeviceNub *device_nub {nullptr};
 
     IOLock *page_mutex {nullptr};

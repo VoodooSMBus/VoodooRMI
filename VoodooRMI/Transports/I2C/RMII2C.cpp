@@ -11,6 +11,7 @@
  */
 
 #include "RMII2C.hpp"
+#include "Configuration.hpp"
 
 OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 
@@ -152,7 +153,6 @@ void RMII2C::releaseResources() {
     OSSafeReleaseNULL(interrupt_source);
     OSSafeReleaseNULL(interrupt_simulator);
     OSSafeReleaseNULL(work_loop);
-    OSSafeReleaseNULL(acpi_device);
 
     IOLockFree(page_mutex);
 }
@@ -460,4 +460,26 @@ void RMII2C::stopInterrupt() {
     } else if (interrupt_source) {
         interrupt_source->disable();
     }
+}
+
+OSDictionary *RMII2C::createConfig() {
+    OSDictionary *config = nullptr;
+    OSArray *acpiArray = nullptr;
+    OSObject *acpiReturn = nullptr;
+    
+    IOACPIPlatformDevice *acpi_device = OSDynamicCast(IOACPIPlatformDevice, device_nub->getProperty("acpi-device"));
+    if (!acpi_device) {
+        IOLogError("%s::%s Could not retrieve acpi device", getName(), name);
+        return nullptr;
+    };
+
+    if (acpi_device->evaluateObject("RCFG", &acpiReturn) != kIOReturnSuccess) {
+        return nullptr;
+    }
+    
+    acpiArray = OSDynamicCast(OSArray, acpiReturn);
+    config = Configuration::mapArrayToDict(acpiArray);
+    OSSafeReleaseNULL(acpiReturn);
+    
+    return config;
 }

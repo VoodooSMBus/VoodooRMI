@@ -13,7 +13,8 @@ DefinitionBlock ("", "SSDT", 2, "GWYD", "Set", 0) {
         Name (RCFG, Package() {
             // Disable force touch
             // 0 = Disabled
-            // 1 = Clickpad button + 
+            // 1 = Clickpad button + Size threshold
+            // 2 = Size threshold 
             "ForceTouchType", 0,
         })
     }

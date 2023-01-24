@@ -5,7 +5,7 @@
 A port for macOS of Synaptic's RMI Trackpad driver from Linux. This works for both I2C HID trackpads from Synaptic as well as Synaptic's SMBus trackpads. When following the instructions below, make sure you only select I2C or SMBus depending on your trackpad's capabilities.
 
 ## Supported Features
-* Force Touch emulation for clickpads (press down clickpad and increase finger pressure)
+* Force Touch emulation
 * 3 and 4 finger gestures
 * Trackpoint over PS2 Passthrough
 * SMBus or I2C communication
@@ -111,7 +111,7 @@ The values below can be edited under Info.plist within the kext itself - these c
 
 | Value | Default | Description |
 | ----- | ------- | ----------- |
-| `ForceTouchEmulation` | True | Allows Force Touch emulation on Clickpads |
+| `ForceTouchType` | 1 | Controls how force touch emulation behaves. 0 = Disabled, 1 = Clickpad press with size threshold, 2 = size threshold only |
 | `ForceTouchMinPressure` | 90 | Minimum z value to trigger Force touch when clickpad is clicked |
 | `DisableWhileTypingTimeout` | 250 | Milliseconds after typing in which to reject trackpad packets |
 | `DisableWhileTrackpointTimeout` | 250 | Milliseconds after using the trackpoint in which to reject trackpad packets |

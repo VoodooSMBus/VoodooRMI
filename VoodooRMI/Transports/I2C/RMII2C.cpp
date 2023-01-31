@@ -12,6 +12,7 @@
 
 #include "RMII2C.hpp"
 #include "Configuration.hpp"
+#include <IOKit/acpi/IOACPIPlatformDevice.h>
 
 OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 
@@ -26,30 +27,14 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     name = provider->getName();
     IOLogDebug("%s::%s probing", getName(), name);
 
-    OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
-    if (isLegacy == nullptr) {
-        IOLogInfo("%s::%s Legacy mode not set, default to false", getName(), name);
-    } else if (isLegacy->getValue()) {
-        reportMode = RMI_MODE_ATTN_REPORTS;
-        IOLogInfo("%s::%s running in legacy mode", getName(), name);
-    }
-
-    device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
-    if (!device_nub) {
+    hid_interface = OSDynamicCast(IOHIDInterface, provider);
+    if (!hid_interface) {
         IOLogError("%s::%s Could not cast nub", getName(), name);
         return NULL;
     }
 
-    if (getHIDDescriptorAddress() != kIOReturnSuccess)
-        IOLogInfo("%s::%s Could not get HID descriptor address\n", getName(), name);
-
-    if (getHIDDescriptor() != kIOReturnSuccess) {
-        IOLogError("%s::%s Could not get valid HID descriptor", getName(), name);
-        return NULL;
-    }
-
-    if (hdesc.wVendorID != SYNAPTICS_VENDOR_ID) {
-        IOLogDebug("%s::%s Skip vendor %x", getName(), name, hdesc.wVendorID);
+    if (hid_interface->getVendorID() != SYNAPTICS_VENDOR_ID) {
+        IOLogDebug("%s::%s Skip vendor %x", getName(), name, hid_interface->getVendorID());
         return NULL;
     }
 
@@ -97,29 +82,14 @@ bool RMII2C::start(IOService *provider) {
     }
 
     // Try to get interrupt source, fall back to polling though if we can't get an interrupt source
-    interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
-    
-    if (interrupt_source) {
-        work_loop->addEventSource(interrupt_source);
-    } else {
-        IOLogInfo("%s::%s Could not get interrupt event source, falling back to polling", getName(), name);
-        interrupt_simulator = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &RMII2C::simulateInterrupt));
-        if (!interrupt_simulator) {
-            IOLogError("%s::%s Could not get timer event source", getName(), name);
-            goto exit;
-        }
-        
-        work_loop->addEventSource(interrupt_simulator);
-    }
-    
-    startInterrupt();
+    hid_interface->open(this, 0,
+                        OSMemberFunctionCast(IOHIDInterface::InterruptReportAction, this, &RMII2C::handleInterruptReport),
+                        nullptr);
 
     PMinit();
     provider->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);
 
-    setProperty("Interrupt mode", (!interrupt_source) ? "Polling" : "Pinned");
-    setProperty("VoodooI2CServices Supported", kOSBooleanTrue);
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
     return true;
@@ -135,23 +105,13 @@ void RMII2C::releaseResources() {
 
     stopInterrupt();
 
-    if (interrupt_source) {
-        work_loop->removeEventSource(interrupt_source);
-    }
-
-    if (interrupt_simulator) {
-        work_loop->removeEventSource(interrupt_simulator);
-    }
-
-    if (device_nub) {
-        if (device_nub->isOpen(this))
-            device_nub->close(this);
-        device_nub = nullptr;
+    if (hid_interface) {
+        if (hid_interface->isOpen(this))
+            hid_interface->close(this);
+        hid_interface = nullptr;
     }
 
     OSSafeReleaseNULL(command_gate);
-    OSSafeReleaseNULL(interrupt_source);
-    OSSafeReleaseNULL(interrupt_simulator);
     OSSafeReleaseNULL(work_loop);
 
     IOLockFree(page_mutex);
@@ -164,22 +124,14 @@ void RMII2C::stop(IOService *provider) {
 }
 
 int RMII2C::rmi_set_page(u8 page) {
-    /*
-     * simplified version of rmi_write_report, hid_hw_output_report, i2c_hid_output_report,
-     * i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
-     */
-    u8 writeReport[] = {
-        (u8) (hdesc.wOutputRegister & 0xFF),
-        (u8) (hdesc.wOutputRegister >> 8),
-        0x06,  // size & 0xFF
-        0x00,  // size >> 8
-        RMI_WRITE_REPORT_ID,
-        0x01,
-        RMI_PAGE_SELECT_REGISTER,
-        page
-    };
-
-    if (device_nub->writeI2C(writeReport, sizeof(writeReport)) != kIOReturnSuccess) {
+    u8 command[] = {RMI_WRITE_REPORT_ID, 0x01, RMI_PAGE_SELECT_REGISTER, page};
+    IOMemoryDescriptor *desc = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, 0, sizeof(command));
+    desc->writeBytes(0, command, sizeof(command));
+    
+    IOReturn ret = hid_interface->setReport(desc, kIOHIDReportTypeOutput, RMI_WRITE_REPORT_ID, 0);
+    OSSafeReleaseNULL(desc);
+    
+    if (ret != kIOReturnSuccess) {
         IOLogError("%s::%s failed to write request output report", getName(), name);
         return -1;
     }
@@ -188,76 +140,18 @@ int RMII2C::rmi_set_page(u8 page) {
     return 0;
 }
 
-IOReturn RMII2C::getHIDDescriptorAddress() {
-    IOReturn ret;
-    OSObject *obj = nullptr;
-
-    ret = device_nub->evaluateDSM(I2C_DSM_HIDG, HIDG_DESC_INDEX, &obj);
-    if (ret == kIOReturnSuccess) {
-        OSNumber *number = OSDynamicCast(OSNumber, obj);
-        if (number != nullptr) {
-            wHIDDescRegister = number->unsigned16BitValue();
-            setProperty("HIDDescriptorAddress", wHIDDescRegister, 16);
-        } else {
-            IOLogInfo("%s::%s HID descriptor address invalid\n", getName(), name);
-            ret = kIOReturnInvalid;
-        }
-    } else {
-        IOLogInfo("%s::%s unable to parse HID descriptor address\n", getName(), name);
-        ret = kIOReturnNotFound;
-    }
-    if (obj) obj->release();
-    return ret;
-}
-
-IOReturn RMII2C::getHIDDescriptor() {
-    u8 command[] = {
-        (u8) (wHIDDescRegister & 0xFF),
-        (u8) (wHIDDescRegister >> 8) };
-
-    if (device_nub->writeReadI2C(command, sizeof(command), (UInt8 *)&hdesc, sizeof(i2c_hid_desc)) != kIOReturnSuccess) {
-        IOLogError("%s::%s Read descriptor from 0x%02x failed", getName(), name, wHIDDescRegister);
-        return kIOReturnError;
-    }
-
-    if (hdesc.bcdVersion != 0x0100) {
-        IOLogError("%s::%s BCD version %d mismatch", getName(), name, hdesc.bcdVersion);
-        return kIOReturnInvalid;
-    }
-    
-    if (hdesc.wHIDDescLength != sizeof(i2c_hid_desc)) {
-        IOLogError("%s::%s descriptor length %d mismatch", getName(), name, hdesc.wHIDDescLength);
-        return kIOReturnInvalid;
-    }
-
-    setProperty("VendorID", hdesc.wVendorID, 16);
-    setProperty("ProductID", hdesc.wProductID, 16);
-    setProperty("VersionID", hdesc.wVersionID, 16);
-
-    return kIOReturnSuccess;
-}
-
 int RMII2C::rmi_set_mode(u8 mode) {
-    u8 command[] = {
-        (u8) (hdesc.wCommandRegister & 0xFF),
-        (u8) (hdesc.wCommandRegister >> 8),
-        RMI_SET_RMI_MODE_REPORT_ID + (0x3 << 4), // reportID | reportType << 4;
-              // reportType: 0x03 for HID_FEATURE_REPORT (kIOHIDReportTypeFeature) ; 0x02 for HID_OUTPUT_REPORT (kIOHIDReportTypeOutput)
-        0x03, // hid_set_report_cmd =    { I2C_HID_CMD(0x03) };
-        RMI_SET_RMI_MODE_REPORT_ID, // report_id
-        (u8) (hdesc.wDataRegister & 0xFF),
-        (u8) (hdesc.wDataRegister >> 8),
-        0x04, // size & 0xFF; 2 + reportID + buf (reportID excluded)
-        0x00, // size >> 8;
-        RMI_SET_RMI_MODE_REPORT_ID, // report_id = buf[0];
-        mode
-    };
-
-    if (device_nub->writeI2C(command, sizeof(command)) != kIOReturnSuccess)
+    u8 command[] = {RMI_SET_RMI_MODE_REPORT_ID, mode};
+    IOMemoryDescriptor *desc = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, 0, sizeof(command));
+    desc->writeBytes(0, &command, sizeof(command));
+    
+    IOReturn ret = hid_interface->setReport(desc, kIOHIDReportTypeFeature, RMI_SET_RMI_MODE_REPORT_ID, 0);
+    OSSafeReleaseNULL(desc);
+    
+    if (ret != kIOReturnSuccess)
         return -1;
     
     IOLogDebug("%s::%s mode set", getName(), name);
-
     return 1;
 }
 
@@ -276,96 +170,76 @@ int RMII2C::reset() {
     return retval;
 };
 
-bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
-    if (forClient && forClient->getProperty(RMIBusIdentifier)) {
-        bus = forClient;
-        bus->retain();
-
-        startInterrupt();
-        return true;
-    }
-
-    return IOService::handleOpen(forClient, options, arg);
+int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
+    return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMII2C::readBlockGated),
+                                       (void *) rmiaddr, databuff, (void *) len);
 }
 
-int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
+int RMII2C::readBlockGated(u16 rmiaddr, u8 *databuff, size_t len) {
     int retval = 0;
-
-    if (hdesc.wMaxInputLength && (len > hdesc.wMaxInputLength))
-        len = hdesc.wMaxInputLength;
-
-    u8 writeReport[] = {
-        (u8) (hdesc.wOutputRegister & 0xFF),
-        (u8) (hdesc.wOutputRegister >> 8),
-        0x08,  // size & 0xFF; 2 + reportID + buf (reportID excluded)
-        0x00,  // size >> 8;
+    IOReturn ret;
+    AbsoluteTime curTime, deadline;
+    
+    u8 command[] = {
         RMI_READ_ADDR_REPORT_ID,
-        0x00,  // old 1 byte read count
-        (u8) (rmiaddr & 0xFF),
-        (u8) (rmiaddr >> 8),
-        (u8) (len & 0xFF),
-        (u8) (len >> 8) };
-
-    u8 *i2cInput = new u8[len+4];
+        0x00, // Old 1 byte read length
+        (u8) (rmiaddr & 0xFF), (u8) (rmiaddr >> 8),
+        (u8) (len & 0xFF), (u8) (len >> 8)
+    };
+    
+    IOBufferMemoryDescriptor *report = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, 0, sizeof(command));
+    report->writeBytes(0, command, sizeof(command));
+    
     memset(databuff, 0, len);
-
     IOLockLock(page_mutex);
     if (RMI_I2C_PAGE(rmiaddr) != page) {
         retval = rmi_set_page(RMI_I2C_PAGE(rmiaddr));
         if (retval < 0)
             goto exit;
     }
-
-    if (device_nub->writeReadI2C(writeReport, sizeof(writeReport), i2cInput, len+4) != kIOReturnSuccess) {
+    
+    ret = hid_interface->setReport(report, kIOHIDReportTypeOutput, RMI_READ_ADDR_REPORT_ID, 0);
+    
+    if (ret != kIOReturnSuccess) {
         IOLogError("%s::%s failed to read I2C input", getName(), name);
         retval = -1;
         goto exit;
     }
-
-    if (i2cInput[2] != RMI_READ_DATA_REPORT_ID) {
-        IOLogError("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d", getName(), name, i2cInput[2]);
-        if (i2cInput[2] == HID_GENERIC_MOUSE ||
-            i2cInput[2] == HID_GENERIC_POINTER) {
-            int err = reset();
-            if (err < 0) {
-                IOLogError("Failed to reset trackpad after report id mismatch!");
-            }
+    
+    while (len > 0) {
+        clock_get_uptime(&curTime);
+        deadline = ADD_ABSOLUTETIME(500 * MILLI_TO_NANO, curTime);
+        ret = command_gate->commandSleep(this, deadline, THREAD_UNINT);
+        if (ret == kIOReturnTimeout) {
+            IOLogError("%s::%s Timeout\n", getName(), name);
+            retval = -1;
+            break;
         }
-        retval = -1;
-        goto exit;
+        
+        if (read_data == nullptr) {
+            // No data????
+            continue;
+        }
+        
+        read_data->readBytes(0, databuff, read_data->getLength());
+        databuff += read_data->getLength();
+        read_data = nullptr;
     }
 
-    // FIXME: whether to rebuild packet
-    if (reportMode == RMI_MODE_ATTN_REPORTS && len == 68) {
-        memcpy(databuff, i2cInput+4, 16);
-        device_nub->readI2C(i2cInput, len+4);
-        memcpy(databuff+16, i2cInput+4, 16);
-        device_nub->readI2C(i2cInput, len+4);
-        memcpy(databuff+32, i2cInput+4, 16);
-    } else {
-        memcpy(databuff, i2cInput+4, len);
-    }
 exit:
-    delete[] i2cInput;
+    OSSafeReleaseNULL(report);
     IOLockUnlock(page_mutex);
     return retval;
 }
 
 int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
     int retval = 0;
-
-    if (hdesc.wMaxOutputLength && (len + 6 > hdesc.wMaxOutputLength))
-        setProperty("InputLength exceed", len);
-
-    u8 *writeReport = new u8[len+8] {
-        (u8) (hdesc.wOutputRegister & 0xFF),
-        (u8) (hdesc.wOutputRegister >> 8),
-        (u8) ((len + 6) & 0xFF),  // size & 0xFF; 2 + reportID + buf (reportID excluded)
-        (u8) ((len + 6) >> 8),  // size >> 8;
+    IOBufferMemoryDescriptor *report = nullptr;
+    u8 command[] = {
         RMI_WRITE_REPORT_ID,
         (u8) len,
-        (u8) (rmiaddr & 0xFF),
-        (u8) (rmiaddr >> 8) };
+        (u8) (rmiaddr & 0xFF), (u8) (rmiaddr >> 8)
+    };
 
     IOLockLock(page_mutex);
     if (RMI_I2C_PAGE(rmiaddr) != page) {
@@ -373,42 +247,48 @@ int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
         if (retval < 0)
             goto exit;
     }
+    
+    report = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, 0, len + sizeof(command));
+    report->writeBytes(0, command, sizeof(command));
+    report->writeBytes(sizeof(command), buf, len);
 
-    memcpy(writeReport+8, buf, len);
-
-    if (device_nub->writeI2C(writeReport, len+8) != kIOReturnSuccess) {
+    if (hid_interface->setReport(report, kIOHIDReportTypeOutput, RMI_WRITE_REPORT_ID, 0) != kIOReturnSuccess) {
         IOLogError("%s::%s failed to write request output report", getName(), name);
         retval = -1;
-        goto exit;
+    } else {
+        retval = 0;
     }
-    retval = 0;
 
 exit:
-    delete [] writeReport;
+    OSSafeReleaseNULL(report);
     IOLockUnlock(page_mutex);
     return retval;
 }
 
-// We are in the workloop (not interrupt context), it's OK to use IOLog, messageClient, etc
-void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int intCount) {
-    if (!ready || !bus)
-        return;
-
-    messageClient(reportMode == RMI_MODE_ATTN_REPORTS ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
+void RMII2C::handleInterruptReportGated(AbsoluteTime timestamp, IOMemoryDescriptor *report, IOHIDReportType report_type, UInt32 report_id) {
+    if (report_id == RMI_READ_DATA_REPORT_ID) {
+        read_data = report;
+        command_gate->commandWakeup(this);
+    } else if (report_id == RMI_ATTN_REPORT_ID) {
+        
+    } else if (report_id == HID_GENERIC_MOUSE || report_id == HID_GENERIC_POINTER) {
+        IOLogError("%s::%s RMI_READ_DATA_REPORT_ID mismatch %d", getName(), name, report_id);
+        int err = reset();
+        if (err < 0) {
+            IOLogError("Failed to reset trackpad after report id mismatch!");
+        }
+    }
 }
 
-void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
-    interruptOccured(owner, NULL, 0);
-    interrupt_simulator->setTimeoutMS(INTERRUPT_SIMULATOR_TIMEOUT);
+void RMII2C::handleInterruptReport(AbsoluteTime timestamp, IOMemoryDescriptor *report, IOHIDReportType report_type, UInt32 report_id) {
+    command_gate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMII2C::handleInterruptReportGated),
+                            (void *) timestamp, report, (void *) report_type, (void *) report_id);
 }
 
 IOReturn RMII2C::setPowerStateGated() {
     if (currentPowerState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
-        stopInterrupt();
     } else {
-        startInterrupt();
-        
         // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
         IOSleep(1000);
         
@@ -444,30 +324,12 @@ IOReturn RMII2C::setPowerState(unsigned long newPowerState, IOService *whatDevic
     return kIOPMAckImplied;
 }
 
-void RMII2C::startInterrupt() {
-    if (interrupt_simulator) {
-        interrupt_simulator->setTimeoutMS(200);
-        interrupt_simulator->enable();
-    } else if (interrupt_source) {
-        interrupt_source->enable();
-    }
-}
-
-void RMII2C::stopInterrupt() {
-    ready = false;
-    if (interrupt_simulator) {
-        interrupt_simulator->disable();
-    } else if (interrupt_source) {
-        interrupt_source->disable();
-    }
-}
-
 OSDictionary *RMII2C::createConfig() {
     OSDictionary *config = nullptr;
     OSArray *acpiArray = nullptr;
     OSObject *acpiReturn = nullptr;
     
-    IOACPIPlatformDevice *acpi_device = OSDynamicCast(IOACPIPlatformDevice, device_nub->getProperty("acpi-device"));
+    IOACPIPlatformDevice *acpi_device = OSDynamicCast(IOACPIPlatformDevice, getProperty("acpi-device", gIOServicePlane));
     if (!acpi_device) {
         IOLogError("%s::%s Could not retrieve acpi device", getName(), name);
         return nullptr;

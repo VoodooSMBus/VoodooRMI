@@ -73,11 +73,11 @@
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>com.apple.kpi.iokit</key>
-		<string>15</string>
+		<string>11</string>
 		<key>com.apple.kpi.libkern</key>
-		<string>15</string>
+		<string>11</string>
 		<key>com.apple.kpi.mach</key>
-		<string>15</string>
+		<string>11</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Console</string>

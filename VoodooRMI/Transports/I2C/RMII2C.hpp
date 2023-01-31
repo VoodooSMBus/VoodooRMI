@@ -14,7 +14,7 @@
 #define RMISMBus_h
 
 #include "RMITransport.hpp"
-#include "VoodooI2CDeviceNub.hpp"
+#include <IOKit/hid/IOHIDEventService.h>
 #include <IOKit/IOTimerEventSource.h>
 
 #define SYNAPTICS_VENDOR_ID         0x6cb
@@ -72,7 +72,7 @@ typedef struct __attribute__((__packed__)) {
 
 class RMII2C : public RMITransport {
     OSDeclareDefaultStructors(RMII2C);
-    typedef IOService super;
+    typedef RMITransport super;
 
 public:
     const char* name;
@@ -81,7 +81,6 @@ public:
     bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
     void stop(IOService *provider) APPLE_KEXT_OVERRIDE;
     IOReturn setPowerState(unsigned long powerState, IOService *whatDevice) APPLE_KEXT_OVERRIDE;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) APPLE_KEXT_OVERRIDE;
 
     int reset() APPLE_KEXT_OVERRIDE;
     int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
@@ -92,26 +91,16 @@ private:
     bool ready {false};
     unsigned long currentPowerState {1};
     int page {0};
-    int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
-
-    VoodooI2CDeviceNub *device_nub {nullptr};
+    int reportMode {RMI_MODE_ATTN_REPORTS};
 
     IOLock *page_mutex {nullptr};
+    IOHIDInterface *hid_interface {nullptr};
+    IOMemoryDescriptor *read_data {nullptr};
 
     IOWorkLoop* work_loop;
     IOCommandGate* command_gate;
-    IOTimerEventSource* interrupt_simulator;
-    IOInterruptEventSource* interrupt_source;
 
-    void interruptOccured(OSObject* owner, IOInterruptEventSource* src, int intCount);
-    void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     IOReturn setPowerStateGated();
-
-    __le16 wHIDDescRegister {RMI_HID_DESC_REGISTER};
-    i2c_hid_desc hdesc;
-
-    IOReturn getHIDDescriptorAddress();
-    IOReturn getHIDDescriptor();
 
     int rmi_set_page(u8 page);
     int rmi_set_mode(u8 mode);
@@ -120,6 +109,9 @@ private:
 
     void startInterrupt();
     void stopInterrupt();
+    void handleInterruptReportGated(AbsoluteTime timestamp, IOMemoryDescriptor *report, IOHIDReportType report_type, UInt32 report_id);
+    void handleInterruptReport(AbsoluteTime timestamp, IOMemoryDescriptor *report, IOHIDReportType report_type, UInt32 report_id);
+    int readBlockGated(u16 rmiaddr, u8 *databuff, size_t len);
 };
 
 #endif

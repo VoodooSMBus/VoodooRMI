@@ -18,6 +18,7 @@ class RMIFunction;
 #include "Logging.h"
 #include "RMITransport.hpp"
 #include "rmi_driver.hpp"
+#include "RMIBusPDT.hpp"
 #include <Availability.h>
 
 #ifndef __ACIDANTHERA_MAC_SDK
@@ -29,7 +30,6 @@ class RMIBus : public IOService {
     OSDeclareDefaultStructors(RMIBus);
     
 public:
-    virtual RMIBus * probe(IOService *provider, SInt32 *score) override;
     virtual bool init(OSDictionary *dictionary) override;
     virtual bool start(IOService *provider) override;
     virtual void stop(IOService *provider) override;
@@ -43,23 +43,23 @@ public:
     RMITransport *transport;
     
     // rmi_read
-    inline int read(u16 addr, u8 *buf) {
+    inline int read(u16 addr, u8 *buf) const {
         return transport->readBlock(addr, buf, 1);
     }
     // rmi_read_block
-    inline int readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
+    inline int readBlock(u16 rmiaddr, u8 *databuff, size_t len) const {
         return transport->readBlock(rmiaddr, databuff, len);
     }
     // rmi_write
-    inline int write(u16 rmiaddr, u8 *buf) {
+    inline int write(u16 rmiaddr, u8 *buf) const {
         return transport->blockWrite(rmiaddr, buf, 1);
     }
     // rmi_block_write
-    inline int blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
+    inline int blockWrite(u16 rmiaddr, u8 *buf, size_t len) const {
         return transport->blockWrite(rmiaddr, buf, len);
     }
     
-    inline IOService *getVoodooInput() {
+    inline IOService *getVoodooInput() const {
         return voodooInputInstance;
     }
     
@@ -67,14 +67,17 @@ public:
         voodooInputInstance = service;
     }
     
-    inline const gpio_data* getGPIOData() {
-        return &gpio;
+    inline const RmiGpioData &getGPIOData() const {
+        return gpio;
     }
     
-    OSSet *functions;
+    inline const RmiConfiguration &getConfiguration() const {
+        return conf;
+    }
     
-    void notify(UInt32 type, void *argument = 0);
-    int rmi_register_function(rmi_function* fn);
+    OSSet *functions {nullptr};
+    
+    void notify(UInt32 type, void *argument = 0) const;
     int reset();
 private:
     IOWorkLoop *workLoop {nullptr};
@@ -83,8 +86,8 @@ private:
     
     void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);
-    rmi_configuration conf {};
-    gpio_data gpio {};
+    RmiConfiguration conf {};
+    RmiGpioData gpio {};
     
     IOService *trackpadFunction {nullptr};
     IOService *trackpointFunction {nullptr};
@@ -92,6 +95,14 @@ private:
     void handleHostNotify();
     void handleHostNotifyLegacy();
     void handleReset();
+    
+    // IRQ information
+    UInt8 irqCount {0};
+    UInt32 irqMask {0};
+    
+    IOReturn rmiScanPdt();
+    IOReturn rmiHandlePdtEntry(RmiPdtEntry &entry);
+    IOReturn rmiReadPdtEntry(RmiPdtEntry &entry, UInt16 addr);
     
     void configAllFunctions();
 };

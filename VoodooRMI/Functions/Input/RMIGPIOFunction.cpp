@@ -7,6 +7,7 @@
  */
 
 #include "RMIGPIOFunction.hpp"
+#include "VoodooInputMessages.h"
 
 OSDefineMetaClassAndStructors(RMIGPIOFunction, RMIFunction)
 #define super RMIFunction
@@ -25,12 +26,12 @@ bool RMIGPIOFunction::attach(IOService *provider)
 int RMIGPIOFunction::config()
 {
     /* Write Control Register values back to device */
-    int error = bus->blockWrite(desc.control_base_addr,
-                                   ctrl_regs, ctrl_regs_size);
+    int error = writeBlock(getCtrlAddr(),
+                           ctrl_regs, ctrl_regs_size);
 
     if (error) {
         IOLogError("%s: Could not write control registers at 0x%x: %d",
-                   getName(), desc.control_base_addr, error);
+                   getName(), getCtrlAddr(), error);
     }
     return error;
 }
@@ -50,7 +51,7 @@ int RMIGPIOFunction::mapGpios()
     unsigned int button = BTN_LEFT;
     unsigned int trackpoint_button = BTN_LEFT;
     int buttonArrLen = min(gpioled_count, TRACKPOINT_RANGE_END);
-    const gpio_data *gpio = bus->getGPIOData();
+    const RmiGpioData &gpio = getGPIOData();
     setProperty("Button Count", buttonArrLen, 32);
 
     gpioled_key_map = reinterpret_cast<uint16_t *>(IOMalloc(buttonArrLen * sizeof(uint16_t)));
@@ -64,7 +65,7 @@ int RMIGPIOFunction::mapGpios()
         if (!is_valid_button(i))
             continue;
 
-        if (gpio->trackpointButtons &&
+        if (gpio.trackpointButtons &&
             (i >= TRACKPOINT_RANGE_START && i < TRACKPOINT_RANGE_END)) {
             IOLogDebug("%s: Found Trackpoint button %d at %d\n", getName(), trackpoint_button, i);
             gpioled_key_map[i] = trackpoint_button++;
@@ -90,8 +91,8 @@ IOReturn RMIGPIOFunction::message(UInt32 type, IOService *provider, void *argume
     int error;
     switch (type) {
         case kHandleRMIAttention:
-            error = bus->readBlock(desc.data_base_addr,
-                                          data_regs, register_count);
+            error = readBlock(getDataAddr(),
+                              data_regs, register_count);
 
             if (error < 0) {
                 IOLogError("Could not read %s data: %d", getName(), error);
@@ -111,6 +112,7 @@ IOReturn RMIGPIOFunction::message(UInt32 type, IOService *provider, void *argume
 
 void RMIGPIOFunction::reportButton()
 {
+    RelativePointerEvent relativeEvent {};
     unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
     u16 key_code;
@@ -134,7 +136,7 @@ void RMIGPIOFunction::reportButton()
 
         if (numButtons == 1 && i == clickpadIndex) {
             if (clickpadState != key_down) {
-                 bus->notify(kHandleRMIClickpadSet, (void *)key_down);
+                 notify(kHandleRMIClickpadSet, reinterpret_cast<void *>(key_down));
                  clickpadState = key_down;
              }
             continue;
@@ -148,7 +150,7 @@ void RMIGPIOFunction::reportButton()
         }
     }
 
-    IOService *voodooInputInstance = bus->getVoodooInput();
+    const IOService *voodooInputInstance = getVoodooInput();
     if (numButtons > 1 && voodooInputInstance) {
         AbsoluteTime timestamp;
         clock_get_uptime(&timestamp);
@@ -157,11 +159,11 @@ void RMIGPIOFunction::reportButton()
         relativeEvent.buttons = btns;
         relativeEvent.timestamp = timestamp;
 
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, voodooInputInstance, &relativeEvent, sizeof(RelativePointerEvent));
+        messageClient(kIOMessageVoodooTrackpointRelativePointer, const_cast<IOService *>(voodooInputInstance), &relativeEvent, sizeof(RelativePointerEvent));
     }
 
     if (hasTrackpointButtons) {
-        bus->notify(kHandleRMITrackpointButton, reinterpret_cast<void *>(trackpointBtns));
+        notify(kHandleRMITrackpointButton, reinterpret_cast<void *>(trackpointBtns));
     }
 }
 

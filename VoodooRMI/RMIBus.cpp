@@ -5,13 +5,7 @@
  */
 
 #include "RMIBus.hpp"
-#include <F01.hpp>
-#include <F03.hpp>
-#include <F11.hpp>
-#include <F12.hpp>
-#include <F17.hpp>
-#include <F30.hpp>
-#include <F3A.hpp>
+#include "RMIFunction.hpp"
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
 OSDefineMetaClassAndStructors(RMIFunction, IOService)
@@ -22,36 +16,39 @@ bool RMIBus::init(OSDictionary *dictionary) {
     if (!super::init(dictionary))
         return false;
     
-    data = reinterpret_cast<rmi_driver_data *>(IOMalloc(sizeof(rmi_driver_data)));
-    memset(data, 0, sizeof(rmi_driver_data));
-    
-    if (!data) return false;
-    
     functions = OSSet::withCapacity(5);
-    
-    data->irq_mutex = IOLockAlloc();
-    data->enabled_mutex = IOLockAlloc();
 
     updateConfiguration(OSDynamicCast(OSDictionary, getProperty("Configuration")));
     return true;
 }
 
-RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
+bool RMIBus::start(IOService *provider) {
+    int retval;
+    OSDictionary *config;
+    
 #if DEBUG
     IOLogInfo("RMI Bus (DEBUG) Starting up!");
 #else
     IOLogInfo("RMI Bus (RELEASE) Starting up!");
 #endif // DEBUG
     
-    if (!super::probe(provider, score)) {
-        IOLogError("Super said no to probing");
-        return NULL;
+    if (!super::start(provider)) {
+        return false;
     }
-        
+    
     transport = OSDynamicCast(RMITransport, provider);
-    if (!transport) {
+    if (transport == nullptr) {
         IOLogError("Could not get transport instance");
-        return NULL;
+        return false;
+    }
+    
+    workLoop = IOWorkLoop::workLoop();
+    commandGate = IOCommandGate::commandGate(this);
+    
+    if (workLoop == nullptr || commandGate == nullptr ||
+        workLoop->addEventSource(commandGate) != kIOReturnSuccess) {
+        IOLogError("%s Failed to add commandGate", getName());
+        return false;
     }
     
     // GPIO data from VoodooPS2
@@ -60,37 +57,14 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
         getGPIOData(dict);
     }
 
-    if (rmi_driver_probe(this)) {
-        IOLogError("Could not probe");
-        return NULL;
-    }
-    
-    return this;
-}
-
-bool RMIBus::start(IOService *provider) {
-    int retval;
-    OSDictionary *config;
-    
-    if (!super::start(provider))
-        return false;
-    
-    if (!(workLoop = IOWorkLoop::workLoop()) ||
-        !(commandGate = IOCommandGate::commandGate(this)) ||
-        (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
-        IOLogError("%s Failed to add commandGate", getName());
-        return false;
-    }
-
     retval = rmi_init_functions(this, data);
     if (retval)
         goto err;
 
     retval = rmi_enable_sensor(this);
-    if (retval)
+    if (retval) {
         goto err;
-    
-    setProperty(RMIBusIdentifier, kOSBooleanTrue);
+    }
     
     if (!transport->open(this))
         return false;
@@ -275,87 +249,6 @@ bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
 int RMIBus::reset()
 {
     return transport->reset();
-}
-
-int RMIBus::rmi_register_function(rmi_function *fn) {
-    RMIFunction * function;
-
-    IOLogDebug("Function F%X - IRQs: %u CMD Base: %u CTRL Base: %u DATA Base: %d QRY Base: %u VER: %u",
-               fn->fd.function_number,
-               fn->num_of_irqs,
-               fn->fd.command_base_addr,
-               fn->fd.control_base_addr,
-               fn->fd.data_base_addr,
-               fn->fd.query_base_addr,
-               fn->fd.function_version);
-    
-    switch(fn->fd.function_number) {
-        case 0x01: /* device control */
-            function = OSTypeAlloc(F01);
-            break;
-        case 0x03: /* PS/2 pass-through */
-            function = OSTypeAlloc(F03);
-            break;
-        case 0x11: /* multifinger pointing */
-            function = OSTypeAlloc(F11);
-            break;
-        case 0x12: /* multifinger pointing */
-            function = OSTypeAlloc(F12);
-            break;
-        case 0x17: /* trackpoints */
-            function = OSTypeAlloc(F17);
-            break;
-        case 0x30: /* GPIO and LED controls */
-            function = OSTypeAlloc(F30);
-            break;
-        case 0x3A: /* Buttons? */
-            function = OSTypeAlloc(F3A);
-            break;
-//        case 0x08: /* self test (aka BIST) */
-//        case 0x09: /* self test (aka BIST) */
-//        case 0x17: /* trackpoints */
-//        case 0x19: /* capacitive buttons */
-//        case 0x1A: /* simple capacitive buttons */
-//        case 0x21: /* force sensing */
-//        case 0x32: /* timer */
-        case 0x34: /* device reflash */
-//        case 0x36: /* auxiliary ADC */
-//        case 0x41: /* active pen pointing */
-        case 0x54: /* analog data reporting */
-        case 0x55: /* Sensor tuning */
-            IOLogInfo("F%X not implemented", fn->fd.function_number);
-            return 0;
-        default:
-            IOLogError("Unknown function: %02X - Continuing to load", fn->fd.function_number);
-            return 0;
-    }
-
-    if (!function || !function->init()) {
-        IOLogError("Could not initialize function: %02X", fn->fd.function_number);
-        OSSafeReleaseNULL(function);
-        return -ENODEV;
-    }
-    
-    if (!function->initData(this, &conf, fn)) {
-        OSSafeReleaseNULL(function);
-        return -ENODEV;
-    }
-    
-    if (!function->attach(this)) {
-        IOLogError("Function %02X could not attach", fn->fd.function_number);
-        OSSafeReleaseNULL(function);
-        return -ENODEV;
-    }
-    
-    if (OSDynamicCast(RMITrackpadFunction, function)) {
-        trackpadFunction = function;
-    } else if (OSDynamicCast(RMITrackpointFunction, function)) {
-        trackpointFunction = function;
-    }
-    
-    functions->setObject(function);
-    OSSafeReleaseNULL(function);
-    return 0;
 }
 
 IOReturn RMIBus::setProperties(OSObject *properties) {

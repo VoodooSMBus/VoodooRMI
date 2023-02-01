@@ -9,7 +9,7 @@ OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
 #define MIDDLE_MOUSE_MASK 0x04
 
 bool RMITrackpointFunction::shouldDiscardReport() {
-    return bus->getVoodooInput() != nullptr;
+    return getVoodooInput() != nullptr;
 }
 
 void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {

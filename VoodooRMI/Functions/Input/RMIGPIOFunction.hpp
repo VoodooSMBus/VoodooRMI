@@ -21,8 +21,6 @@ public:
     void free() override;
 
 protected:
-    RelativePointerEvent relativeEvent {};
-
     uint8_t *query_regs {nullptr};
     uint8_t query_regs_size {0};
     uint8_t *ctrl_regs {nullptr};

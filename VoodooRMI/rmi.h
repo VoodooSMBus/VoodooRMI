@@ -45,61 +45,7 @@ enum {
     kHandleRMIConfig = iokit_vendor_specific_msg(2053),
 };
 
-/*
- * The interrupt source count in the function descriptor can represent up to
- * 6 interrupt sources in the normal manner.
- */
-#define RMI_FN_MAX_IRQS    6
 
-/**
- * struct rmi_function_descriptor - RMI function base addresses
- *
- * @ query_base_addr: The RMI Query base address
- * @ command_base_addr: The RMI Command base address
- * @ control_base_addr: The RMI Control base address
- * @ data_base_addr: The RMI Data base address
- * @ interrupt_source_count: The number of irqs this RMI function needs
- * @ function_number: The RMI function number
- *
- * This struct is used when iterating the Page Description Table. The addresses
- * are 16-bit values to include the current page address.
- *
- */
-struct rmi_function_descriptor {
-    u16 query_base_addr;
-    u16 command_base_addr;
-    u16 control_base_addr;
-    u16 data_base_addr;
-    u8 interrupt_source_count;
-    u8 function_number;
-    u8 function_version;
-};
-
-/**
- * struct rmi_function - represents the implementation of an RMI4
- * function for a particular device (basically, a driver for that RMI4 function)
- *
- * @fd: The function descriptor of the RMI function
- * @rmi_dev: Pointer to the RMI device associated with this function container
- * @dev: The device associated with this particular function.
- *
- * @num_of_irqs: The number of irqs needed by this function
- * @irq_pos: The position in the irq bitfield this function holds
- * @irq_mask: For convenience, can be used to mask IRQ bits off during ATTN
- * interrupt handling.
- * @irqs: assigned virq numbers (up to num_of_irqs)
- *
- * @node: entry in device's list of functions
- */
-struct rmi_function {
-    int size;
-    struct rmi_function_descriptor fd;
-    
-    unsigned int num_of_irqs;
-    int irq[RMI_FN_MAX_IRQS];
-    unsigned int irq_pos;
-    unsigned long irq_mask[];
-};
 
 /*
  * Set the state of a register
@@ -134,7 +80,7 @@ enum ForceTouchType {
     RMI_FT_SIZE = 2,
 };
 
-struct rmi_configuration {
+struct RmiConfiguration {
     /* F03 */
     uint32_t trackpointMult {DEFAULT_MULT};
     uint32_t trackpointScrollXMult {DEFAULT_MULT};
@@ -155,7 +101,7 @@ struct rmi_configuration {
 };
 
 // Data for F30 and F3A
-struct gpio_data {
+struct RmiGpioData {
     bool clickpad {false};
     bool trackpointButtons {true}; // Does not affect F03
 };
@@ -245,8 +191,6 @@ struct rmi_2d_sensor_platform_data {
 };
 
 struct rmi_driver_data {
-    rmi_function *f01_container;
-    rmi_function *f34_container;
     bool bootloader_mode;
     
     int num_of_irq_regs;

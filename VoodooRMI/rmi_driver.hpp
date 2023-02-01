@@ -31,17 +31,6 @@
 #define RMI_SCAN_CONTINUE    0
 #define RMI_SCAN_DONE        1
 
-struct pdt_entry {
-    u16 page_start;
-    u8 query_base_addr;
-    u8 command_base_addr;
-    u8 control_base_addr;
-    u8 data_base_addr;
-    u8 interrupt_source_count;
-    u8 function_version;
-    u8 function_number;
-};
-
 int rmi_driver_probe(RMIBus *dev);
 int rmi_initial_reset(RMIBus *dev, void *ctx, const struct pdt_entry *pdt);
 int rmi_scan_pdt(RMIBus *dev, void *ctx,

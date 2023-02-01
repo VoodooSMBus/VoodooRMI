@@ -7,6 +7,7 @@
  */
 
 #include "F30.hpp"
+#include "Configuration.hpp"
 
 OSDefineMetaClassAndStructors(F30, RMIGPIOFunction)
 #define super RMIGPIOFunction
@@ -26,7 +27,7 @@ bool F30::start(IOService *provider)
 
 void F30::rmi_f30_calc_ctrl_data() {
     u8 *ctrl_reg = ctrl_regs;
-    int control_address = desc.control_base_addr;
+    int control_address = getCtrlAddr();
 
     if (has_gpio && has_led)
         rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
@@ -92,8 +93,8 @@ int F30::initialize()
     }
     bzero(query_regs, query_regs_size * sizeof(uint8_t));
 
-    error = bus->readBlock(desc.query_base_addr,
-                              query_regs, RMI_F30_QUERY_SIZE);
+    error = readBlock(getQryAddr(),
+                      query_regs, RMI_F30_QUERY_SIZE);
     if (error) {
         IOLogError("%s: Failed to read query register: %d", getName(), error);
         return error;
@@ -136,7 +137,7 @@ int F30::initialize()
 
     rmi_f30_calc_ctrl_data();
 
-    error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
+    error = readBlock(getCtrlAddr(), ctrl_regs, ctrl_regs_size);
     if (error) {
         IOLogError("%s - Failed to read control registers: %d", getName(), error);
         return error;

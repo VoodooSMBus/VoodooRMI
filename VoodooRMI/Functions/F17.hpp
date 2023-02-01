@@ -154,8 +154,6 @@ public:
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
 private:
-    RelativePointerEvent relativeEvent {};
-
     rmi_f17_device_data f17;
 
     int rmi_f17_init_stick(struct rmi_f17_stick_data *stick, u16 *next_query_reg, u16 *next_data_reg, u16 *next_control_reg);

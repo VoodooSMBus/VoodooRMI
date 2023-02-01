@@ -111,13 +111,6 @@ int rmi_init_functions(RMIBus *rmi_dev, rmi_driver_data *data)
     int irq_count = 0;
     int retval;
     
-    IOLogDebug("%s: Creating functions", __func__);
-//    retval = rmi_scan_pdt(rmi_dev, &irq_count, rmi_create_function);
-    if (retval < 0) {
-        IOLogError("Function creation failed with code %d", retval);
-        return retval;
-    }
-    
     if (!data->f01_container) {
         IOLogError("Missing F01 container!");
         return -EINVAL;
@@ -133,16 +126,5 @@ int rmi_init_functions(RMIBus *rmi_dev, rmi_driver_data *data)
     }
     
     return 0;
-}
-
-void rmi_free_function_list(RMIBus *rmi_dev)
-{
-    struct rmi_driver_data *data = rmi_dev->data;
-    
-    IOLogDebug("Freeing function list");
-    
-    if (data->f01_container)
-        IOFree(data->f01_container, data->f01_container->size);
-    data->f01_container = NULL;
 }
 

@@ -64,9 +64,9 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
               u16 *next_query_reg, u16 *next_data_reg,
               u16 *next_control_reg) {
     int retval;
-    retval = bus->readBlock(*next_query_reg,
-        stick->query.general.regs,
-        sizeof(stick->query.general.regs));
+    retval = readBlock(*next_query_reg,
+                       stick->query.general.regs,
+                       sizeof(stick->query.general.regs));
     if (retval < 0) {
         IOLogError("%s: Failed to read stick general query", __func__);
         return retval;
@@ -105,9 +105,9 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
     setPropertyNumber(stickProps, "Reserved2", stick->query.general.reserved2, 8);
 #endif
     if (stick->query.general.has_gestures) {
-        retval = bus->readBlock(*next_query_reg,
-            stick->query.gestures.regs,
-            sizeof(stick->query.gestures.regs));
+        retval = readBlock(*next_query_reg,
+                           stick->query.gestures.regs,
+                           sizeof(stick->query.gestures.regs));
         if (retval < 0) {
             IOLogError("%s: Failed to read F17 gestures query, code %d", __func__, retval);
             setProperty(stickName, stickProps);
@@ -146,12 +146,12 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
 
 int F17::rmi_f17_initialize() {
     int retval;
-    u16 next_query_reg = desc.query_base_addr;
-    u16 next_data_reg = desc.data_base_addr;
-    u16 next_control_reg = desc.control_base_addr;
+    u16 next_query_reg = getQryAddr();
+    u16 next_data_reg = getDataAddr();
+    u16 next_control_reg = getCtrlAddr();
 
-    retval = bus->readBlock(desc.query_base_addr,
-                               f17.query.regs, sizeof(f17.query.regs));
+    retval = readBlock(getQryAddr(),
+                       f17.query.regs, sizeof(f17.query.regs));
 
     if (retval < 0) {
         IOLogError("%s: Failed to read query register", __func__);
@@ -169,8 +169,8 @@ int F17::rmi_f17_initialize() {
 
     next_query_reg += sizeof(f17.query.regs);
 
-    retval = bus->readBlock(desc.command_base_addr,
-                               f17.commands.regs, sizeof(f17.commands.regs));
+    retval = readBlock(getCmdAddr(),
+                       f17.commands.regs, sizeof(f17.commands.regs));
 
     if (retval < 0) {
         IOLogError("%s: Failed to read command register", __func__);
@@ -181,8 +181,9 @@ int F17::rmi_f17_initialize() {
     setProperty("rezero", f17.commands.rezero);
 #endif
 
-    retval = bus->readBlock(desc.control_base_addr,
-                               f17.controls.regs, sizeof(f17.controls.regs));
+    retval = readBlock(getCtrlAddr(),
+                       f17.controls.regs,
+                       sizeof(f17.controls.regs));
     if (retval < 0) {
         IOLogError("%s: Failed to read control register", __func__);
         return retval;
@@ -217,21 +218,25 @@ int F17::rmi_f17_initialize() {
 }
 
 int F17::rmi_f17_config() {
-    int retval = bus->blockWrite(desc.control_base_addr,
-                                   f17.controls.regs, sizeof(f17.controls.regs));
+    int retval = writeBlock(getCtrlAddr(),
+                            f17.controls.regs, sizeof(f17.controls.regs));
 
     if (retval < 0) {
         IOLogError("%s: Could not write stick control registers at 0x%x: %d",
-                   __func__, desc.control_base_addr, retval);
+                   __func__, getCtrlAddr(), retval);
     }
     return retval;
 }
 
 int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
     int retval = 0;
+    const RmiConfiguration &conf = getConfiguration();
+    RelativePointerEvent relativeEvent {};
+    
     if (stick->query.general.has_absolute) {
-        retval = bus->readBlock(stick->data.abs.address,
-            stick->data.abs.regs, sizeof(stick->data.abs.regs));
+        retval = readBlock(stick->data.abs.address,
+                           stick->data.abs.regs,
+                           sizeof(stick->data.abs.regs));
         if (retval < 0) {
             IOLogError("%s: Failed to read abs data for stick %d, code %d", __func__, stick->index, retval);
         } else {
@@ -246,15 +251,16 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
     }
 
     if (stick->query.general.has_relative && !retval) {
-        retval = bus->readBlock(stick->data.rel.address,
-            stick->data.rel.regs, sizeof(stick->data.rel.regs));
+        retval = readBlock(stick->data.rel.address,
+                           stick->data.rel.regs,
+                           sizeof(stick->data.rel.regs));
         if (retval < 0) {
             IOLogError("%s: Failed to read rel data for stick %d, code %d", __func__, stick->index, retval);
         } else {
             IOLogDebug("%s: Reporting dx: %d, dy: %d\n", __func__, stick->data.rel.x_delta, stick->data.rel.y_delta);
 
-            report.dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf->trackpointMult / DEFAULT_MULT);
-            report.dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf->trackpointMult / DEFAULT_MULT);
+            report.dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf.trackpointMult / DEFAULT_MULT);
+            report.dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf.trackpointMult / DEFAULT_MULT);
             report.buttons = 0;
 
             handleReport(&report);
@@ -262,9 +268,9 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
     }
 
     if (stick->query.general.has_gestures && !retval) {
-        retval = bus->readBlock(stick->data.gestures.address,
-            stick->data.gestures.regs,
-            sizeof(stick->data.gestures.regs));
+        retval = readBlock(stick->data.gestures.address,
+                           stick->data.gestures.regs,
+                           sizeof(stick->data.gestures.regs));
         if (retval < 0) {
             IOLogError("%s: Failed to read gestures for stick %d, code %d", __func__,
                 stick->index, retval);

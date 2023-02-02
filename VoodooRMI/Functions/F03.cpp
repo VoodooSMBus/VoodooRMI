@@ -21,7 +21,7 @@ bool F03::attach(IOService *provider)
     u8 query2[RMI_F03_DEVICE_COUNT * RMI_F03_BYTES_PER_DEVICE];
     size_t query2_len;
     
-    int error = bus->read(desc.query_base_addr, &query1);
+    int error = readByte(getQryAddr(), &query1);
     
     if (error < 0) {
         IOLogError("F03: Failed to read query register: %02X", error);
@@ -42,8 +42,7 @@ bool F03::attach(IOService *provider)
         device_count = 1;
         rx_queue_length = 7;
     } else {
-        error = bus->readBlock(desc.query_base_addr + 1,
-                                  query2, query2_len);
+        error = readBlock(getQryAddr() + 1, query2, query2_len);
         if (error) {
             IOLogError("Failed to read second set of query registers (%d)",
                        error);
@@ -84,8 +83,7 @@ bool F03::start(IOService *provider)
      * 0xaa 0x00 announcement which may confuse us as we try to
      * probe the device
      */
-    int error = bus->readBlock(desc.data_base_addr + RMI_F03_OB_OFFSET,
-                                  obs, ob_len);
+    int error = readBlock(getDataAddr() + RMI_F03_OB_OFFSET, obs, ob_len);
     if (!error)
         IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest",
                    ob_len, obs, ob_len);
@@ -126,7 +124,7 @@ void F03::stop(IOService *provider)
 
 int F03::rmi_f03_pt_write(unsigned char val)
 {
-    int error = bus->write(desc.data_base_addr, &val);
+    int error = writeByte(getDataAddr(), &val);
     if (error) {
         IOLogError("F03 - Failed to write to F03 TX register (%d)", error);
     }
@@ -136,6 +134,7 @@ int F03::rmi_f03_pt_write(unsigned char val)
 
 void F03::handlePacket(u8 *packet)
 {
+    RMITrackpointReport report;
     // Trackpoint isn't initialized!
     if (packet[0] == 0xaa &&
         packet[1] == 0x00 &&
@@ -158,16 +157,35 @@ void F03::handlePacket(u8 *packet)
     handleReport(&report);
 }
 
+IOReturn F03::setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) {
+    if (whatDevice != this) {
+        return kIOPMAckImplied;
+    }
+    
+    switch (powerStateOrdinal) {
+        case RMI_POWER_ON:
+            timer->setTimeoutMS(3000);
+            timer->enable();
+            break;
+        case RMI_POWER_OFF:
+            break;
+        default:
+            return kIOPMNoSuchState;
+    }
+    
+    return kIOPMAckImplied;
+}
+
 IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
 {
     
     switch (type) {
         case kHandleRMIAttention: {
-            const u16 data_addr = desc.data_base_addr + RMI_F03_OB_OFFSET;
+            const u16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
             const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
             u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
             
-            int error = bus->readBlock(data_addr, obs, ob_len);
+            int error = readBlock(data_addr, obs, ob_len);
             if (error) {
                 IOLogError("F03 - Failed to read output buffers: %d", error);
                 return kIOReturnError;
@@ -195,10 +213,6 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             }
             break;
         }
-        case kHandleRMIResume:
-            timer->setTimeoutMS(3000);
-            timer->enable();
-            break;
         default:
             return super::message(type, provider, argument);
     }

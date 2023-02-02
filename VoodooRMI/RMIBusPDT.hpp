@@ -43,6 +43,7 @@ struct RmiPdtEntry {
     UInt16 qryAddr;
     UInt8 function;
     UInt8 interruptBits;
+    UInt32 irqMask;
 };
 
 

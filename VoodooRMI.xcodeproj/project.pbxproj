@@ -28,10 +28,8 @@
 		A41323E82492077C00907B0D /* Configuration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A41323E62492077C00907B0D /* Configuration.cpp */; };
 		A41323E92492077C00907B0D /* Configuration.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A41323E72492077C00907B0D /* Configuration.hpp */; };
 		A43A3A5624B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */; };
-		A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */; };
 		A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED6247F2A650009CBE0 /* RMIBus.hpp */; };
 		A4560EE2247F2A660009CBE0 /* rmi.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560ED8247F2A650009CBE0 /* rmi.h */; };
-		A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */; };
 		A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A4560EDB247F2A660009CBE0 /* RMIBus.cpp */; };
 		A4560EE7247F2A660009CBE0 /* LinuxCompat.h in Headers */ = {isa = PBXBuildFile; fileRef = A4560EDD247F2A660009CBE0 /* LinuxCompat.h */; };
 		A4560EEE247F32600009CBE0 /* RMITransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A4560EEB247F32600009CBE0 /* RMITransport.hpp */; };
@@ -98,10 +96,8 @@
 		A43A3A5524B4F58500B9A714 /* VoodooSMBusDeviceNub.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = VoodooSMBusDeviceNub.hpp; path = Dependencies/VoodooSMBus/VoodooSMBus/VoodooSMBusDeviceNub.hpp; sourceTree = "<group>"; };
 		A4560EC7247F29EC0009CBE0 /* VoodooRMI.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoodooRMI.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4560ECE247F29EC0009CBE0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = rmi_driver.hpp; sourceTree = "<group>"; };
 		A4560ED6247F2A650009CBE0 /* RMIBus.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMIBus.hpp; sourceTree = "<group>"; };
 		A4560ED8247F2A650009CBE0 /* rmi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rmi.h; sourceTree = "<group>"; };
-		A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rmi_driver.cpp; sourceTree = "<group>"; };
 		A4560EDB247F2A660009CBE0 /* RMIBus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RMIBus.cpp; sourceTree = "<group>"; };
 		A4560EDD247F2A660009CBE0 /* LinuxCompat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LinuxCompat.h; sourceTree = "<group>"; };
 		A4560EEB247F32600009CBE0 /* RMITransport.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RMITransport.hpp; sourceTree = "<group>"; };
@@ -124,6 +120,7 @@
 		A46D70DA2517CB6800A60B75 /* F3A.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = F3A.hpp; sourceTree = "<group>"; };
 		EE83B6CF2989D9040025DF3A /* RMIBusPDT.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMIBusPDT.cpp; sourceTree = "<group>"; };
 		EE83B6D02989D9040025DF3A /* RMIBusPDT.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RMIBusPDT.hpp; sourceTree = "<group>"; };
+		EE83B6D9298B1B3F0025DF3A /* RMIPowerStates.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RMIPowerStates.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +201,7 @@
 				A4560EDD247F2A660009CBE0 /* LinuxCompat.h */,
 				2850FFBC24904435000FA6BC /* PS2.hpp */,
 				2826E66D24FEE22E008F04F4 /* Logging.h */,
+				EE83B6D9298B1B3F0025DF3A /* RMIPowerStates.h */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -234,8 +232,6 @@
 				A41323EA2492078A00907B0D /* Utility */,
 				A4560EF0247F32760009CBE0 /* Functions */,
 				A4560EE9247F32600009CBE0 /* Transports */,
-				A4560ED4247F2A640009CBE0 /* rmi_driver.hpp */,
-				A4560ED9247F2A650009CBE0 /* rmi_driver.cpp */,
 				A4560ED8247F2A650009CBE0 /* rmi.h */,
 				A4560ED6247F2A650009CBE0 /* RMIBus.hpp */,
 				A4560EDB247F2A660009CBE0 /* RMIBus.cpp */,
@@ -325,7 +321,6 @@
 				A4560F112480757F0009CBE0 /* F03.hpp in Headers */,
 				A4560EFA247F32760009CBE0 /* F12.hpp in Headers */,
 				A4560EE0247F2A660009CBE0 /* RMIBus.hpp in Headers */,
-				A4560EDE247F2A660009CBE0 /* rmi_driver.hpp in Headers */,
 				6FA2918D26EDC41000496388 /* RMIGPIOFunction.hpp in Headers */,
 				A4560F09247F38670009CBE0 /* VoodooInputTransducer.h in Headers */,
 				A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */,
@@ -521,7 +516,6 @@
 				A4560EF9247F32760009CBE0 /* F01.cpp in Sources */,
 				A4560EE5247F2A660009CBE0 /* RMIBus.cpp in Sources */,
 				A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */,
-				A4560EE3247F2A660009CBE0 /* rmi_driver.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

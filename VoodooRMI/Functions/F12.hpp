@@ -60,6 +60,8 @@ public:
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     
+    IOReturn config() override;
+    
 private:
     IOService *voodooInputInstance {nullptr};
     
@@ -70,8 +72,6 @@ private:
     static int rmi_register_desc_calc_reg_offset(rmi_register_descriptor *rdesc, u16 reg);
     static bool rmi_register_desc_has_subpacket(const rmi_register_desc_item *item,
                                                 u8 subpacket);
-    
-    int rmi_f12_config();
     
     /* F12 Data */
     u8 *data_pkt;

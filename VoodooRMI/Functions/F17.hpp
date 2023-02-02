@@ -149,16 +149,15 @@ class F17 : public RMITrackpointFunction {
     
 public:
     bool attach(IOService *provider) override;
-    bool start(IOService *provider) override;
     void free() override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-
+    
+    IOReturn config() override;
 private:
     rmi_f17_device_data f17;
 
     int rmi_f17_init_stick(struct rmi_f17_stick_data *stick, u16 *next_query_reg, u16 *next_data_reg, u16 *next_control_reg);
     int rmi_f17_initialize();
-    int rmi_f17_config();
     int rmi_f17_process_stick(struct rmi_f17_stick_data *stick);
 };
 

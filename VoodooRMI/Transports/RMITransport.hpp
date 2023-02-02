@@ -26,12 +26,6 @@
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
 
-// power management
-static IOPMPowerState RMIPowerStates[] = {
-    {1, 0                , 0, 0           , 0, 0, 0, 0, 0, 0, 0, 0},
-    {1, kIOPMPowerOn, kIOPMPowerOn, kIOPMPowerOn, 0, 0, 0, 0, 0, 0, 0, 0}
-};
-
 /*
  * read/write/reset APIs can be used before opening. Opening/Closing is needed to recieve interrupts
  */

@@ -23,7 +23,7 @@ bool RMIGPIOFunction::attach(IOService *provider)
     return super::attach(provider);
 }
 
-int RMIGPIOFunction::config()
+IOReturn RMIGPIOFunction::config()
 {
     /* Write Control Register values back to device */
     int error = writeBlock(getCtrlAddr(),
@@ -101,8 +101,6 @@ IOReturn RMIGPIOFunction::message(UInt32 type, IOService *provider, void *argume
             if (has_gpio)
                 reportButton();
             break;
-        case kHandleRMIConfig:
-            return config();
         default:
             return super::message(type, provider, argument);
     }

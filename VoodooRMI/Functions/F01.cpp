@@ -19,8 +19,6 @@ bool F01::attach(IOService *provider)
     u16 ctrl_base_addr = getCtrlAddr();
     u8 temp, device_status;
     
-    num_of_irq_regs = bus->data->num_of_irq_regs;
-    
     /*
      * Set the configured bit and (optionally) other important stuff
      * in the device control register.
@@ -84,7 +82,7 @@ bool F01::attach(IOService *provider)
 
     /* Advance to interrupt control registers, then skip over them. */
     ctrl_base_addr++;
-    ctrl_base_addr += num_of_irq_regs;
+    ctrl_base_addr += numIrqRegs;
     
     /* read control register */
     if (properties.has_adjustable_doze) {
@@ -144,23 +142,6 @@ bool F01::attach(IOService *provider)
     return super::attach(provider);
 }
 
-bool F01::start(IOService* provider)
-{
-    int retval = 0;
-    
-    if(!super::start(provider))
-        return false;
-    
-    retval = rmi_f01_config();
-    if (retval < 0) {
-        IOLogError("Failed to config F01");
-        return false;
-    }
-    
-    registerService();
-    return true;
-}
-
 void F01::publishProps()
 {
     OSObject *value;
@@ -187,7 +168,7 @@ void F01::publishProps()
     propDict->release();
 }
 
-int F01::rmi_f01_config()
+IOReturn F01::config()
 {
     int error;
     
@@ -401,29 +382,108 @@ void F01::rmi_f01_attention()
         IOLogError("Device in bootloader mode, please update firmware");
     
     if (RMI_F01_STATUS_UNCONFIGURED(device_status)) {
-        IOLogDebug("Device reset detected.");
+        IOLogError("Device reset detected.");
         // reset
     }
+}
+
+IOReturn F01::setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) {
+    if (whatDevice != this) {
+        return kIOPMNoSuchState;
+    }
+    
+    switch (powerStateOrdinal) {
+        case RMI_POWER_ON:
+            rmi_f01_resume();
+            break;
+        case RMI_POWER_OFF:
+            rmi_f01_suspend();
+            break;
+        default:
+            return kIOPMNoSuchState;
+    }
+    
+    return kIOPMAckImplied;
 }
 
 IOReturn F01::message(UInt32 type, IOService *provider, void *argument)
 {
     int error = 0;
     switch (type) {
-        case kHandleRMISleep:
-            error = rmi_f01_suspend();
-            break;
-        case kHandleRMIResume:
-            error = rmi_f01_resume();
-            break;
         case kHandleRMIAttention:
             rmi_f01_attention();
-            break;
-        case kHandleRMIConfig:
-            error = rmi_f01_config();
             break;
     }
     
     if (error) return kIOReturnError;
     return kIOReturnSuccess;
+}
+
+// MARK: RMI4 device IRQs
+
+IOReturn F01::readIRQ(UInt32 &irq) const {
+    return readBlock(getDataAddr() + 1,
+                      reinterpret_cast<UInt8 *>(&irq),
+                      numIrqRegs);
+}
+
+IOReturn F01::setIRQs() const {
+    IOReturn error;
+    UInt32 irqStatus = 0;
+    
+    // Dummy read in order to clear irqs
+    error = readIRQ(irqStatus);
+    if (error != kIOReturnSuccess) {
+        IOLogError("%s: Failed to read interrupt status!", __func__);
+    }
+    
+    const UInt8 *newMask = reinterpret_cast<const UInt8 *>(&irqMask);
+    error = writeBlock(getCtrlAddr() + 1,
+                       const_cast<UInt8 *>(newMask),
+                       numIrqRegs);
+    if (error != kIOReturnSuccess) {
+        IOLogError("%s: Failed to change enabled intterupts!", __func__);
+    }
+    
+    return error;
+}
+
+IOReturn F01::clearIRQs() const {
+    int error = 0;
+    UInt32 currentEnabledIRQs;
+    
+    // Dummy read in order to clear irqs
+    error = readIRQ(currentEnabledIRQs);
+    if (error != kIOReturnSuccess) {
+        IOLogError("%s: Failed to read current IRQs, continuing to clear IRQs", __func__);
+    }
+    
+    // Read current IRQ bits
+    error = readBlock(getCtrlAddr() + 1,
+                      reinterpret_cast<UInt8 *>(currentEnabledIRQs),
+                      numIrqRegs);
+    
+    if (error != kIOReturnSuccess) {
+        IOLogError("%s: Failed to read current enabled IRQs", __func__);
+        return error;
+    }
+    
+    // Disable all known IRQs
+    currentEnabledIRQs &= ~irqMask;
+    
+    // Write back new IRQ mask
+    error = writeBlock(getCtrlAddr() + 1,
+                       reinterpret_cast<UInt8 *>(currentEnabledIRQs),
+                       numIrqRegs);
+    
+    if (error != kIOReturnSuccess) {
+        IOLogError("%s: Failed to change enabled interrupts!", __func__);
+    }
+    
+    return error;
+}
+
+void F01::setIRQMask(const UInt32 irq, const UInt8 numIrqBits) {
+    irqMask = irq;
+    numIrqRegs = (numIrqBits + 7) / 8;
 }

@@ -7,24 +7,19 @@
 #ifndef RMIBus_h
 #define RMIBus_h
 
-class RMIBus;
-class RMIFunction;
-
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
-#include <IOKit/IOMessage.h>
 #include <IOKit/IOCommandGate.h>
-#include "LinuxCompat.h"
-#include "Logging.h"
-#include "RMITransport.hpp"
-#include "rmi_driver.hpp"
-#include "RMIBusPDT.hpp"
 #include <Availability.h>
+#include "RMITransport.hpp"
 
 #ifndef __ACIDANTHERA_MAC_SDK
 #error "This kext SDK is unsupported. Download from https://github.com/acidanthera/MacKernelSDK"
 #error "You can also do 'git clone --depth=1 https://github.com/acidanthera/MacKernelSDK.git'"
 #endif
+
+struct RmiPdtEntry;
+class F01;
 
 class RMIBus : public IOService {
     OSDeclareDefaultStructors(RMIBus);
@@ -38,24 +33,21 @@ public:
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setProperties(OSObject* properties) override;
-
-    rmi_driver_data *data;
-    RMITransport *transport;
     
     // rmi_read
-    inline int read(u16 addr, u8 *buf) const {
+    inline int read(UInt16 addr, UInt8 *buf) const {
         return transport->readBlock(addr, buf, 1);
     }
     // rmi_read_block
-    inline int readBlock(u16 rmiaddr, u8 *databuff, size_t len) const {
+    inline int readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) const {
         return transport->readBlock(rmiaddr, databuff, len);
     }
     // rmi_write
-    inline int write(u16 rmiaddr, u8 *buf) const {
+    inline int write(UInt16 rmiaddr, UInt8 *buf) const {
         return transport->blockWrite(rmiaddr, buf, 1);
     }
     // rmi_block_write
-    inline int blockWrite(u16 rmiaddr, u8 *buf, size_t len) const {
+    inline int blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len) const {
         return transport->blockWrite(rmiaddr, buf, len);
     }
     
@@ -77,7 +69,7 @@ public:
     
     OSSet *functions {nullptr};
     
-    void notify(UInt32 type, void *argument = 0) const;
+    void notify(UInt32 type, void *argument = 0);
     int reset();
 private:
     IOWorkLoop *workLoop {nullptr};
@@ -89,8 +81,10 @@ private:
     RmiConfiguration conf {};
     RmiGpioData gpio {};
     
+    RMITransport *transport {nullptr};
     IOService *trackpadFunction {nullptr};
     IOService *trackpointFunction {nullptr};
+    F01 *controlFunction {nullptr};
 
     void handleHostNotify();
     void handleHostNotifyLegacy();
@@ -103,6 +97,8 @@ private:
     IOReturn rmiScanPdt();
     IOReturn rmiHandlePdtEntry(RmiPdtEntry &entry);
     IOReturn rmiReadPdtEntry(RmiPdtEntry &entry, UInt16 addr);
+    
+    IOReturn rmiEnableSensor();
     
     void configAllFunctions();
 };

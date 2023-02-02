@@ -18,6 +18,7 @@ class RMIGPIOFunction : public RMIFunction {
 public:
     bool attach(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    IOReturn config() override;
     void free() override;
 
 protected:
@@ -40,7 +41,6 @@ protected:
     virtual inline int initialize() {return -1;};
     virtual inline bool is_valid_button(int button) {return false;};
 
-    int config();
     int mapGpios();
     void reportButton();
 };

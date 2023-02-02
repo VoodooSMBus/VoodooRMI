@@ -125,15 +125,16 @@ class F01 : public RMIFunction {
     
 public:
     bool attach(IOService *provider) override;
-    bool start(IOService *provider) override;
+    void stop(IOService *provider) override;
+    IOReturn config() override;
     
+    IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
-    /**
-     *  Duplicates properties to put in as flags
-     */
-    f01_basic_properties * getProperties();
-
+    void setIRQMask(const UInt32 irq, const UInt8 numIrqBits);
+    IOReturn readIRQ(UInt32 &irq) const;
+    IOReturn setIRQs() const;
+    IOReturn clearIRQs() const;
 private:
     u16 doze_interval_addr;
     u16 wakeup_threshold_addr;
@@ -145,11 +146,12 @@ private:
     f01_basic_properties properties;
     f01_device_control device_control;
     
-    unsigned int num_of_irq_regs;
+    UInt8 numIrqRegs;
+    UInt32 irqMask;
     
+    f01_basic_properties * getProperties();
     void publishProps();
     int rmi_f01_read_properties();
-    int rmi_f01_config();
     int rmi_f01_suspend();
     int rmi_f01_resume();
     void rmi_f01_attention();

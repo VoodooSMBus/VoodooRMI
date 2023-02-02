@@ -21,16 +21,6 @@ bool F17::attach(IOService *provider)
     return super::attach(provider);
 }
 
-bool F17::start(IOService *provider)
-{
-    int retval = rmi_f17_config();
-    if (retval < 0)
-        return false;
-
-    registerService();
-    return super::start(provider);
-}
-
 void F17::free()
 {
     if (f17.sticks)
@@ -51,8 +41,6 @@ IOReturn F17::message(UInt32 type, IOService *provider, void *argument)
             }
 
             break;
-        case kHandleRMIConfig:
-            return rmi_f17_config();
         default:
             return super::message(type, provider, argument);
     }
@@ -217,7 +205,7 @@ int F17::rmi_f17_initialize() {
     return retval;
 }
 
-int F17::rmi_f17_config() {
+int F17::config() {
     int retval = writeBlock(getCtrlAddr(),
                             f17.controls.regs, sizeof(f17.controls.regs));
 
@@ -231,7 +219,7 @@ int F17::rmi_f17_config() {
 int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
     int retval = 0;
     const RmiConfiguration &conf = getConfiguration();
-    RelativePointerEvent relativeEvent {};
+    RMITrackpointReport report;
     
     if (stick->query.general.has_absolute) {
         retval = readBlock(stick->data.abs.address,

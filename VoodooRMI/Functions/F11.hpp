@@ -503,9 +503,10 @@ class F11 : public RMITrackpadFunction {
     
 public:
     bool attach(IOService *provider) override;
-    bool start(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
+    
+    IOReturn config() override;
     
 private:
     RMI2DSensorReport report {};
@@ -540,7 +541,6 @@ private:
     unsigned long *rel_mask;
     
     bool getReport();
-    int rmi_f11_config();
     int rmi_f11_initialize();
     int rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
                                       u16 query_base_addr);

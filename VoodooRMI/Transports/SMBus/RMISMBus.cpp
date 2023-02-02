@@ -9,6 +9,7 @@
 
 #include "RMISMBus.hpp"
 #include "Configuration.hpp"
+#include "RMIPowerStates.h"
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
 
 OSDefineMetaClassAndStructors(RMISMBus, RMITransport)

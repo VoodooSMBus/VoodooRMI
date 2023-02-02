@@ -7,8 +7,9 @@
 
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
-#include <RMIBus.hpp>
-#include <RMIBusPDT.hpp>
+#include "RMIBus.hpp"
+#include "RMIBusPDT.hpp"
+#include "RMIPowerStates.h"
 
 /*
  *  Wrapper class for functions
@@ -32,11 +33,31 @@ public:
         return IOService::attach(provider);
     }
     
+    inline virtual bool hasAttnSig(const UInt32 irq) const {
+        return pdtEntry.irqMask & irq;
+    }
+    
+    inline virtual bool start(IOService *provider) override {
+        if (provider == nullptr ||
+            !IOService::start(provider)) {
+            return false;
+        }
+        
+        PMinit();
+        provider->joinPMtree(this);
+        registerPowerDriver(this, RMIPowerStates, 2);
+        registerService();
+        return true;
+    }
+    
+    virtual IOReturn config() { return kIOReturnSuccess; };
+    
 private:
     RmiPdtEntry pdtEntry;
     RMIBus *bus {nullptr};
 protected:
     inline const IOService *getVoodooInput() const { return bus->getVoodooInput(); }
+    inline void setVoodooInput(IOService *service) { bus->setVoodooInput(service); }
     inline const RmiGpioData &getGPIOData() const { return bus->getGPIOData(); }
     inline const RmiConfiguration &getConfiguration() const { return bus->getConfiguration(); }
     inline IOReturn readByte(UInt16 addr, UInt8 *buf) const { return bus->read(addr, buf); }

@@ -12,6 +12,7 @@
 
 #include "RMII2C.hpp"
 #include "Configuration.hpp"
+#include "RMIPowerStates.h"
 
 OSDefineMetaClassAndStructors(RMII2C, RMITransport)
 

@@ -6,6 +6,8 @@
 
 #include "RMIBus.hpp"
 #include "RMIFunction.hpp"
+#include "Configuration.hpp"
+#include "F01.hpp"
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
 OSDefineMetaClassAndStructors(RMIFunction, IOService)
@@ -56,18 +58,22 @@ bool RMIBus::start(IOService *provider) {
         OSDictionary *dict = OSDynamicCast(OSDictionary, object);
         getGPIOData(dict);
     }
-
-    retval = rmi_init_functions(this, data);
+    
+    retval = rmiScanPdt();
     if (retval)
         goto err;
 
-    retval = rmi_enable_sensor(this);
+    
+    retval = rmiEnableSensor();
     if (retval) {
         goto err;
     }
     
-    if (!transport->open(this))
+    // Do not open transport until we are ready to deal with interrupts
+    if (!transport->open(this)) {
+        IOLogError("Could not open transport");
         return false;
+    }
 
     config = transport->createConfig();
     if (config != nullptr) {
@@ -82,31 +88,20 @@ err:
     return false;
 }
 
-void RMIBus::handleHostNotify()
-{
-    unsigned long mask, irqStatus;
+void RMIBus::handleHostNotify() {
+    UInt32 irqStatus;
     
-    if (!data) {
-        IOLogError("Interrupt - No data");
-        return;
-    }
-    if (!data->f01_container) {
-        IOLogError("Interrupt - No F01 Container");
+    if (controlFunction == nullptr) {
+        IOLogError("Interrupt - No F01");
         return;
     }
     
-    int error = readBlock(data->f01_container->fd.data_base_addr + 1,
-                          reinterpret_cast<u8*>(&irqStatus), data->num_of_irq_regs);
-    if (error < 0){
+    IOReturn error = controlFunction->readIRQ(irqStatus);
+    
+    if (error != kIOReturnSuccess){
         IOLogError("Unable to read IRQ");
         return;
     }
-    
-    data->irq_status = irqStatus;
-
-    IOLockLock(data->irq_mutex);
-    mask = data->irq_status & data->fn_irq_bits;
-    IOLockUnlock(data->irq_mutex);
     
     OSIterator* iter = OSCollectionIterator::withCollection(functions);
     if (!iter) {
@@ -115,7 +110,7 @@ void RMIBus::handleHostNotify()
     }
     
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-        if (func->getIRQ() & mask) {
+        if (func->hasAttnSig(irqStatus)) {
             messageClient(kHandleRMIAttention, func);
         }
     }
@@ -123,15 +118,9 @@ void RMIBus::handleHostNotify()
     OSSafeReleaseNULL(iter);
 }
 
-void RMIBus::handleHostNotifyLegacy()
- {
-     if (!data) {
-         IOLogError("Interrupt - No data");
-         return;
-     }
-     if (!data->f01_container) {
-         IOLogError("Interrupt - No F01 Container");
-         return;
+void RMIBus::handleHostNotifyLegacy() {
+     if (controlFunction == nullptr) {
+         IOLogError("Interrupt - No F01");
      }
 
      OSIterator* iter = OSCollectionIterator::withCollection(functions);
@@ -140,28 +129,16 @@ void RMIBus::handleHostNotifyLegacy()
      OSSafeReleaseNULL(iter);
  }
 
-void RMIBus::handleReset()
-{
-    if (!data || !data->f01_container) {
+void RMIBus::handleReset() {
+    if (controlFunction == nullptr) {
         IOLogDebug("Device not ready for reset, ignoring...");
         return;
     }
     
-    int error = readBlock(data->f01_container->fd.control_base_addr + 1,
-                          reinterpret_cast<u8 *>(&data->current_irq_mask),
-                          data->num_of_irq_regs);
-    
-    if (error < 0) {
-        IOLogError("Failed to read current IRQ mask during reset!");
-        return;
-    }
-    
-    messageClients(kHandleRMIConfig);
+    rmiEnableSensor();
 }
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
-    IOReturn err;
-    
     switch (type) {
         case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
@@ -175,18 +152,10 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             break;
         case kIOMessageRMI4Sleep:
             IOLogDebug("Sleep");
-            messageClients(kHandleRMISleep);
-            rmi_driver_clear_irq_bits(this);
-            break;
+            return controlFunction->clearIRQs();
         case kIOMessageRMI4Resume:
             IOLogDebug("Wakeup");
-            err = rmi_driver_set_irq_bits(this);
-            if (err < 0) {
-                IOLogError("Could not wakeup device");
-                return kIOReturnError;
-            }
-            messageClients(kHandleRMIResume);
-            break;
+            return controlFunction->setIRQs();
         default:
             return super::message(type, provider);
     }
@@ -194,8 +163,7 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     return kIOReturnSuccess;
 }
 
-void RMIBus::notify(UInt32 type, void *argument)
-{
+void RMIBus::notify(UInt32 type, void *argument) {
     if (type == kHandleRMIClickpadSet ||
         type == kHandleRMITrackpoint) {
         
@@ -209,12 +177,6 @@ void RMIBus::notify(UInt32 type, void *argument)
 void RMIBus::stop(IOService *provider) {
     OSIterator *iter = OSCollectionIterator::withCollection(functions);
     
-    workLoop->removeEventSource(commandGate);
-    OSSafeReleaseNULL(commandGate);
-    OSSafeReleaseNULL(workLoop);
-
-    rmi_driver_clear_irq_bits(this);
-    
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         func->stop(this);
         func->detach(this);
@@ -227,14 +189,10 @@ void RMIBus::stop(IOService *provider) {
 }
 
 void RMIBus::free() {
-    if (data) {
-        rmi_free_function_list(this);
-        IOLockFree(data->enabled_mutex);
-        IOLockFree(data->irq_mutex);
-    }
-    
-    if (functions)
-        OSSafeReleaseNULL(functions);
+    workLoop->removeEventSource(commandGate);
+    OSSafeReleaseNULL(commandGate);
+    OSSafeReleaseNULL(workLoop);
+    OSSafeReleaseNULL(functions);
     super::free();
 }
 
@@ -246,8 +204,7 @@ bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
     return super::willTerminate(provider, options);
 }
 
-int RMIBus::reset()
-{
+int RMIBus::reset() {
     return transport->reset();
 }
 
@@ -301,4 +258,19 @@ void RMIBus::getGPIOData(OSDictionary *dict) {
     setProperty("GPIO Data", dict);
     
     IOLogInfo("Recieved GPIO Data");
+}
+
+
+IOReturn RMIBus::rmiEnableSensor() {
+    RMIFunction *func;
+    
+    OSIterator* iter = getClientIterator();
+    while ((func = OSDynamicCast(RMIFunction, iter->getNextObject()))) {
+        if (func->config() != kIOReturnSuccess) {
+            IOLogError("Could not start function %s", func->getName());
+        }
+    }
+    
+    OSSafeReleaseNULL(iter);
+    return controlFunction->setIRQs();
 }

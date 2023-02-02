@@ -37,9 +37,10 @@ bool RMITrackpadFunction::start(IOService *provider)
         fingerState[i] = RMI_FINGER_LIFTED;
     }
     
-    const int palmRejectWidth = max_x * cfgToPercent(conf->palmRejectionWidth);
-    const int palmRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeight);
-    const int trackpointRejectHeight = max_y * cfgToPercent(conf->palmRejectionHeightTrackpoint);
+    const RmiConfiguration &conf = getConfiguration();
+    const int palmRejectWidth = max_x * cfgToPercent(conf.palmRejectionWidth);
+    const int palmRejectHeight = max_y * cfgToPercent(conf.palmRejectionHeight);
+    const int trackpointRejectHeight = max_y * cfgToPercent(conf.palmRejectionHeightTrackpoint);
     
     /*
      * Calculate reject zones.
@@ -88,7 +89,7 @@ bool RMITrackpadFunction::handleOpen(IOService *forClient, IOOptionBits options,
     if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
         && super::handleOpen(forClient, options, arg)) {
         voodooInputInstance = forClient;
-        const_cast<RMIBus *>(getBus())->setVoodooInput(voodooInputInstance);
+        setVoodooInput(voodooInputInstance);
         return true;
     }
     
@@ -98,7 +99,7 @@ bool RMITrackpadFunction::handleOpen(IOService *forClient, IOOptionBits options,
 void RMITrackpadFunction::handleClose(IOService *forClient, IOOptionBits options)
 {
     if (forClient && forClient == voodooInputInstance) {
-        const_cast<RMIBus *>(getBus())->setVoodooInput(nullptr);
+        setVoodooInput(voodooInputInstance);
         voodooInputInstance = nullptr;
         super::handleClose(forClient, options);
     }
@@ -170,7 +171,7 @@ size_t RMITrackpadFunction::checkInZone(VoodooInputTransducer &obj) {
 void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
 {
     int validFingerCount = 0;
-    const RmiConfiguration &conf = getBus()->getConfiguration();
+    const RmiConfiguration &conf = getConfiguration();
     
     bool discardRegions = ((report->timestamp - lastKeyboardTS) < (conf.disableWhileTypingTimeout * MILLI_TO_NANO)) ||
                           ((report->timestamp - lastTrackpointTS) < (conf.disableWhileTrackpointTimeout * MILLI_TO_NANO));
@@ -321,6 +322,8 @@ void RMITrackpadFunction::setThumbFingerType(size_t maxIdx, RMI2DSensorReport *r
     UInt32 maxDiff = 0;
     UInt32 maxArea = 0;
     
+    const RmiConfiguration &conf = getConfiguration();
+    
     for (size_t i = 0; i < maxIdx; i++) {
         auto &trans = inputEvent.transducers[i];
         rmi_2d_sensor_abs_object *obj = &report->objs[i];
@@ -394,7 +397,7 @@ void RMITrackpadFunction::invalidateFingers() {
 }
 
 bool RMITrackpadFunction::isForceTouch(u8 pressure) {
-    const RmiConfiguration &conf = getBus()->getConfiguration();
+    const RmiConfiguration &conf = getConfiguration();
     switch (conf.forceTouchType) {
         case RMI_FT_DISABLE:
             return false;

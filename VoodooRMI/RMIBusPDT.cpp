@@ -6,7 +6,7 @@
 //  Copyright © 2023 1Revenger1. All rights reserved.
 //
 
-#include "RMIBusPDT.hpp"
+#include <RMIBusPDT.hpp>
 #include <RMIBus.hpp>
 #include <F01.hpp>
 #include <F03.hpp>
@@ -27,6 +27,7 @@
  */
 IOReturn RMIBus::rmiScanPdt() {
     int blankPages = 0;
+    IOReturn ret;
     RmiPdtEntry pdtEntry;
     
     for (UInt16 page = 0; page <= RMI_MAX_PAGE; page++) {
@@ -34,8 +35,13 @@ IOReturn RMIBus::rmiScanPdt() {
         UInt8 offset;
         
         for (offset = RMI_PDT_START; offset >= RMI_PDT_STOP; offset -= sizeof(RmiPdtData)) {
-            IOReturn ret = rmiReadPdtEntry(pdtEntry, pageBase + offset);
+            ret = rmiReadPdtEntry(pdtEntry, pageBase + offset);
             
+            if (ret != kIOReturnSuccess) {
+                return ret;
+            }
+            
+            ret = rmiHandlePdtEntry(pdtEntry);
             if (ret != kIOReturnSuccess) {
                 return ret;
             }
@@ -53,6 +59,12 @@ IOReturn RMIBus::rmiScanPdt() {
         }
     }
     
+    if (controlFunction == nullptr) {
+        IOLogError("Failed to find F01 control function! Exiting...");
+        return kIOReturnNotFound;
+    }
+    
+    controlFunction->setIRQMask(irqMask, irqCount);
     return kIOReturnSuccess;
 }
 
@@ -72,6 +84,7 @@ IOReturn RMIBus::rmiReadPdtEntry(RmiPdtEntry &entry, UInt16 addr) {
     entry.ctrlAddr = pageBase + data.ctrlBase;
     entry.dataAddr = pageBase + data.dataBase;
     entry.qryAddr = pageBase + data.qryBase;
+    entry.irqMask = ((1 << entry.interruptBits) - 1) << irqCount;
     return kIOReturnSuccess;
 }
 
@@ -81,7 +94,7 @@ IOReturn RMIBus::rmiReadPdtEntry(RmiPdtEntry &entry, UInt16 addr) {
 IOReturn RMIBus::rmiHandlePdtEntry(RmiPdtEntry &entry) {
     RMIFunction * function;
     
-    irqMask |= ((1 << entry.interruptBits) - 1) << irqCount;
+    irqMask |= entry.irqMask;
     irqCount += entry.interruptBits;
     if (irqCount > RMI_MAX_IRQS) {
         IOLogError("Too many IRQ bits!");
@@ -154,6 +167,8 @@ IOReturn RMIBus::rmiHandlePdtEntry(RmiPdtEntry &entry) {
         trackpadFunction = function;
     } else if (OSDynamicCast(RMITrackpointFunction, function)) {
         trackpointFunction = function;
+    } else if (entry.function == 0x01) {
+        controlFunction = OSDynamicCast(F01, function);
     }
     
     functions->setObject(function);

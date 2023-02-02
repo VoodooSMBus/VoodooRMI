@@ -37,12 +37,9 @@ enum {
 enum {
     kHandleRMIAttention = iokit_vendor_specific_msg(2046),
     kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
-    kHandleRMISleep = iokit_vendor_specific_msg(2048),
-    kHandleRMIResume = iokit_vendor_specific_msg(2049),
     kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
     kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051),
     kHandleRMIInputReport = iokit_vendor_specific_msg(2052),
-    kHandleRMIConfig = iokit_vendor_specific_msg(2053),
 };
 
 
@@ -63,14 +60,6 @@ struct rmi4_attn_data {
     unsigned long irq_status;
     size_t size;
     void *data;
-};
-
-struct __kfifo {
-    unsigned int    in;
-    unsigned int    out;
-    unsigned int    mask;
-    unsigned int    esize;
-    void        *data;
 };
 
 // Force touch types
@@ -106,54 +95,6 @@ struct RmiGpioData {
     bool trackpointButtons {true}; // Does not affect F03
 };
 
-/**
- * struct rmi_2d_axis_alignment - target axis alignment
- * @swap_axes: set to TRUE if desired to swap x- and y-axis
- * @flip_x: set to TRUE if desired to flip direction on x-axis
- * @flip_y: set to TRUE if desired to flip direction on y-axis
- * @clip_x_low - reported X coordinates below this setting will be clipped to
- *               the specified value
- * @clip_x_high - reported X coordinates above this setting will be clipped to
- *               the specified value
- * @clip_y_low - reported Y coordinates below this setting will be clipped to
- *               the specified value
- * @clip_y_high - reported Y coordinates above this setting will be clipped to
- *               the specified value
- * @offset_x - this value will be added to all reported X coordinates
- * @offset_y - this value will be added to all reported Y coordinates
- * @rel_report_enabled - if set to true, the relative reporting will be
- *               automatically enabled for this sensor.
- */
-struct rmi_2d_axis_alignment {
-    bool swap_axes;
-    bool flip_x;
-    bool flip_y;
-    u16 clip_x_low;
-    u16 clip_y_low;
-    u16 clip_x_high;
-    u16 clip_y_high;
-    u16 offset_x;
-    u16 offset_y;
-    u8 delta_x_threshold;
-    u8 delta_y_threshold;
-};
-
-/** This is used to override any hints an F11 2D sensor might have provided
- * as to what type of sensor it is.
- *
- * @rmi_f11_sensor_default - do not override, determine from F11_2D_QUERY14 if
- * available.
- * @rmi_f11_sensor_touchscreen - treat the sensor as a touchscreen (direct
- * pointing).
- * @rmi_f11_sensor_trackpad - thread the sensor as a trackpad (indirect
- * pointing).
- */
-enum rmi_sensor_type {
-    rmi_sensor_default = 0,
-    rmi_sensor_touchscreen,
-    rmi_sensor_trackpad
-};
-
 #define RMI_F11_DISABLE_ABS_REPORT      BIT(0)
 
 /**
@@ -177,8 +118,6 @@ enum rmi_sensor_type {
  * distincts fingers to be considered the same.
  */
 struct rmi_2d_sensor_platform_data {
-    struct rmi_2d_axis_alignment axis_align;
-    enum rmi_sensor_type sensor_type;
     int x_mm;
     int y_mm;
     int disable_report_mask;
@@ -188,28 +127,6 @@ struct rmi_2d_sensor_platform_data {
     int dmax;
     int dribble;
     int palm_detect;
-};
-
-struct rmi_driver_data {
-    bool bootloader_mode;
-    
-    int num_of_irq_regs;
-    int irq_count;
-    unsigned long irq_status;
-    unsigned long fn_irq_bits;
-    unsigned long current_irq_mask;
-    unsigned long new_irq_mask;
-    IOLock *irq_mutex;
-    
-    struct irq_domain *irqdomain;
-    
-    u8 pdt_props;
-    
-    u8 num_rx_electrodes;
-    u8 num_tx_electrodes;
-    
-    bool enabled;
-    IOLock *enabled_mutex;
 };
 
 #endif /* rmi_h */

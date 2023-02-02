@@ -15,11 +15,11 @@ bool F12::attach(IOService *provider)
 {
     int ret;
     u8 buf;
-    u16 query_addr = desc.query_base_addr;
+    u16 query_addr = getQryAddr();
     const rmi_register_desc_item *item;
     u16 data_offset = 0;
     
-    ret = bus->read(query_addr, &buf);
+    ret = readByte(query_addr, &buf);
     if (ret < 0) {
         IOLogError("F12 - Failed to read general info register: %d", ret);
         return false;
@@ -123,19 +123,6 @@ bool F12::attach(IOService *provider)
     return super::attach(provider);
 }
 
-bool F12::start(IOService *provider)
-{
-    int ret = rmi_f12_config();
-    if (ret < 0)
-        return false;
-    
-    bool start = super::start(provider);
-    
-    registerService();
-    
-    return start;
-}
-
 void F12::free()
 {
     if (data_pkt != nullptr) {
@@ -152,8 +139,6 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
         case kHandleRMIAttention:
             getReport();
             break;
-        case kHandleRMIConfig:
-            return rmi_f12_config();
         default:
             return super::message(type, provider, argument);
     }
@@ -161,54 +146,54 @@ IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
     return kIOReturnSuccess;
 }
 
-int F12::rmi_f12_config()
+IOReturn F12::config()
 {
     const struct rmi_register_desc_item *item;
     unsigned long control_size;
-    char buf[3];
+    UInt8 buf[3];
     u8 subpacket_offset = 0;
+    IOReturn ret;
     
-    if (has_dribble) {
-        item = rmi_get_register_desc_item(&control_reg_desc, 20);
-        if (item) {
-            u16 control_offset = rmi_register_desc_calc_reg_offset(&control_reg_desc, 20);
-            
-            /*
-             * The byte containing the EnableDribble bit will be
-             * in either byte 0 or byte 2 of control 20. Depending
-             * on the existence of subpacket 0. If control 20 is
-             * larger then 3 bytes, just read the first 3.
-             */
-            control_size = min(item->reg_size, 3UL);
-            
-            int ret = bus->readBlock(desc.control_base_addr
-                                    + control_offset, (u8 *) buf, control_size);
-            if (ret)
-                return ret;
-            
-            if (rmi_register_desc_has_subpacket(item, 0))
-                subpacket_offset += 1;
-            
-            switch (RMI_REG_STATE_OFF) {
-                case RMI_REG_STATE_OFF:
-                    buf[subpacket_offset] &= ~BIT(2);
-                    break;
-                case RMI_REG_STATE_ON:
-                    buf[subpacket_offset] |= BIT(2);
-                    break;
-                case RMI_REG_STATE_DEFAULT:
-                default:
-                    break;
-            }
-            
-            ret = bus->blockWrite(desc.control_base_addr + control_offset,
-                                     (u8 *) buf, control_size);
-            if (ret)
-                return ret;
-        }
+    if (!has_dribble) {
+        return kIOReturnSuccess;
     }
     
-    return kIOReturnSuccess;
+    item = rmi_get_register_desc_item(&control_reg_desc, 20);
+    if (!item) {
+        return kIOReturnSuccess;
+    }
+
+    u16 control_offset = rmi_register_desc_calc_reg_offset(&control_reg_desc, 20);
+    
+    /*
+     * The byte containing the EnableDribble bit will be
+     * in either byte 0 or byte 2 of control 20. Depending
+     * on the existence of subpacket 0. If control 20 is
+     * larger then 3 bytes, just read the first 3.
+     */
+    control_size = min(item->reg_size, 3UL);
+    
+    ret = readBlock(getCtrlAddr() + control_offset, buf, control_size);
+    if (ret)
+        return ret;
+    
+    if (rmi_register_desc_has_subpacket(item, 0))
+        subpacket_offset += 1;
+    
+    switch (RMI_REG_STATE_OFF) {
+        case RMI_REG_STATE_OFF:
+            buf[subpacket_offset] &= ~BIT(2);
+            break;
+        case RMI_REG_STATE_ON:
+            buf[subpacket_offset] |= BIT(2);
+            break;
+        case RMI_REG_STATE_DEFAULT:
+        default:
+            break;
+    }
+    
+    ret = writeBlock(getCtrlAddr() + control_offset, buf, control_size);
+    return ret;
 }
 
 int F12::rmi_f12_read_sensor_tuning()
@@ -236,8 +221,7 @@ int F12::rmi_f12_read_sensor_tuning()
         return -ENODEV;
     }
     
-    ret = bus->readBlock(desc.control_base_addr + offset, buf,
-                            item->reg_size);
+    ret = readBlock(getCtrlAddr() + offset, buf, item->reg_size);
     if (ret)
         return ret;
     
@@ -296,8 +280,7 @@ void F12::getReport()
     if (!data1)
         return;
     
-    int retval = bus->readBlock(desc.data_base_addr, data_pkt,
-                                   pkt_size);
+    int retval = readBlock(getDataAddr(), data_pkt, pkt_size);
     
     if (retval < 0) {
         IOLogError("F12 - Failed to read object data. Code: %d", retval);
@@ -365,7 +348,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * The first register of the register descriptor is the size of
      * the register descriptor's presense register.
      */
-    ret = bus->read(addr, &size_presence_reg);
+    ret = readByte(addr, &size_presence_reg);
     if (ret)
         return ret;
     ++addr;
@@ -380,7 +363,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * and a bitmap which identified which packet registers are present
      * for this particular register type (ie query, control, or data).
      */
-    ret = bus->readBlock(addr, buf, size_presence_reg);
+    ret = readBlock(addr, buf, size_presence_reg);
     if (ret)
         return ret;
     ++addr;
@@ -424,7 +407,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * register and a bitmap of all subpackets contained in the packet
      * register.
      */
-    ret = bus->readBlock(addr, struct_buf, rdesc->struct_size);
+    ret = readBlock(addr, struct_buf, rdesc->struct_size);
     if (ret)
         goto free_struct_buff;
     

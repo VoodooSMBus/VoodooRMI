@@ -53,7 +53,7 @@ struct f01_basic_properties {
     char product_id[RMI_PRODUCT_ID_LENGTH + 1];
     u16 productinfo;
     u32 firmware_id;
-    u32 package_id;
+    u64 package_id;
 };
 
 /* F01 device status bits */

@@ -49,23 +49,6 @@ typedef s64 __s64;
 // kernel.h
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
-// unaligned/le_byteshift.h
-static inline u32 __get_unaligned_le32(const u8 *p)
-{
-    return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
-}
-
-static inline u64 __get_unaligned_le64(const u8 *p)
-{
-    return (u64)__get_unaligned_le32(p + 4) << 32 |
-    __get_unaligned_le32(p);
-}
-
-static inline u64 get_unaligned_le64(const void *p)
-{
-    return __get_unaligned_le64((const u8 *)p);
-}
-
 // input.h
 #define KEY_RESERVED        0
 #define BTN_LEFT            1

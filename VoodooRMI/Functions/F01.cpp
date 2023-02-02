@@ -163,7 +163,7 @@ void F01::publishProps()
     setPropertyString(propDict, "Product ID", properties.product_id);
     setPropertyNumber(propDict, "Product Info", properties.productinfo, 16);
     setPropertyNumber(propDict, "Firmware ID", properties.firmware_id, 32);
-    setPropertyNumber(propDict, "Package ID", properties.package_id, 32);
+    setPropertyNumber(propDict, "Package ID", properties.package_id, 64);
     setProperty("Device Properties", propDict);
     propDict->release();
 }
@@ -301,7 +301,7 @@ int F01::rmi_f01_read_properties()
             
             // Truncates in F01.c in Linux as well, no clue why.
             // Casting to remove warning
-            properties.package_id = (u32) get_unaligned_le64(queries);
+            properties.package_id = OSSwapLittleToHostInt64(queries);
             prod_info_addr++;
         }
         

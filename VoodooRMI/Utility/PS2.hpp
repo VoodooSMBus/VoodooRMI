@@ -12,8 +12,8 @@
 #define PS2_CMD_SETSCALE21    0x00e7
 #define PS2_CMD_SETRES        0x10e8
 #define PS2_CMD_SETRATE       0x10f3
-#define PS2_CMD_GETID        0x02f2
-#define PS2_CMD_RESET_BAT    0x02ff
+#define PS2_CMD_GETID         0x02f2
+#define PS2_CMD_RESET_BAT     0x02ff
 
 #define PS2_RET_BAT        0xaa
 #define PS2_RET_ID        0x00

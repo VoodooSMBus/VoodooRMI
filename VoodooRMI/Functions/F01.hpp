@@ -10,7 +10,6 @@
 #ifndef F01_hpp
 #define F01_hpp
 
-#include <RMIBus.hpp>
 #include <RMIFunction.hpp>
 
 #define RMI_PRODUCT_ID_LENGTH    10

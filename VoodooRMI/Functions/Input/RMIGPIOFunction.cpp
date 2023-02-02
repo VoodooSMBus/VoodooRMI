@@ -9,6 +9,9 @@
 #include "RMIGPIOFunction.hpp"
 #include "VoodooInputMessages.h"
 
+#define TRACKPOINT_RANGE_START      3
+#define TRACKPOINT_RANGE_END        6
+
 OSDefineMetaClassAndStructors(RMIGPIOFunction, RMIFunction)
 #define super RMIFunction
 

@@ -11,6 +11,9 @@
 */
 
 #include "F03.hpp"
+#include "PS2.hpp"
+#include "Configuration.hpp"
+#include <VoodooInputMessages.h>
 
 OSDefineMetaClassAndStructors(F03, RMITrackpointFunction)
 #define super RMIFunction

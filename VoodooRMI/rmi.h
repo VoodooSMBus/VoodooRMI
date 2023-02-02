@@ -20,9 +20,6 @@
 #define DEFAULT_MULT 10
 #define MILLI_TO_NANO 1000000
 
-#define TRACKPOINT_RANGE_START      3
-#define TRACKPOINT_RANGE_END        6
-
 // Message types defined by ApplePS2Keyboard
 enum {
     // from keyboard to mouse/trackpad
@@ -41,8 +38,6 @@ enum {
     kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051),
     kHandleRMIInputReport = iokit_vendor_specific_msg(2052),
 };
-
-
 
 /*
  * Set the state of a register
@@ -92,10 +87,8 @@ struct RmiConfiguration {
 // Data for F30 and F3A
 struct RmiGpioData {
     bool clickpad {false};
-    bool trackpointButtons {true}; // Does not affect F03
+    bool trackpointButtons {true};
 };
-
-#define RMI_F11_DISABLE_ABS_REPORT      BIT(0)
 
 /**
  * struct rmi_2d_sensor_data - overrides defaults for a 2D sensor.

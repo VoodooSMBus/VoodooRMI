@@ -67,14 +67,12 @@ public:
         return conf;
     }
     
-    OSSet *functions {nullptr};
-    
     void notify(UInt32 type, void *argument = 0);
-    int reset();
 private:
     IOWorkLoop *workLoop {nullptr};
     IOCommandGate *commandGate {nullptr};
     IOService *voodooInputInstance {nullptr};
+    OSSet *functions {nullptr};
     
     void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);

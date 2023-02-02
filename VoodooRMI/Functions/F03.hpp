@@ -13,14 +13,10 @@
 #ifndef F03_hpp
 #define F03_hpp
 
-#include "../RMIBus.hpp"
-#include "../Utility/PS2.hpp"
-#include "../Utility/Configuration.hpp"
-#include <VoodooInputMessages.h>
-#include <RMITrackpointFunction.hpp>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOTimerEventSource.h>
+#include <RMITrackpointFunction.hpp>
 
 #define PSMOUSE_CMD_ENABLE 0x00f4
 

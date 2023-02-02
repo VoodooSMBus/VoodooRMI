@@ -16,10 +16,32 @@
 #include <F30.hpp>
 #include <F3A.hpp>
 
+// IRQs
+#define RMI_MAX_IRQS 32
+
+// Page Description Table
+#define RMI_PAGE_MASK 0xFF00
+#define RMI_MAX_PAGE 0xFF
+#define RMI_PDT_START 0xE9
+#define RMI_PDT_STOP 0x5
+
+// PDT entry data directly from RMI4 device
+struct RmiPdtData {
+    UInt8 functionNum;
+    UInt8 interruptBits : 3;
+    UInt8 _ : 2;
+    UInt8 functionVersion : 1;
+    UInt8 __ : 1;
+    UInt8 dataBase;
+    UInt8 ctrlBase;
+    UInt8 cmdBase;
+    UInt8 qryBase;
+};
+
 /*
  * The Page description table describes all of the functions/capabilities of
  *  the RMI4 device. Each function is represented as an entry in this table,
- *  and each "page" (256 block) can contain any number of these entries.
+ *  and each "page" (256 bytes) of registers can contain any number of these entries.
  * Most devices only contain 1-2 pages worth of functions, and Function 1
  *  should always be found on the first page.
  * All the function services should be instantiated in here, and IRQ bits

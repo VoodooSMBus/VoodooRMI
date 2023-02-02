@@ -59,17 +59,19 @@ bool RMIBus::start(IOService *provider) {
         getGPIOData(dict);
     }
     
+    // Scan page descripton table to find all functionality
+    // This is where trackpad/trackpoint/button capability is found
     retval = rmiScanPdt();
     if (retval)
         goto err;
 
-    
+    // Configure all functions then enable IRQs
     retval = rmiEnableSensor();
     if (retval) {
         goto err;
     }
     
-    // Do not open transport until we are ready to deal with interrupts
+    // Ready for interrupts
     if (!transport->open(this)) {
         IOLogError("Could not open transport");
         return false;
@@ -155,7 +157,7 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             return controlFunction->clearIRQs();
         case kIOMessageRMI4Resume:
             IOLogDebug("Wakeup");
-            return controlFunction->setIRQs();
+            return rmiEnableSensor();
         default:
             return super::message(type, provider);
     }
@@ -202,10 +204,6 @@ bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
     }
     
     return super::willTerminate(provider, options);
-}
-
-int RMIBus::reset() {
-    return transport->reset();
 }
 
 IOReturn RMIBus::setProperties(OSObject *properties) {
@@ -260,7 +258,7 @@ void RMIBus::getGPIOData(OSDictionary *dict) {
     IOLogInfo("Recieved GPIO Data");
 }
 
-
+// Make sure all functions are configured, then enable IRQs so we get data
 IOReturn RMIBus::rmiEnableSensor() {
     RMIFunction *func;
     

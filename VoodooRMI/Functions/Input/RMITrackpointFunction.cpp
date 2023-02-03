@@ -3,13 +3,15 @@
  */
 
 #include "RMITrackpointFunction.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
 
 OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
 
 #define MIDDLE_MOUSE_MASK 0x04
 
 bool RMITrackpointFunction::shouldDiscardReport() {
-    return bus->getVoodooInput() != nullptr;
+    return getVoodooInput() != nullptr;
 }
 
 void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
@@ -20,11 +22,13 @@ void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
     SInt32 dy = report->dy;
     UInt32 buttons = report->buttons | overwrite_buttons;
 
+    const RmiConfiguration &conf = getConfiguration();
+    
     // The highest dx/dy is lowered by subtracting by trackpointDeadzone.
     // This however does allows values below the deadzone value to still be sent, preserving control in the lower end
 
-    dx -= signum(dx) * min(abs(dx), conf->trackpointDeadzone);
-    dy -= signum(dy) * min(abs(dy), conf->trackpointDeadzone);
+    dx -= signum(dx) * min(abs(dx), conf.trackpointDeadzone);
+    dy -= signum(dy) * min(abs(dy), conf.trackpointDeadzone);
 
     // For middle button, we do not actually tell macOS it's been pressed until it's been released and we didn't scroll
     // We first say that it's been pressed internally - but if we scroll at all, then instead we say we scroll
@@ -37,7 +41,7 @@ void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
         }
     }
     
-    IOService *voodooInputInstance = bus->getVoodooInput();
+    IOService *voodooInputInstance = const_cast<IOService *>(getVoodooInput());
 
     // When middle button is released, if we registered a middle press w/o scrolling, send middle click as a seperate packet
     // Otherwise just turn scrolling off and remove middle buttons from packet
@@ -54,19 +58,19 @@ void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
 
     // Must multiply first then divide so we don't multiply by zero
     if (isScrolling) {
-        SInt32 scrollY = (SInt32)((SInt64)-dy * conf->trackpointScrollYMult / DEFAULT_MULT);
-        SInt32 scrollX = (SInt32)((SInt64)-dx * conf->trackpointScrollXMult / DEFAULT_MULT);
+        SInt32 scrollY = (SInt32)((SInt64)-dy * conf.trackpointScrollYMult / DEFAULT_MULT);
+        SInt32 scrollX = (SInt32)((SInt64)-dx * conf.trackpointScrollXMult / DEFAULT_MULT);
         
         dispatchScrollEvent(voodooInputInstance, scrollY, scrollX, timestamp);
     } else {
-        SInt32 mulDx = (SInt32)((SInt64)dx * conf->trackpointMult / DEFAULT_MULT);
-        SInt32 mulDy = (SInt32)((SInt64)dy * conf->trackpointMult / DEFAULT_MULT);
+        SInt32 mulDx = (SInt32)((SInt64)dx * conf.trackpointMult / DEFAULT_MULT);
+        SInt32 mulDy = (SInt32)((SInt64)dy * conf.trackpointMult / DEFAULT_MULT);
         
         dispatchPointerEvent(voodooInputInstance, mulDx, mulDy, buttons, timestamp);
     }
 
     if (dx || dy) {
-        bus->notify(kHandleRMITrackpoint);
+        notify(kHandleRMITrackpoint);
     }
 
     IOLogDebug("Dx: %d Dy : %d, Buttons: %d", dx, dy, buttons);

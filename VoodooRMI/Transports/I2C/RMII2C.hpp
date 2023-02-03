@@ -54,20 +54,20 @@ enum rmi_mode_type {
 };
 
 typedef struct __attribute__((__packed__)) {
-    __le16 wHIDDescLength;
-    __le16 bcdVersion;
-    __le16 wReportDescLength;
-    __le16 wReportDescRegister;
-    __le16 wInputRegister;
-    __le16 wMaxInputLength;
-    __le16 wOutputRegister;
-    __le16 wMaxOutputLength;
-    __le16 wCommandRegister;
-    __le16 wDataRegister;
-    __le16 wVendorID;
-    __le16 wProductID;
-    __le16 wVersionID;
-    __le32 reserved;
+    UInt16 wHIDDescLength;
+    UInt16 bcdVersion;
+    UInt16 wReportDescLength;
+    UInt16 wReportDescRegister;
+    UInt16 wInputRegister;
+    UInt16 wMaxInputLength;
+    UInt16 wOutputRegister;
+    UInt16 wMaxOutputLength;
+    UInt16 wCommandRegister;
+    UInt16 wDataRegister;
+    UInt16 wVendorID;
+    UInt16 wProductID;
+    UInt16 wVersionID;
+    UInt32 reserved;
 } i2c_hid_desc;
 
 class RMII2C : public RMITransport {
@@ -84,8 +84,8 @@ public:
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) APPLE_KEXT_OVERRIDE;
 
     int reset() APPLE_KEXT_OVERRIDE;
-    int readBlock(u16 rmiaddr, u8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
-    int blockWrite(u16 rmiaddr, u8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
+    int readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
+    int blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len) APPLE_KEXT_OVERRIDE;
     virtual OSDictionary *createConfig() APPLE_KEXT_OVERRIDE;
 
 private:
@@ -107,14 +107,14 @@ private:
     void simulateInterrupt(OSObject* owner, IOTimerEventSource* timer);
     IOReturn setPowerStateGated();
 
-    __le16 wHIDDescRegister {RMI_HID_DESC_REGISTER};
+    UInt16 wHIDDescRegister {RMI_HID_DESC_REGISTER};
     i2c_hid_desc hdesc;
 
     IOReturn getHIDDescriptorAddress();
     IOReturn getHIDDescriptor();
 
-    int rmi_set_page(u8 page);
-    int rmi_set_mode(u8 mode);
+    int rmi_set_page(UInt8 page);
+    int rmi_set_mode(UInt8 mode);
 
     void releaseResources();
 

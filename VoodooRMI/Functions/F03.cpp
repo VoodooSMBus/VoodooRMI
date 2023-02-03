@@ -11,17 +11,40 @@
 */
 
 #include "F03.hpp"
+#include "PS2.hpp"
+#include "RMIConfiguration.hpp"
+#include "RMIMessages.h"
+#include "RMILogging.h"
+#include "LinuxCompat.h"
+#include <VoodooInputMessages.h>
+
+#define RMI_F03_RX_DATA_OFB     0x01
+#define RMI_F03_OB_SIZE         2
+
+#define RMI_F03_OB_OFFSET       2
+#define RMI_F03_OB_DATA_OFFSET  1
+#define RMI_F03_OB_FLAG_TIMEOUT BIT(6)
+#define RMI_F03_OB_FLAG_PARITY  BIT(7)
+
+#define RMI_F03_DEVICE_COUNT            0x07
+#define RMI_F03_BYTES_PER_DEVICE        0x07
+#define RMI_F03_BYTES_PER_DEVICE_SHIFT  4
+#define RMI_F03_QUEUE_LENGTH            0x0F
 
 OSDefineMetaClassAndStructors(F03, RMITrackpointFunction)
 #define super RMIFunction
 
 bool F03::attach(IOService *provider)
 {
-    u8 bytes_per_device, query1;
-    u8 query2[RMI_F03_DEVICE_COUNT * RMI_F03_BYTES_PER_DEVICE];
+    UInt8 bytes_per_device, query1;
+    UInt8 query2[RMI_F03_DEVICE_COUNT * RMI_F03_BYTES_PER_DEVICE];
     size_t query2_len;
     
-    int error = bus->read(desc.query_base_addr, &query1);
+    if(!super::attach(provider)) {
+        return false;
+    }
+    
+    int error = readByte(getQryAddr(), &query1);
     
     if (error < 0) {
         IOLogError("F03: Failed to read query register: %02X", error);
@@ -42,8 +65,7 @@ bool F03::attach(IOService *provider)
         device_count = 1;
         rx_queue_length = 7;
     } else {
-        error = bus->readBlock(desc.query_base_addr + 1,
-                                  query2, query2_len);
+        error = readBlock(getQryAddr() + 1, query2, query2_len);
         if (error) {
             IOLogError("Failed to read second set of query registers (%d)",
                        error);
@@ -56,15 +78,15 @@ bool F03::attach(IOService *provider)
     setProperty("Device Count", device_count, 8);
     setProperty("Bytes Per Device", bytes_per_device, 8);
     
-    return IOService::attach(provider);
+    return true;
 }
 
 bool F03::start(IOService *provider)
 {
-    const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
-    u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
+    const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+    UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
     
-    work_loop = reinterpret_cast<IOWorkLoop*>(getWorkLoop());
+    work_loop = IOWorkLoop::workLoop();
     if (!work_loop) {
         IOLogError("F03 - Could not get work loop");
         return false;
@@ -84,8 +106,7 @@ bool F03::start(IOService *provider)
      * 0xaa 0x00 announcement which may confuse us as we try to
      * probe the device
      */
-    int error = bus->readBlock(desc.data_base_addr + RMI_F03_OB_OFFSET,
-                                  obs, ob_len);
+    int error = readBlock(getDataAddr() + RMI_F03_OB_OFFSET, obs, ob_len);
     if (!error)
         IOLogDebug("F03 - Consumed %*ph (%d) from PS2 guest",
                    ob_len, obs, ob_len);
@@ -126,7 +147,7 @@ void F03::stop(IOService *provider)
 
 int F03::rmi_f03_pt_write(unsigned char val)
 {
-    int error = bus->write(desc.data_base_addr, &val);
+    int error = writeByte(getDataAddr(), &val);
     if (error) {
         IOLogError("F03 - Failed to write to F03 TX register (%d)", error);
     }
@@ -134,8 +155,9 @@ int F03::rmi_f03_pt_write(unsigned char val)
     return error;
 }
 
-void F03::handlePacket(u8 *packet)
+void F03::handlePacket(UInt8 *packet)
 {
+    RMITrackpointReport report;
     // Trackpoint isn't initialized!
     if (packet[0] == 0xaa &&
         packet[1] == 0x00 &&
@@ -158,78 +180,62 @@ void F03::handlePacket(u8 *packet)
     handleReport(&report);
 }
 
-IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
-{
+IOReturn F03::setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) {
+    if (whatDevice != this) {
+        return kIOPMAckImplied;
+    }
     
-    switch (type) {
-        case kHandleRMIAttention: {
-            const u16 data_addr = desc.data_base_addr + RMI_F03_OB_OFFSET;
-            const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
-            u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
-            
-            int error = bus->readBlock(data_addr, obs, ob_len);
-            if (error) {
-                IOLogError("F03 - Failed to read output buffers: %d", error);
-                return kIOReturnError;
-            }
-            
-            for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
-                u8 ob_status = obs[i];
-                u8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
-                
-                if (!(ob_status & RMI_F03_RX_DATA_OFB))
-                    continue;
-                
-                
-                IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
-                if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
-                    IOLogDebug("F03 Timeout Flag");
-                    return kIOReturnSuccess;
-                }
-                if (ob_status & RMI_F03_OB_FLAG_PARITY) {
-                    IOLogDebug("F03 Parity Flag");
-                    return kIOReturnSuccess;
-                }
-                
-                handleByte(ob_data);
-            }
-            break;
-        }
-        case kHandleRMIResume:
+    switch (powerStateOrdinal) {
+        case RMI_POWER_ON:
             timer->setTimeoutMS(3000);
             timer->enable();
             break;
+        case RMI_POWER_OFF:
+            break;
         default:
-            return super::message(type, provider, argument);
+            return kIOPMNoSuchState;
     }
-
-    return kIOReturnSuccess;
+    
+    return kIOPMAckImplied;
 }
 
-IOWorkLoop* F03::getWorkLoop()
+void F03::attention()
 {
-    // Do we have a work loop already?, if so return it NOW.
-    if ((vm_address_t) work_loop >> 1)
-        return work_loop;
+    const UInt16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
+    const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+    UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
     
-    if (OSCompareAndSwap(0, 1, reinterpret_cast<IOWorkLoop*>(&work_loop))) {
-        // Construct the workloop and set the cntrlSync variable
-        // to whatever the result is and return
-        work_loop = IOWorkLoop::workLoop();
-    } else {
-        while (reinterpret_cast<IOWorkLoop*>(work_loop) == reinterpret_cast<IOWorkLoop*>(1)) {
-            // Spin around the cntrlSync variable until the
-            // initialization finishes.
-            thread_block(0);
-        }
+    int error = readBlock(data_addr, obs, ob_len);
+    if (error) {
+        IOLogError("F03 - Failed to read output buffers: %d", error);
+        return;
     }
     
-    return work_loop;
+    for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
+        UInt8 ob_status = obs[i];
+        UInt8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
+        
+        if (!(ob_status & RMI_F03_RX_DATA_OFB))
+            continue;
+        
+        
+        IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
+        if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
+            IOLogDebug("F03 Timeout Flag");
+            continue;
+        }
+        if (ob_status & RMI_F03_OB_FLAG_PARITY) {
+            IOLogDebug("F03 Parity Flag");
+            continue;
+        }
+        
+        handleByte(ob_data);
+    }
 }
 
 void F03::initPS2()
 {
-    u8 param[2] = {0};
+    UInt8 param[2] = {0};
     int error = 0;
     
     error = ps2Command(NULL, PS2_CMD_RESET_BAT);
@@ -253,7 +259,7 @@ void F03::initPS2()
         setProperty("Firmware ID", param[1], 8);
     }
     
-    u8 param1[2] = { TP_POR };
+    UInt8 param1[2] = { TP_POR };
 
     error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
     if (param1[0] != 0xAA || param1[1] != 0x00) {
@@ -261,7 +267,7 @@ void F03::initPS2()
     }
 
     // Resolutions from psmouse-base.c
-    u8 params[] = {0, 1, 2, 2, 3};
+    UInt8 params[] = {0, 1, 2, 2, 3};
     
     error = ps2Command(&params[4], PS2_CMD_SETRES);
     if (error)
@@ -273,7 +279,7 @@ void F03::initPS2()
         IOLogError("Failed to set scale: %d", error);
     
     // TODO: Actually set this - my trackpoint does not respond to this ~ 1Rev
-    u8 rate[1] = {100};
+    UInt8 rate[1] = {100};
     error = ps2Command(rate, PS2_CMD_SETRATE);
     if (error)
         IOLogError("Failed to set resolution: %d", error);
@@ -295,7 +301,7 @@ void F03::initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer)
     timer->disable();
 }
 
-void F03::handleByte(u8 byte)
+void F03::handleByte(UInt8 byte)
 {
     if (!cmdcnt && !flags) {
         // Wait for start of packets
@@ -325,7 +331,7 @@ void F03::handleByte(u8 byte)
     }
 }
 
-int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
+int F03::ps2DoSendbyteGated(UInt8 byte, uint64_t timeout)
 {
     AbsoluteTime time;
     AbsoluteTime currentTime;
@@ -367,7 +373,7 @@ int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
     return error;
 }
 
-int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
+int F03::ps2CommandGated(UInt8 *param, unsigned int *cmd)
 {
     unsigned int command = *cmd;
     uint64_t timeout = 500 * MILLI_TO_NANO;
@@ -379,7 +385,7 @@ int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
     AbsoluteTime time, currentTime;
     int rc, i;
     IOReturn res;
-    u8 send_param[16];
+    UInt8 send_param[16];
     
     memcpy(send_param, param, send);
     flags = command == PS2_CMD_GETID ? PS2_FLAG_WAITID : 0;
@@ -429,7 +435,7 @@ out_reset_flags:
     return rc;
 }
 
-int F03::ps2Command(u8 *param, unsigned int command)
+int F03::ps2Command(UInt8 *param, unsigned int command)
 {
     return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &F03::ps2CommandGated),
                                        param, &command);

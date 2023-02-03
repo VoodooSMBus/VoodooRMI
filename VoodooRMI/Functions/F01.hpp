@@ -10,7 +10,6 @@
 #ifndef F01_hpp
 #define F01_hpp
 
-#include <RMIBus.hpp>
 #include <RMIFunction.hpp>
 
 #define RMI_PRODUCT_ID_LENGTH    10
@@ -46,15 +45,15 @@
 
 
 struct f01_basic_properties {
-    u8 manufacturer_id;
+    UInt8 manufacturer_id;
     bool has_lts;
     bool has_adjustable_doze;
     bool has_adjustable_doze_holdoff;
     char dom[11]; /* YYYY/MM/DD + '\0' */
     char product_id[RMI_PRODUCT_ID_LENGTH + 1];
-    u16 productinfo;
-    u32 firmware_id;
-    u32 package_id;
+    UInt16 productinfo;
+    UInt32 firmware_id;
+    UInt64 package_id;
 };
 
 /* F01 device status bits */
@@ -114,45 +113,43 @@ struct f01_basic_properties {
  * finger lifts before entering the doze state, in units of 100ms.
  */
 struct f01_device_control {
-    u8 ctrl0;
-    u8 doze_interval;
-    u8 wakeup_threshold;
-    u8 doze_holdoff;
+    UInt8 ctrl0;
+    UInt8 doze_interval;
+    UInt8 wakeup_threshold;
+    UInt8 doze_holdoff;
 };
 
 class F01 : public RMIFunction {
     OSDeclareDefaultStructors(F01);
     
 public:
-    bool init(OSDictionary *dictionary) override;
     bool attach(IOService *provider) override;
-    bool start(IOService *provider) override;
-    void stop(IOService *provider) override;
-    void free() override;
+    IOReturn config() override;
+    void attention() override;
     
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) override;
     
-    /**
-     *  Duplicates properties to put in as flags
-     */
-    f01_basic_properties * getProperties();
-
+    void setIRQMask(const UInt32 irq, const UInt8 numIrqBits);
+    IOReturn readIRQ(UInt32 &irq) const;
+    IOReturn setIRQs() const;
+    IOReturn clearIRQs() const;
 private:
-    u16 doze_interval_addr;
-    u16 wakeup_threshold_addr;
-    u16 doze_holdoff_addr;
+    UInt16 doze_interval_addr;
+    UInt16 wakeup_threshold_addr;
+    UInt16 doze_holdoff_addr;
     
     bool suspend;
     bool old_nosleep;
     
-    f01_basic_properties *properties;
-    f01_device_control *device_control;
+    f01_basic_properties properties;
+    f01_device_control device_control;
     
-    unsigned int num_of_irq_regs;
+    UInt8 numIrqRegs;
+    UInt32 irqMask;
     
+    f01_basic_properties * getProperties();
     void publishProps();
     int rmi_f01_read_properties();
-    int rmi_f01_config();
     int rmi_f01_suspend();
     int rmi_f01_resume();
     void rmi_f01_attention();

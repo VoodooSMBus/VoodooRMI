@@ -5,16 +5,13 @@
  */
 
 #include "RMIBus.hpp"
-#include <F01.hpp>
-#include <F03.hpp>
-#include <F11.hpp>
-#include <F12.hpp>
-#include <F17.hpp>
-#include <F30.hpp>
-#include <F3A.hpp>
+#include "RMIFunction.hpp"
+#include "RMIConfiguration.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
+#include "F01.hpp"
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
-OSDefineMetaClassAndStructors(RMIFunction, IOService)
 OSDefineMetaClassAndStructors(RMITransport, IOService)
 #define super IOService
 
@@ -22,36 +19,39 @@ bool RMIBus::init(OSDictionary *dictionary) {
     if (!super::init(dictionary))
         return false;
     
-    data = reinterpret_cast<rmi_driver_data *>(IOMalloc(sizeof(rmi_driver_data)));
-    memset(data, 0, sizeof(rmi_driver_data));
-    
-    if (!data) return false;
-    
     functions = OSSet::withCapacity(5);
-    
-    data->irq_mutex = IOLockAlloc();
-    data->enabled_mutex = IOLockAlloc();
 
     updateConfiguration(OSDynamicCast(OSDictionary, getProperty("Configuration")));
     return true;
 }
 
-RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
+bool RMIBus::start(IOService *provider) {
+    int retval;
+    OSDictionary *config;
+    
 #if DEBUG
     IOLogInfo("RMI Bus (DEBUG) Starting up!");
 #else
     IOLogInfo("RMI Bus (RELEASE) Starting up!");
 #endif // DEBUG
     
-    if (!super::probe(provider, score)) {
-        IOLogError("Super said no to probing");
-        return NULL;
+    if (!super::start(provider)) {
+        return false;
     }
-        
+    
     transport = OSDynamicCast(RMITransport, provider);
-    if (!transport) {
+    if (transport == nullptr) {
         IOLogError("Could not get transport instance");
-        return NULL;
+        return false;
+    }
+    
+    workLoop = IOWorkLoop::workLoop();
+    commandGate = IOCommandGate::commandGate(this);
+    
+    if (workLoop == nullptr || commandGate == nullptr ||
+        workLoop->addEventSource(commandGate) != kIOReturnSuccess) {
+        IOLogError("%s Failed to add commandGate", getName());
+        return false;
     }
     
     // GPIO data from VoodooPS2
@@ -59,42 +59,28 @@ RMIBus * RMIBus::probe(IOService *provider, SInt32 *score) {
         OSDictionary *dict = OSDynamicCast(OSDictionary, object);
         getGPIOData(dict);
     }
-
-    if (rmi_driver_probe(this)) {
-        IOLogError("Could not probe");
-        return NULL;
-    }
     
-    return this;
-}
-
-bool RMIBus::start(IOService *provider) {
-    int retval;
-    OSDictionary *config;
-    
-    if (!super::start(provider))
-        return false;
-    
-    if (!(workLoop = IOWorkLoop::workLoop()) ||
-        !(commandGate = IOCommandGate::commandGate(this)) ||
-        (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
-        IOLogError("%s Failed to add commandGate", getName());
-        return false;
+    // Scan page descripton table to find all functionality
+    // This is where trackpad/trackpoint/button capability is found
+    retval = rmiScanPdt();
+    if (retval) {
+        goto err;
     }
 
-    retval = rmi_init_functions(this, data);
-    if (retval)
+    // Configure all functions then enable IRQs
+    retval = rmiEnableSensor();
+    if (retval) {
         goto err;
-
-    retval = rmi_enable_sensor(this);
-    if (retval)
-        goto err;
+    }
     
+    // Ready for interrupts
     setProperty(RMIBusIdentifier, kOSBooleanTrue);
-    
-    if (!transport->open(this))
-        return false;
+    if (!transport->open(this)) {
+        IOLogError("Could not open transport");
+        goto err;
+    }
 
+    // Check for any ACPI configuration
     config = transport->createConfig();
     if (config != nullptr) {
         updateConfiguration(config);
@@ -104,35 +90,33 @@ bool RMIBus::start(IOService *provider) {
     registerService();
     return true;
 err:
+    OSIterator *iter = OSCollectionIterator::withCollection(functions);
+    
+    while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+        func->stop(this);
+        func->detach(this);
+    }
+    
+    functions->flushCollection();
+    OSSafeReleaseNULL(iter);
     IOLogError("Could not start");
     return false;
 }
 
-void RMIBus::handleHostNotify()
-{
-    unsigned long mask, irqStatus;
+void RMIBus::handleHostNotify() {
+    UInt32 irqStatus;
     
-    if (!data) {
-        IOLogError("Interrupt - No data");
-        return;
-    }
-    if (!data->f01_container) {
-        IOLogError("Interrupt - No F01 Container");
+    if (controlFunction == nullptr) {
+        IOLogError("Interrupt - No F01");
         return;
     }
     
-    int error = readBlock(data->f01_container->fd.data_base_addr + 1,
-                          reinterpret_cast<u8*>(&irqStatus), data->num_of_irq_regs);
-    if (error < 0){
+    IOReturn error = controlFunction->readIRQ(irqStatus);
+    
+    if (error != kIOReturnSuccess){
         IOLogError("Unable to read IRQ");
         return;
     }
-    
-    data->irq_status = irqStatus;
-
-    IOLockLock(data->irq_mutex);
-    mask = data->irq_status & data->fn_irq_bits;
-    IOLockUnlock(data->irq_mutex);
     
     OSIterator* iter = OSCollectionIterator::withCollection(functions);
     if (!iter) {
@@ -141,53 +125,26 @@ void RMIBus::handleHostNotify()
     }
     
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
-        if (func->getIRQ() & mask) {
-            messageClient(kHandleRMIAttention, func);
+        if (func->hasAttnSig(irqStatus)) {
+            func->attention();
         }
     }
     
     OSSafeReleaseNULL(iter);
 }
 
-void RMIBus::handleHostNotifyLegacy()
- {
-     if (!data) {
-         IOLogError("Interrupt - No data");
-         return;
-     }
-     if (!data->f01_container) {
-         IOLogError("Interrupt - No F01 Container");
-         return;
+void RMIBus::handleHostNotifyLegacy() {
+     if (controlFunction == nullptr) {
+         IOLogError("Interrupt - No F01");
      }
 
      OSIterator* iter = OSCollectionIterator::withCollection(functions);
      while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
-         messageClient(kHandleRMIAttention, func);
+         func->attention();
      OSSafeReleaseNULL(iter);
- }
-
-void RMIBus::handleReset()
-{
-    if (!data || !data->f01_container) {
-        IOLogDebug("Device not ready for reset, ignoring...");
-        return;
-    }
-    
-    int error = readBlock(data->f01_container->fd.control_base_addr + 1,
-                          reinterpret_cast<u8 *>(&data->current_irq_mask),
-                          data->num_of_irq_regs);
-    
-    if (error < 0) {
-        IOLogError("Failed to read current IRQ mask during reset!");
-        return;
-    }
-    
-    messageClients(kHandleRMIConfig);
 }
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
-    IOReturn err;
-    
     switch (type) {
         case kIOMessageVoodooI2CHostNotify:
         case kIOMessageVoodooSMBusHostNotify:
@@ -197,22 +154,14 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             handleHostNotifyLegacy();
             break;
         case kIOMessageRMI4ResetHandler:
-            handleReset();
+            rmiEnableSensor();
             break;
         case kIOMessageRMI4Sleep:
-            IOLogDebug("Sleep");
-            messageClients(kHandleRMISleep);
-            rmi_driver_clear_irq_bits(this);
-            break;
+            IOLogInfo("Sleep");
+            return controlFunction->clearIRQs();
         case kIOMessageRMI4Resume:
-            IOLogDebug("Wakeup");
-            err = rmi_driver_set_irq_bits(this);
-            if (err < 0) {
-                IOLogError("Could not wakeup device");
-                return kIOReturnError;
-            }
-            messageClients(kHandleRMIResume);
-            break;
+            IOLogInfo("Wakeup");
+            return rmiEnableSensor();
         default:
             return super::message(type, provider);
     }
@@ -220,8 +169,7 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     return kIOReturnSuccess;
 }
 
-void RMIBus::notify(UInt32 type, void *argument)
-{
+void RMIBus::notify(UInt32 type, void *argument) {
     if (type == kHandleRMIClickpadSet ||
         type == kHandleRMITrackpoint) {
         
@@ -235,12 +183,6 @@ void RMIBus::notify(UInt32 type, void *argument)
 void RMIBus::stop(IOService *provider) {
     OSIterator *iter = OSCollectionIterator::withCollection(functions);
     
-    workLoop->removeEventSource(commandGate);
-    OSSafeReleaseNULL(commandGate);
-    OSSafeReleaseNULL(workLoop);
-
-    rmi_driver_clear_irq_bits(this);
-    
     while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         func->stop(this);
         func->detach(this);
@@ -253,14 +195,10 @@ void RMIBus::stop(IOService *provider) {
 }
 
 void RMIBus::free() {
-    if (data) {
-        rmi_free_function_list(this);
-        IOLockFree(data->enabled_mutex);
-        IOLockFree(data->irq_mutex);
-    }
-    
-    if (functions)
-        OSSafeReleaseNULL(functions);
+    workLoop->removeEventSource(commandGate);
+    OSSafeReleaseNULL(commandGate);
+    OSSafeReleaseNULL(workLoop);
+    OSSafeReleaseNULL(functions);
     super::free();
 }
 
@@ -270,92 +208,6 @@ bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
     }
     
     return super::willTerminate(provider, options);
-}
-
-int RMIBus::reset()
-{
-    return transport->reset();
-}
-
-int RMIBus::rmi_register_function(rmi_function *fn) {
-    RMIFunction * function;
-
-    IOLogDebug("Function F%X - IRQs: %u CMD Base: %u CTRL Base: %u DATA Base: %d QRY Base: %u VER: %u",
-               fn->fd.function_number,
-               fn->num_of_irqs,
-               fn->fd.command_base_addr,
-               fn->fd.control_base_addr,
-               fn->fd.data_base_addr,
-               fn->fd.query_base_addr,
-               fn->fd.function_version);
-    
-    switch(fn->fd.function_number) {
-        case 0x01: /* device control */
-            function = OSTypeAlloc(F01);
-            break;
-        case 0x03: /* PS/2 pass-through */
-            function = OSTypeAlloc(F03);
-            break;
-        case 0x11: /* multifinger pointing */
-            function = OSTypeAlloc(F11);
-            break;
-        case 0x12: /* multifinger pointing */
-            function = OSTypeAlloc(F12);
-            break;
-        case 0x17: /* trackpoints */
-            function = OSTypeAlloc(F17);
-            break;
-        case 0x30: /* GPIO and LED controls */
-            function = OSTypeAlloc(F30);
-            break;
-        case 0x3A: /* Buttons? */
-            function = OSTypeAlloc(F3A);
-            break;
-//        case 0x08: /* self test (aka BIST) */
-//        case 0x09: /* self test (aka BIST) */
-//        case 0x17: /* trackpoints */
-//        case 0x19: /* capacitive buttons */
-//        case 0x1A: /* simple capacitive buttons */
-//        case 0x21: /* force sensing */
-//        case 0x32: /* timer */
-        case 0x34: /* device reflash */
-//        case 0x36: /* auxiliary ADC */
-//        case 0x41: /* active pen pointing */
-        case 0x54: /* analog data reporting */
-        case 0x55: /* Sensor tuning */
-            IOLogInfo("F%X not implemented", fn->fd.function_number);
-            return 0;
-        default:
-            IOLogError("Unknown function: %02X - Continuing to load", fn->fd.function_number);
-            return 0;
-    }
-
-    if (!function || !function->init()) {
-        IOLogError("Could not initialize function: %02X", fn->fd.function_number);
-        OSSafeReleaseNULL(function);
-        return -ENODEV;
-    }
-    
-    if (!function->initData(this, &conf, fn)) {
-        OSSafeReleaseNULL(function);
-        return -ENODEV;
-    }
-    
-    if (!function->attach(this)) {
-        IOLogError("Function %02X could not attach", fn->fd.function_number);
-        OSSafeReleaseNULL(function);
-        return -ENODEV;
-    }
-    
-    if (OSDynamicCast(RMITrackpadFunction, function)) {
-        trackpadFunction = function;
-    } else if (OSDynamicCast(RMITrackpointFunction, function)) {
-        trackpointFunction = function;
-    }
-    
-    functions->setObject(function);
-    OSSafeReleaseNULL(function);
-    return 0;
 }
 
 IOReturn RMIBus::setProperties(OSObject *properties) {
@@ -408,4 +260,25 @@ void RMIBus::getGPIOData(OSDictionary *dict) {
     setProperty("GPIO Data", dict);
     
     IOLogInfo("Recieved GPIO Data");
+}
+
+// Make sure all functions are configured, then enable IRQs so we get data
+IOReturn RMIBus::rmiEnableSensor() {
+    RMIFunction *func;
+    OSIterator *iter;
+    
+    if (controlFunction == nullptr) {
+        IOLogDebug("Device not ready for reset, ignoring...");
+        return kIOReturnSuccess;
+    }
+    
+    iter = getClientIterator();
+    while ((func = OSDynamicCast(RMIFunction, iter->getNextObject()))) {
+        if (func->config() != kIOReturnSuccess) {
+            IOLogError("Could not start function %s", func->getName());
+        }
+    }
+    
+    OSSafeReleaseNULL(iter);
+    return controlFunction->setIRQs();
 }

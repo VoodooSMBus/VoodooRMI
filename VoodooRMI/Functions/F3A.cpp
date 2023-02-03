@@ -7,17 +7,19 @@
  */
 
 #include "F3A.hpp"
+#include "RMILogging.h"
+#include "LinuxCompat.h"
 
 OSDefineMetaClassAndStructors(F3A, RMIGPIOFunction)
 #define super RMIGPIOFunction
 
 int F3A::initialize()
 {
-    int error;
+    IOReturn error;
     uint8_t temp;
 
-    error = bus->read(desc.query_base_addr, &temp);
-    if (error) {
+    error = readByte(getQryAddr(), &temp);
+    if (error != kIOReturnSuccess) {
         IOLogError("%s - Failed to read general info register: %d", getName(), error);
         return error;
     }
@@ -43,14 +45,14 @@ int F3A::initialize()
     bzero(ctrl_regs, ctrl_regs_size * sizeof(uint8_t));
 
     /* Query1 -> gpio exist */
-    error = bus->readBlock(desc.query_base_addr, query_regs, query_regs_size);
-    if (error) {
+    error = readBlock(getQryAddr(), query_regs, query_regs_size);
+    if (error != kIOReturnSuccess) {
         IOLogError("%s - Failed to read query1 registers: %d", getName(), error);
         return error;
     }
 
     /* Ctrl1 -> gpio direction */
-    error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
+    error = readBlock(getCtrlAddr(), ctrl_regs, ctrl_regs_size);
     if (error) {
         IOLogError("%s - Failed to read control registers: %d", getName(), error);
         return error;
@@ -64,15 +66,6 @@ int F3A::initialize()
         return error;
     }
     return 0;
-}
-
-bool F3A::start(IOService *provider)
-{
-    if (!super::start(provider))
-        return false;
-
-    registerService();
-    return true;
 }
 
 bool F3A::is_valid_button(int button)

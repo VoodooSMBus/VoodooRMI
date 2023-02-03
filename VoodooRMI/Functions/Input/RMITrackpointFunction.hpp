@@ -22,9 +22,6 @@ class RMITrackpointFunction : public RMIFunction {
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
 
-protected:
-    RMITrackpointReport report {};
-
 private:
     RelativePointerEvent relativeEvent {};
     ScrollWheelEvent scrollEvent {};

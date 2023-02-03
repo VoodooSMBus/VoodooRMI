@@ -13,9 +13,6 @@
 
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
-#include "../Utility/LinuxCompat.h"
-#include "../Utility/Logging.h"
-#include "../rmi.h"
 
 #define kIOMessageVoodooSMBusHostNotify     iokit_vendor_specific_msg(420)
 #define kIOMessageVoodooI2CHostNotify       iokit_vendor_specific_msg(421)
@@ -26,12 +23,6 @@
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
 
-// power management
-static IOPMPowerState RMIPowerStates[] = {
-    {1, 0                , 0, 0           , 0, 0, 0, 0, 0, 0, 0, 0},
-    {1, kIOPMPowerOn, kIOPMPowerOn, kIOPMPowerOn, 0, 0, 0, 0, 0, 0, 0, 0}
-};
-
 /*
  * read/write/reset APIs can be used before opening. Opening/Closing is needed to recieve interrupts
  */
@@ -40,9 +31,9 @@ class RMITransport : public IOService {
     
 public:
     // rmi_read_block
-    virtual int readBlock(u16 rmiaddr, u8 *databuff, size_t len) { return -1; };
+    virtual int readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) { return -1; };
     // rmi_block_write
-    virtual int blockWrite(u16 rmiaddr, u8 *buf, size_t len) { return -1; };
+    virtual int blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len) { return -1; };
     
     virtual int reset() { return 0; };
     

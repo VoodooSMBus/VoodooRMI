@@ -10,10 +10,7 @@
 #ifndef F11_hpp
 #define F11_hpp
 
-#include <RMIBus.hpp>
-#include <RMIFunction.hpp>
 #include <RMITrackpadFunction.hpp>
-#include <IOKit/IOMessage.h>
 
 /*
  *  Aren't we glad that header files exist?
@@ -315,7 +312,7 @@
  */
 struct f11_2d_sensor_queries {
     /* query1 */
-    u8 nr_fingers;
+    UInt8 nr_fingers;
     bool has_rel;
     bool has_abs;
     bool has_gestures;
@@ -323,16 +320,16 @@ struct f11_2d_sensor_queries {
     bool configurable;
     
     /* query2 */
-    u8 nr_x_electrodes;
+    UInt8 nr_x_electrodes;
     
     /* query3 */
-    u8 nr_y_electrodes;
+    UInt8 nr_y_electrodes;
     
     /* query4 */
-    u8 max_electrodes;
+    UInt8 max_electrodes;
     
     /* query5 */
-    u8 abs_data_size;
+    UInt8 abs_data_size;
     bool has_anchored_finger;
     bool has_adj_hyst;
     bool has_dribble;
@@ -340,7 +337,7 @@ struct f11_2d_sensor_queries {
     bool has_large_object_suppression;
     bool has_jitter_filter;
     
-    u8 f11_2d_query6;
+    UInt8 f11_2d_query6;
     
     /* query 7 */
     bool has_single_tap;
@@ -377,7 +374,7 @@ struct f11_2d_sensor_queries {
     bool has_pen_filters;
     
     /* Query 10 */
-    u8 nr_touch_shapes;
+    UInt8 nr_touch_shapes;
     
     /* Query 11. */
     bool has_z_tuning;
@@ -400,19 +397,19 @@ struct f11_2d_sensor_queries {
     bool has_linear_coeff_2;
     
     /* Query 13 */
-    u8 jitter_window_size;
-    u8 jitter_filter_type;
+    UInt8 jitter_window_size;
+    UInt8 jitter_filter_type;
     
     /* Query 14 */
-    u8 light_control;
+    UInt8 light_control;
     bool is_clear;
-    u8 clickpad_props;
-    u8 mouse_buttons;
+    UInt8 clickpad_props;
+    UInt8 mouse_buttons;
     bool has_advanced_gestures;
     
     /* Query 15 - 18 */
-    u16 x_sensor_size_mm;
-    u16 y_sensor_size_mm;
+    UInt16 x_sensor_size_mm;
+    UInt16 y_sensor_size_mm;
 };
 
 /* Defs for Ctrl0. */
@@ -439,8 +436,8 @@ struct f11_2d_sensor_queries {
 #define RMI_F11_CTRL_REG_COUNT          12
 
 struct f11_2d_ctrl {
-    u8              ctrl0_11[RMI_F11_CTRL_REG_COUNT];
-    u16             ctrl0_11_address;
+    UInt8              ctrl0_11[RMI_F11_CTRL_REG_COUNT];
+    UInt16             ctrl0_11_address;
 };
 
 #define RMI_F11_ABS_BYTES 5
@@ -478,15 +475,15 @@ struct f11_2d_ctrl {
  * @scroll_zones - scroll deltas for 4 regions (if present).
  */
 struct f11_2d_data {
-    u8    *f_state;
-    u8    *abs_pos;
+    UInt8    *f_state;
+    UInt8    *abs_pos;
 //    s8    *rel_pos;
-//    u8    *gest_1;
-//    u8    *gest_2;
+//    UInt8    *gest_1;
+//    UInt8    *gest_2;
 //    s8    *pinch;
-//    u8    *flick;
-//    u8    *rotate;
-//    u8    *shapes;
+//    UInt8    *flick;
+//    UInt8    *rotate;
+//    UInt8    *shapes;
 //    s8    *multi_scroll;
 //    s8    *scroll_zones;
 };
@@ -503,9 +500,10 @@ class F11 : public RMITrackpadFunction {
     
 public:
     bool attach(IOService *provider) override;
-    bool start(IOService *provider) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    void attention() override;
     void free() override;
+    
+    IOReturn config() override;
     
 private:
     RMI2DSensorReport report {};
@@ -529,8 +527,8 @@ private:
     bool has_query28;
     bool has_acm;
     struct f11_2d_ctrl dev_controls;
-    u16 rezero_wait_ms;
-    u8 *data_pkt { nullptr };
+    UInt16 rezero_wait_ms;
+    UInt8 *data_pkt { nullptr };
     size_t pkt_size;
     size_t attn_size;
     struct f11_2d_sensor_queries sens_query;
@@ -539,18 +537,16 @@ private:
     unsigned long *abs_mask;
     unsigned long *rel_mask;
     
-    bool getReport();
-    int rmi_f11_config();
     int rmi_f11_initialize();
     int rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
-                                      u16 query_base_addr);
-    int f11_read_control_regs(f11_2d_ctrl *ctrl, u16 ctrl_base_addr);
+                                      UInt16 query_base_addr);
+    int f11_read_control_regs(f11_2d_ctrl *ctrl, UInt16 ctrl_base_addr);
     int f11_write_control_regs(f11_2d_sensor_queries *query,
                                f11_2d_ctrl *ctrl,
-                               u16 ctrl_base_addr);
+                               UInt16 ctrl_base_addr);
     int f11_2d_construct_data();
     
-    inline u8 rmi_f11_parse_finger_state(u8 n_finger)
+    inline UInt8 rmi_f11_parse_finger_state(UInt8 n_finger)
     {
         return (data_2d.f_state[n_finger / 4] >> (2 * (n_finger % 4)))
                 & FINGER_STATE_MASK;

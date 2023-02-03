@@ -6,8 +6,13 @@
  *
  */
 
-#include "Configuration.hpp"
-
+#include <libkern/c++/OSArray.h>
+#include <libkern/c++/OSDictionary.h>
+#include <libkern/c++/OSBoolean.h>
+#include <libkern/c++/OSNumber.h>
+#include <libkern/c++/OSString.h>
+#include "RMIConfiguration.hpp"
+#include "RMILogging.h"
 
 bool Configuration::loadBoolConfiguration(OSDictionary *dict, const char* configurationKey, bool *defaultValue) {
     OSBoolean* value;

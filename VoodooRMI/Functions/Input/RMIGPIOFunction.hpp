@@ -17,32 +17,30 @@ class RMIGPIOFunction : public RMIFunction {
 
 public:
     bool attach(IOService *provider) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    IOReturn config() override;
+    void attention() override;
     void free() override;
 
 protected:
-    RelativePointerEvent relativeEvent {};
-
     uint8_t *query_regs {nullptr};
     uint8_t query_regs_size {0};
     uint8_t *ctrl_regs {nullptr};
     uint8_t ctrl_regs_size {0};
     uint8_t *data_regs {nullptr};
 
-    u8 register_count {0};
-    u8 gpioled_count {0};
-    u16 *gpioled_key_map {nullptr};
+    UInt8 register_count {0};
+    UInt8 gpioled_count {0};
+    UInt16 *gpioled_key_map {nullptr};
 
     bool has_gpio {true};
-    u8 numButtons {0};
-    u8 clickpadIndex {0};
+    UInt8 numButtons {0};
+    UInt8 clickpadIndex {0};
     bool clickpadState {false};
     bool hasTrackpointButtons {false};
 
     virtual inline int initialize() {return -1;};
     virtual inline bool is_valid_button(int button) {return false;};
 
-    int config();
     int mapGpios();
     void reportButton();
 };

@@ -20,9 +20,6 @@
 class F3A : public RMIGPIOFunction {
     OSDeclareDefaultStructors(F3A)
     
-public:
-    bool start(IOService *provider) override;
-
 private:
     int initialize() override;
     bool is_valid_button(int button) override;

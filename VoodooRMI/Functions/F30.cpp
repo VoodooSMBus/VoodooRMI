@@ -6,34 +6,24 @@
  * Copyright (c) 2012-2016 Synaptics Incorporated
  */
 
+#include "RMILogging.h"
+#include "RMIConfiguration.hpp"
 #include "F30.hpp"
+#include "LinuxCompat.h"
 
 OSDefineMetaClassAndStructors(F30, RMIGPIOFunction)
 #define super RMIGPIOFunction
 
-bool F30::start(IOService *provider)
-{
-    if (!super::start(provider))
-        return false;
-    
-    int error = config();
-    if (error)
-        return false;
-    
-    registerService();
-    return true;
-}
-
 void F30::rmi_f30_calc_ctrl_data() {
-    u8 *ctrl_reg = ctrl_regs;
-    int control_address = desc.control_base_addr;
+    UInt8 *ctrl_reg = ctrl_regs;
+    int control_address = getCtrlAddr();
 
     if (has_gpio && has_led)
         rmi_f30_set_ctrl_data(&ctrl[0], &control_address,
                               register_count, &ctrl_reg);
 
     rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
-                          sizeof(u8), &ctrl_reg);
+                          sizeof(UInt8), &ctrl_reg);
 
     if (has_gpio) {
         rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
@@ -69,12 +59,12 @@ void F30::rmi_f30_calc_ctrl_data() {
                               register_count, &ctrl_reg);
 
         rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
-                              sizeof(u8), &ctrl_reg);
+                              sizeof(UInt8), &ctrl_reg);
     }
 
     if (has_mech_mouse_btns)
         rmi_f30_set_ctrl_data(&ctrl[10], &control_address,
-                              sizeof(u8), &ctrl_reg);
+                              sizeof(UInt8), &ctrl_reg);
 
     ctrl_regs_size = (uint32_t) (ctrl_reg -
                                  ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
@@ -92,8 +82,8 @@ int F30::initialize()
     }
     bzero(query_regs, query_regs_size * sizeof(uint8_t));
 
-    error = bus->readBlock(desc.query_base_addr,
-                              query_regs, RMI_F30_QUERY_SIZE);
+    error = readBlock(getQryAddr(),
+                      query_regs, RMI_F30_QUERY_SIZE);
     if (error) {
         IOLogError("%s: Failed to read query register: %d", getName(), error);
         return error;
@@ -136,7 +126,7 @@ int F30::initialize()
 
     rmi_f30_calc_ctrl_data();
 
-    error = bus->readBlock(desc.control_base_addr, ctrl_regs, ctrl_regs_size);
+    error = readBlock(getCtrlAddr(), ctrl_regs, ctrl_regs_size);
     if (error) {
         IOLogError("%s - Failed to read control registers: %d", getName(), error);
         return error;
@@ -164,7 +154,7 @@ bool F30::is_valid_button(int button)
 }
 
 void F30::rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
-                                int *ctrl_addr, int len, u8 **reg)
+                                int *ctrl_addr, int len, UInt8 **reg)
 {
     ctrl->address = *ctrl_addr;
     ctrl->length = len;

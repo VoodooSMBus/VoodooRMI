@@ -1,8 +1,7 @@
-/*
- * Configuration.hpp
- * RMI4 Driver for macOS X
+/* SPDX-License-Identifier: GPL-2.0-only
+ * RMI4 Logging
  *
- * Copyright (c) 2021 Avery Black <1Revenger1>
+ * Copyright (c) 2021 Avery Black
  */
 
 #ifndef Logging_h

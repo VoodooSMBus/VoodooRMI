@@ -1,10 +1,8 @@
-//
-//  RMIBusPDT.cpp
-//  VoodooRMI
-//
-//  Created by Gwydien on 1/31/23.
-//  Copyright © 2023 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * RMI4 Page Descripton Table Parsing
+ *
+ * Copyright (c) 2023 Avery Black
+ */
 
 #include "RMILogging.h"
 #include "RMIBus.hpp"

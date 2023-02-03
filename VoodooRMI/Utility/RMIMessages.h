@@ -1,10 +1,8 @@
-//
-//  RMIMessages.h
-//  VoodooRMI
-//
-//  Created by Gwydien on 2/2/23.
-//  Copyright © 2023 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * RMI4 Messages
+ *
+ * Copyright (c) 2023 Avery Black
+ */
 
 #ifndef RMIMessages_h
 #define RMIMessages_h

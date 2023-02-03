@@ -1,10 +1,8 @@
-//
-//  RMIPowerStates.h
-//  VoodooRMI
-//
-//  Created by Gwydien on 2/1/23.
-//  Copyright © 2023 1Revenger1. All rights reserved.
-//
+/* SPDX-License-Identifier: GPL-2.0-only
+ * RMI4 Power States
+ *
+ * Copyright (c) 2023 Avery Black
+ */
 
 #ifndef RMIPowerStates_h
 #define RMIPowerStates_h

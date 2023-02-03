@@ -7,10 +7,12 @@
  * Copyright (c) 2011 Unixphere
  */
 
-#include "RMISMBus.hpp"
-#include "Configuration.hpp"
-#include "RMIPowerStates.h"
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
+#include "RMISMBus.hpp"
+#include "RMIMessages.h"
+#include "RMIConfiguration.hpp"
+#include "RMIPowerStates.h"
+#include "RMILogging.h"
 
 OSDefineMetaClassAndStructors(RMISMBus, RMITransport)
 #define super IOService
@@ -173,11 +175,11 @@ int RMISMBus::reset()
  * The function to get command code for smbus operations and keeps
  * records to the driver mapping table
  */
-int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
-                                       bool isread, u8 *commandcode)
+int RMISMBus::rmi_smb_get_command_code(UInt16 rmiaddr, int bytecount,
+                                       bool isread, UInt8 *commandcode)
 {
     struct mapping_table_entry new_map;
-    u8 i;
+    UInt8 i;
     int retval = 0;
     
     IOLockLock(mapping_table_mutex);
@@ -206,7 +208,7 @@ int RMISMBus::rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
     new_map.readcount = bytecount;
     new_map.flags = !isread ? RMI_SMB2_MAP_FLAGS_WE : 0;
     retval = device_nub->writeBlockData(i + 0x80,
-                                         sizeof(new_map), reinterpret_cast<u8*>(&new_map));
+                                         sizeof(new_map), reinterpret_cast<UInt8*>(&new_map));
     if (retval < 0) {
         IOLogError("smb_get_command_code: Failed to write mapping table data");
         /*
@@ -229,9 +231,9 @@ exit:
     return 0;
 }
 
-int RMISMBus::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
+int RMISMBus::readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) {
     int retval;
-    u8 commandcode;
+    UInt8 commandcode;
     int cur_len = (int)len;
     
     IOLockLock(page_mutex);
@@ -264,10 +266,10 @@ exit:
     return retval;
 }
 
-int RMISMBus::blockWrite(u16 rmiaddr, u8 *buf, size_t len)
+int RMISMBus::blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len)
 {
     int retval = 0;
-    u8 commandcode;
+    UInt8 commandcode;
     int cur_len = (int)len;
     
     IOLockLock(page_mutex);
@@ -327,14 +329,7 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
             return kIOPMAckImplied;
         }
         
-        // Reconfigure device
-        retval = messageClient(kIOMessageRMI4ResetHandler, bus);
-        if (retval < 0) {
-            IOLogError("Failed to config trackpad!");
-            return kIOPMAckImplied;
-        }
-        
-        // Enable trackpad again
+        // Reconfigure and enable trackpad again
         retval = messageClient(kIOMessageRMI4Resume, bus);
         if (retval < 0) {
             IOLogError("Failed to resume trackpad!");

@@ -6,29 +6,6 @@
 #ifndef linux_compat_h
 #define linux_compat_h
 
-typedef UInt8  u8;
-typedef UInt16 u16;
-typedef UInt32 u32;
-typedef UInt64 u64;
-typedef u8 __u8;
-typedef u16 __u16;
-typedef u32 __u32;
-typedef u64 __u64;
-typedef UInt16 __be16;
-typedef UInt32 __be32;
-typedef UInt64 __be64;
-typedef UInt16 __le16;
-typedef UInt32 __le32;
-typedef UInt64 __le64;
-typedef SInt8  s8;
-typedef SInt16 s16;
-typedef SInt32 s32;
-typedef SInt64 s64;
-typedef s8  __s8;
-typedef s16 __s16;
-typedef s32 __s32;
-typedef s64 __s64;
-
 // https://github.com/torvalds/linux/blob/master/include/uapi/asm-generic/errno-base.h
 #define EIO     5
 #define ENOMEM  12

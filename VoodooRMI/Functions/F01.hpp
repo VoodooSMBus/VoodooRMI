@@ -45,15 +45,15 @@
 
 
 struct f01_basic_properties {
-    u8 manufacturer_id;
+    UInt8 manufacturer_id;
     bool has_lts;
     bool has_adjustable_doze;
     bool has_adjustable_doze_holdoff;
     char dom[11]; /* YYYY/MM/DD + '\0' */
     char product_id[RMI_PRODUCT_ID_LENGTH + 1];
-    u16 productinfo;
-    u32 firmware_id;
-    u64 package_id;
+    UInt16 productinfo;
+    UInt32 firmware_id;
+    UInt64 package_id;
 };
 
 /* F01 device status bits */
@@ -113,10 +113,10 @@ struct f01_basic_properties {
  * finger lifts before entering the doze state, in units of 100ms.
  */
 struct f01_device_control {
-    u8 ctrl0;
-    u8 doze_interval;
-    u8 wakeup_threshold;
-    u8 doze_holdoff;
+    UInt8 ctrl0;
+    UInt8 doze_interval;
+    UInt8 wakeup_threshold;
+    UInt8 doze_holdoff;
 };
 
 class F01 : public RMIFunction {
@@ -124,7 +124,6 @@ class F01 : public RMIFunction {
     
 public:
     bool attach(IOService *provider) override;
-    void stop(IOService *provider) override;
     IOReturn config() override;
     
     IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) override;
@@ -135,9 +134,9 @@ public:
     IOReturn setIRQs() const;
     IOReturn clearIRQs() const;
 private:
-    u16 doze_interval_addr;
-    u16 wakeup_threshold_addr;
-    u16 doze_holdoff_addr;
+    UInt16 doze_interval_addr;
+    UInt16 wakeup_threshold_addr;
+    UInt16 doze_holdoff_addr;
     
     bool suspend;
     bool old_nosleep;

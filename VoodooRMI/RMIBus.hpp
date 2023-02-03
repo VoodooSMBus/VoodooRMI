@@ -12,6 +12,7 @@
 #include <IOKit/IOCommandGate.h>
 #include <Availability.h>
 #include "RMITransport.hpp"
+#include "RMIConfiguration.hpp"
 
 #ifndef __ACIDANTHERA_MAC_SDK
 #error "This kext SDK is unsupported. Download from https://github.com/acidanthera/MacKernelSDK"
@@ -86,7 +87,6 @@ private:
 
     void handleHostNotify();
     void handleHostNotifyLegacy();
-    void handleReset();
     
     // IRQ information
     UInt8 irqCount {0};

@@ -11,7 +11,8 @@
  */
 
 #include "RMII2C.hpp"
-#include "Configuration.hpp"
+#include "RMILogging.h"
+#include "RMIConfiguration.hpp"
 #include "RMIPowerStates.h"
 
 OSDefineMetaClassAndStructors(RMII2C, RMITransport)
@@ -164,14 +165,14 @@ void RMII2C::stop(IOService *provider) {
     super::stop(provider);
 }
 
-int RMII2C::rmi_set_page(u8 page) {
+int RMII2C::rmi_set_page(UInt8 page) {
     /*
      * simplified version of rmi_write_report, hid_hw_output_report, i2c_hid_output_report,
      * i2c_hid_output_raw_report, i2c_hid_set_or_send_report and __i2c_hid_command
      */
-    u8 writeReport[] = {
-        (u8) (hdesc.wOutputRegister & 0xFF),
-        (u8) (hdesc.wOutputRegister >> 8),
+    UInt8 writeReport[] = {
+        (UInt8) (hdesc.wOutputRegister & 0xFF),
+        (UInt8) (hdesc.wOutputRegister >> 8),
         0x06,  // size & 0xFF
         0x00,  // size >> 8
         RMI_WRITE_REPORT_ID,
@@ -212,9 +213,9 @@ IOReturn RMII2C::getHIDDescriptorAddress() {
 }
 
 IOReturn RMII2C::getHIDDescriptor() {
-    u8 command[] = {
-        (u8) (wHIDDescRegister & 0xFF),
-        (u8) (wHIDDescRegister >> 8) };
+    UInt8 command[] = {
+        (UInt8) (wHIDDescRegister & 0xFF),
+        (UInt8) (wHIDDescRegister >> 8) };
 
     if (device_nub->writeReadI2C(command, sizeof(command), (UInt8 *)&hdesc, sizeof(i2c_hid_desc)) != kIOReturnSuccess) {
         IOLogError("%s::%s Read descriptor from 0x%02x failed", getName(), name, wHIDDescRegister);
@@ -238,16 +239,16 @@ IOReturn RMII2C::getHIDDescriptor() {
     return kIOReturnSuccess;
 }
 
-int RMII2C::rmi_set_mode(u8 mode) {
-    u8 command[] = {
-        (u8) (hdesc.wCommandRegister & 0xFF),
-        (u8) (hdesc.wCommandRegister >> 8),
+int RMII2C::rmi_set_mode(UInt8 mode) {
+    UInt8 command[] = {
+        (UInt8) (hdesc.wCommandRegister & 0xFF),
+        (UInt8) (hdesc.wCommandRegister >> 8),
         RMI_SET_RMI_MODE_REPORT_ID + (0x3 << 4), // reportID | reportType << 4;
               // reportType: 0x03 for HID_FEATURE_REPORT (kIOHIDReportTypeFeature) ; 0x02 for HID_OUTPUT_REPORT (kIOHIDReportTypeOutput)
         0x03, // hid_set_report_cmd =    { I2C_HID_CMD(0x03) };
         RMI_SET_RMI_MODE_REPORT_ID, // report_id
-        (u8) (hdesc.wDataRegister & 0xFF),
-        (u8) (hdesc.wDataRegister >> 8),
+        (UInt8) (hdesc.wDataRegister & 0xFF),
+        (UInt8) (hdesc.wDataRegister >> 8),
         0x04, // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00, // size >> 8;
         RMI_SET_RMI_MODE_REPORT_ID, // report_id = buf[0];
@@ -289,25 +290,25 @@ bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
     return IOService::handleOpen(forClient, options, arg);
 }
 
-int RMII2C::readBlock(u16 rmiaddr, u8 *databuff, size_t len) {
+int RMII2C::readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) {
     int retval = 0;
 
     if (hdesc.wMaxInputLength && (len > hdesc.wMaxInputLength))
         len = hdesc.wMaxInputLength;
 
-    u8 writeReport[] = {
-        (u8) (hdesc.wOutputRegister & 0xFF),
-        (u8) (hdesc.wOutputRegister >> 8),
+    UInt8 writeReport[] = {
+        (UInt8) (hdesc.wOutputRegister & 0xFF),
+        (UInt8) (hdesc.wOutputRegister >> 8),
         0x08,  // size & 0xFF; 2 + reportID + buf (reportID excluded)
         0x00,  // size >> 8;
         RMI_READ_ADDR_REPORT_ID,
         0x00,  // old 1 byte read count
-        (u8) (rmiaddr & 0xFF),
-        (u8) (rmiaddr >> 8),
-        (u8) (len & 0xFF),
-        (u8) (len >> 8) };
+        (UInt8) (rmiaddr & 0xFF),
+        (UInt8) (rmiaddr >> 8),
+        (UInt8) (len & 0xFF),
+        (UInt8) (len >> 8) };
 
-    u8 *i2cInput = new u8[len+4];
+    UInt8 *i2cInput = new UInt8[len+4];
     memset(databuff, 0, len);
 
     IOLockLock(page_mutex);
@@ -352,21 +353,21 @@ exit:
     return retval;
 }
 
-int RMII2C::blockWrite(u16 rmiaddr, u8 *buf, size_t len) {
+int RMII2C::blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len) {
     int retval = 0;
 
     if (hdesc.wMaxOutputLength && (len + 6 > hdesc.wMaxOutputLength))
         setProperty("InputLength exceed", len);
 
-    u8 *writeReport = new u8[len+8] {
-        (u8) (hdesc.wOutputRegister & 0xFF),
-        (u8) (hdesc.wOutputRegister >> 8),
-        (u8) ((len + 6) & 0xFF),  // size & 0xFF; 2 + reportID + buf (reportID excluded)
-        (u8) ((len + 6) >> 8),  // size >> 8;
+    UInt8 *writeReport = new UInt8[len+8] {
+        (UInt8) (hdesc.wOutputRegister & 0xFF),
+        (UInt8) (hdesc.wOutputRegister >> 8),
+        (UInt8) ((len + 6) & 0xFF),  // size & 0xFF; 2 + reportID + buf (reportID excluded)
+        (UInt8) ((len + 6) >> 8),  // size >> 8;
         RMI_WRITE_REPORT_ID,
-        (u8) len,
-        (u8) (rmiaddr & 0xFF),
-        (u8) (rmiaddr >> 8) };
+        (UInt8) len,
+        (UInt8) (rmiaddr & 0xFF),
+        (UInt8) (rmiaddr >> 8) };
 
     IOLockLock(page_mutex);
     if (RMI_I2C_PAGE(rmiaddr) != page) {
@@ -413,7 +414,7 @@ IOReturn RMII2C::setPowerStateGated() {
         // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
         IOSleep(1000);
         
-        int retval = reset();
+        int retval = rmi_set_mode(reportMode);
         if (retval < 0) {
             IOLogError("Failed to config trackpad!");
             return kIOPMAckImplied;

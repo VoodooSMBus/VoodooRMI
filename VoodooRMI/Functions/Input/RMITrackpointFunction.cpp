@@ -3,6 +3,8 @@
  */
 
 #include "RMITrackpointFunction.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
 
 OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
 

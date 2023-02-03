@@ -17,9 +17,9 @@
 
 /* describes a single packet register */
 struct rmi_register_desc_item {
-    u16 reg;
+    UInt16 reg;
     unsigned long reg_size;
-    u8 num_subpackets;
+    UInt8 num_subpackets;
     unsigned long subpacket_map[BITS_TO_LONGS(RMI_REG_DESC_SUBPACKET_BITS)];
 };
 
@@ -30,7 +30,7 @@ struct rmi_register_desc_item {
 struct rmi_register_descriptor {
     unsigned long struct_size;
     unsigned long presense_map[BITS_TO_LONGS(RMI_REG_DESC_PRESENSE_BITS)];
-    u8 num_registers;
+    UInt8 num_registers;
     struct rmi_register_desc_item *registers;
 };
 
@@ -54,7 +54,6 @@ class F12 : public RMITrackpadFunction {
     
 public:
     bool attach(IOService *provider) override;
-    bool start(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     void free() override;
     
@@ -65,14 +64,14 @@ private:
     
     RMI2DSensorReport report {};
     
-    static rmi_register_desc_item *rmi_get_register_desc_item(rmi_register_descriptor *rdesc, u16 reg);
+    static rmi_register_desc_item *rmi_get_register_desc_item(rmi_register_descriptor *rdesc, UInt16 reg);
     static size_t rmi_register_desc_calc_size(rmi_register_descriptor *rdesc);
-    static int rmi_register_desc_calc_reg_offset(rmi_register_descriptor *rdesc, u16 reg);
+    static int rmi_register_desc_calc_reg_offset(rmi_register_descriptor *rdesc, UInt16 reg);
     static bool rmi_register_desc_has_subpacket(const rmi_register_desc_item *item,
-                                                u8 subpacket);
+                                                UInt8 subpacket);
     
     /* F12 Data */
-    u8 *data_pkt;
+    UInt8 *data_pkt;
     size_t pkt_size;
     size_t attn_size;
     struct rmi_2d_sensor_platform_data sensor_pdata;
@@ -84,18 +83,18 @@ private:
     
     /* F12 Data1 describes sensed objects */
     const rmi_register_desc_item *data1 {nullptr};
-    u16 data1_offset;
+    UInt16 data1_offset;
     
     /* F12 Data5 describes finger ACM */
     const rmi_register_desc_item *data5 {nullptr};
-    u16 data5_offset;
+    UInt16 data5_offset;
     
     /* F12 Data5 describes Pen */
     const rmi_register_desc_item *data6 {nullptr};
-    u16 data6_offset;
+    UInt16 data6_offset;
     
     int rmi_f12_read_sensor_tuning();
-    int rmi_read_register_desc(u16 addr,
+    int rmi_read_register_desc(UInt16 addr,
                                rmi_register_descriptor *rdesc);
     
     void getReport();

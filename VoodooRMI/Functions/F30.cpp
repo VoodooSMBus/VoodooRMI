@@ -6,27 +6,16 @@
  * Copyright (c) 2012-2016 Synaptics Incorporated
  */
 
+#include "RMILogging.h"
+#include "RMIConfiguration.hpp"
 #include "F30.hpp"
-#include "Configuration.hpp"
+#include "LinuxCompat.h"
 
 OSDefineMetaClassAndStructors(F30, RMIGPIOFunction)
 #define super RMIGPIOFunction
 
-bool F30::start(IOService *provider)
-{
-    if (!super::start(provider))
-        return false;
-    
-    int error = config();
-    if (error)
-        return false;
-    
-    registerService();
-    return true;
-}
-
 void F30::rmi_f30_calc_ctrl_data() {
-    u8 *ctrl_reg = ctrl_regs;
+    UInt8 *ctrl_reg = ctrl_regs;
     int control_address = getCtrlAddr();
 
     if (has_gpio && has_led)
@@ -34,7 +23,7 @@ void F30::rmi_f30_calc_ctrl_data() {
                               register_count, &ctrl_reg);
 
     rmi_f30_set_ctrl_data(&ctrl[1], &control_address,
-                          sizeof(u8), &ctrl_reg);
+                          sizeof(UInt8), &ctrl_reg);
 
     if (has_gpio) {
         rmi_f30_set_ctrl_data(&ctrl[2], &control_address,
@@ -70,12 +59,12 @@ void F30::rmi_f30_calc_ctrl_data() {
                               register_count, &ctrl_reg);
 
         rmi_f30_set_ctrl_data(&ctrl[9], &control_address,
-                              sizeof(u8), &ctrl_reg);
+                              sizeof(UInt8), &ctrl_reg);
     }
 
     if (has_mech_mouse_btns)
         rmi_f30_set_ctrl_data(&ctrl[10], &control_address,
-                              sizeof(u8), &ctrl_reg);
+                              sizeof(UInt8), &ctrl_reg);
 
     ctrl_regs_size = (uint32_t) (ctrl_reg -
                                  ctrl_regs) ?: RMI_F30_CTRL_REGS_MAX_SIZE;
@@ -165,7 +154,7 @@ bool F30::is_valid_button(int button)
 }
 
 void F30::rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
-                                int *ctrl_addr, int len, u8 **reg)
+                                int *ctrl_addr, int len, UInt8 **reg)
 {
     ctrl->address = *ctrl_addr;
     ctrl->length = len;

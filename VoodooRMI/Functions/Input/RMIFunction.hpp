@@ -8,8 +8,35 @@
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
 #include "RMIBus.hpp"
-#include "RMIBusPDT.hpp"
 #include "RMIPowerStates.h"
+
+// macOS kernel/math has absolute value in it. It's only for doubles though
+#define abs(x) ((x < 0) ? -(x) : (x))
+
+#define MILLI_TO_NANO 1000000
+
+/*
+ * Set the state of a register
+ *    DEFAULT - use the default value set by the firmware config
+ *    OFF - explicitly disable the register
+ *    ON - explicitly enable the register
+ */
+enum rmi_reg_state {
+    RMI_REG_STATE_DEFAULT = 0,
+    RMI_REG_STATE_OFF = 1,
+    RMI_REG_STATE_ON = 2
+};
+
+// Parsed PDT data
+struct RmiPdtEntry {
+    UInt16 dataAddr;
+    UInt16 ctrlAddr;
+    UInt16 cmdAddr;
+    UInt16 qryAddr;
+    UInt8 function;
+    UInt8 interruptBits;
+    UInt32 irqMask;
+};
 
 /*
  *  Wrapper class for functions

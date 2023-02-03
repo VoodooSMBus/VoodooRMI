@@ -7,18 +7,24 @@
  */
 
 #include "F17.hpp"
-#include <Configuration.hpp>
+#include "RMIConfiguration.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
 
 OSDefineMetaClassAndStructors(F17, RMITrackpointFunction)
 #define super RMITrackpointFunction
 
 bool F17::attach(IOService *provider)
 {
+    if(!super::attach(provider)) {
+        return false;
+    }
+    
     int retval = rmi_f17_initialize();
     if (retval < 0)
         return false;
 
-    return super::attach(provider);
+    return true;
 }
 
 void F17::free()
@@ -49,8 +55,8 @@ IOReturn F17::message(UInt32 type, IOService *provider, void *argument)
 }
 
 int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
-              u16 *next_query_reg, u16 *next_data_reg,
-              u16 *next_control_reg) {
+              UInt16 *next_query_reg, UInt16 *next_data_reg,
+              UInt16 *next_control_reg) {
     int retval;
     retval = readBlock(*next_query_reg,
                        stick->query.general.regs,
@@ -134,9 +140,9 @@ int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,
 
 int F17::rmi_f17_initialize() {
     int retval;
-    u16 next_query_reg = getQryAddr();
-    u16 next_data_reg = getDataAddr();
-    u16 next_control_reg = getCtrlAddr();
+    UInt16 next_query_reg = getQryAddr();
+    UInt16 next_data_reg = getDataAddr();
+    UInt16 next_control_reg = getCtrlAddr();
 
     retval = readBlock(getQryAddr(),
                        f17.query.regs, sizeof(f17.query.regs));

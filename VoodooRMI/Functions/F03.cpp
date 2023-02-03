@@ -12,17 +12,37 @@
 
 #include "F03.hpp"
 #include "PS2.hpp"
-#include "Configuration.hpp"
+#include "RMIConfiguration.hpp"
+#include "RMIMessages.h"
+#include "RMILogging.h"
+#include "LinuxCompat.h"
 #include <VoodooInputMessages.h>
+
+#define RMI_F03_RX_DATA_OFB     0x01
+#define RMI_F03_OB_SIZE         2
+
+#define RMI_F03_OB_OFFSET       2
+#define RMI_F03_OB_DATA_OFFSET  1
+#define RMI_F03_OB_FLAG_TIMEOUT BIT(6)
+#define RMI_F03_OB_FLAG_PARITY  BIT(7)
+
+#define RMI_F03_DEVICE_COUNT            0x07
+#define RMI_F03_BYTES_PER_DEVICE        0x07
+#define RMI_F03_BYTES_PER_DEVICE_SHIFT  4
+#define RMI_F03_QUEUE_LENGTH            0x0F
 
 OSDefineMetaClassAndStructors(F03, RMITrackpointFunction)
 #define super RMIFunction
 
 bool F03::attach(IOService *provider)
 {
-    u8 bytes_per_device, query1;
-    u8 query2[RMI_F03_DEVICE_COUNT * RMI_F03_BYTES_PER_DEVICE];
+    UInt8 bytes_per_device, query1;
+    UInt8 query2[RMI_F03_DEVICE_COUNT * RMI_F03_BYTES_PER_DEVICE];
     size_t query2_len;
+    
+    if(!super::attach(provider)) {
+        return false;
+    }
     
     int error = readByte(getQryAddr(), &query1);
     
@@ -58,13 +78,13 @@ bool F03::attach(IOService *provider)
     setProperty("Device Count", device_count, 8);
     setProperty("Bytes Per Device", bytes_per_device, 8);
     
-    return IOService::attach(provider);
+    return true;
 }
 
 bool F03::start(IOService *provider)
 {
-    const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
-    u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
+    const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+    UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
     
     work_loop = reinterpret_cast<IOWorkLoop*>(getWorkLoop());
     if (!work_loop) {
@@ -135,7 +155,7 @@ int F03::rmi_f03_pt_write(unsigned char val)
     return error;
 }
 
-void F03::handlePacket(u8 *packet)
+void F03::handlePacket(UInt8 *packet)
 {
     RMITrackpointReport report;
     // Trackpoint isn't initialized!
@@ -184,9 +204,9 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
     
     switch (type) {
         case kHandleRMIAttention: {
-            const u16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
-            const u8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
-            u8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
+            const UInt16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
+            const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+            UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
             
             int error = readBlock(data_addr, obs, ob_len);
             if (error) {
@@ -195,8 +215,8 @@ IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
             }
             
             for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
-                u8 ob_status = obs[i];
-                u8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
+                UInt8 ob_status = obs[i];
+                UInt8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
                 
                 if (!(ob_status & RMI_F03_RX_DATA_OFB))
                     continue;
@@ -246,7 +266,7 @@ IOWorkLoop* F03::getWorkLoop()
 
 void F03::initPS2()
 {
-    u8 param[2] = {0};
+    UInt8 param[2] = {0};
     int error = 0;
     
     error = ps2Command(NULL, PS2_CMD_RESET_BAT);
@@ -270,7 +290,7 @@ void F03::initPS2()
         setProperty("Firmware ID", param[1], 8);
     }
     
-    u8 param1[2] = { TP_POR };
+    UInt8 param1[2] = { TP_POR };
 
     error = ps2Command(param1, MAKE_PS2_CMD(1, 2, TP_COMMAND));
     if (param1[0] != 0xAA || param1[1] != 0x00) {
@@ -278,7 +298,7 @@ void F03::initPS2()
     }
 
     // Resolutions from psmouse-base.c
-    u8 params[] = {0, 1, 2, 2, 3};
+    UInt8 params[] = {0, 1, 2, 2, 3};
     
     error = ps2Command(&params[4], PS2_CMD_SETRES);
     if (error)
@@ -290,7 +310,7 @@ void F03::initPS2()
         IOLogError("Failed to set scale: %d", error);
     
     // TODO: Actually set this - my trackpoint does not respond to this ~ 1Rev
-    u8 rate[1] = {100};
+    UInt8 rate[1] = {100};
     error = ps2Command(rate, PS2_CMD_SETRATE);
     if (error)
         IOLogError("Failed to set resolution: %d", error);
@@ -312,7 +332,7 @@ void F03::initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer)
     timer->disable();
 }
 
-void F03::handleByte(u8 byte)
+void F03::handleByte(UInt8 byte)
 {
     if (!cmdcnt && !flags) {
         // Wait for start of packets
@@ -342,7 +362,7 @@ void F03::handleByte(u8 byte)
     }
 }
 
-int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
+int F03::ps2DoSendbyteGated(UInt8 byte, uint64_t timeout)
 {
     AbsoluteTime time;
     AbsoluteTime currentTime;
@@ -384,7 +404,7 @@ int F03::ps2DoSendbyteGated(u8 byte, uint64_t timeout)
     return error;
 }
 
-int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
+int F03::ps2CommandGated(UInt8 *param, unsigned int *cmd)
 {
     unsigned int command = *cmd;
     uint64_t timeout = 500 * MILLI_TO_NANO;
@@ -396,7 +416,7 @@ int F03::ps2CommandGated(u8 *param, unsigned int *cmd)
     AbsoluteTime time, currentTime;
     int rc, i;
     IOReturn res;
-    u8 send_param[16];
+    UInt8 send_param[16];
     
     memcpy(send_param, param, send);
     flags = command == PS2_CMD_GETID ? PS2_FLAG_WAITID : 0;
@@ -446,7 +466,7 @@ out_reset_flags:
     return rc;
 }
 
-int F03::ps2Command(u8 *param, unsigned int command)
+int F03::ps2Command(UInt8 *param, unsigned int command)
 {
     return command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &F03::ps2CommandGated),
                                        param, &command);

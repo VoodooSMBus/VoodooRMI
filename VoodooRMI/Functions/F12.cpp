@@ -7,6 +7,8 @@
  */
 
 #include "F12.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
 
 OSDefineMetaClassAndStructors(F12, RMITrackpadFunction)
 #define super RMITrackpadFunction
@@ -14,10 +16,14 @@ OSDefineMetaClassAndStructors(F12, RMITrackpadFunction)
 bool F12::attach(IOService *provider)
 {
     int ret;
-    u8 buf;
-    u16 query_addr = getQryAddr();
+    UInt8 buf;
+    UInt16 query_addr = getQryAddr();
     const rmi_register_desc_item *item;
-    u16 data_offset = 0;
+    UInt16 data_offset = 0;
+    
+    if(!super::attach(provider)) {
+        return false;
+    }
     
     ret = readByte(query_addr, &buf);
     if (ret < 0) {
@@ -59,7 +65,7 @@ bool F12::attach(IOService *provider)
     pkt_size = rmi_register_desc_calc_size(&data_reg_desc);
     IOLogDebug("F12 - Data packet size: 0x%lx", pkt_size);
     
-    data_pkt = reinterpret_cast<u8 *>(IOMalloc(pkt_size));
+    data_pkt = reinterpret_cast<UInt8 *>(IOMalloc(pkt_size));
     
     if (!data_pkt)
         return -ENOMEM;
@@ -120,7 +126,7 @@ bool F12::attach(IOService *provider)
     IOLogDebug("F12 - Number of fingers %u", nbr_fingers);
     
     
-    return super::attach(provider);
+    return true;
 }
 
 void F12::free()
@@ -151,7 +157,7 @@ IOReturn F12::config()
     const struct rmi_register_desc_item *item;
     unsigned long control_size;
     UInt8 buf[3];
-    u8 subpacket_offset = 0;
+    UInt8 subpacket_offset = 0;
     IOReturn ret;
     
     if (!has_dribble) {
@@ -163,7 +169,7 @@ IOReturn F12::config()
         return kIOReturnSuccess;
     }
 
-    u16 control_offset = rmi_register_desc_calc_reg_offset(&control_reg_desc, 20);
+    UInt16 control_offset = rmi_register_desc_calc_reg_offset(&control_reg_desc, 20);
     
     /*
      * The byte containing the EnableDribble bit will be
@@ -201,7 +207,7 @@ int F12::rmi_f12_read_sensor_tuning()
     const rmi_register_desc_item *item;
     int ret;
     int offset;
-    u8 buf[15];
+    UInt8 buf[15];
     int pitch_x = 0;
     int pitch_y = 0;
     int rx_receivers = 0;
@@ -299,7 +305,7 @@ void F12::getReport()
 #endif // debug
     
     int fingers = min (nbr_fingers, 5);
-    u8 *data = &data_pkt[data1_offset];
+    UInt8 *data = &data_pkt[data1_offset];
     
     for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];
@@ -330,14 +336,14 @@ void F12::getReport()
     handleReport(&report);
 }
 
-int F12::rmi_read_register_desc(u16 addr,
+int F12::rmi_read_register_desc(UInt16 addr,
                                 rmi_register_descriptor *rdesc)
 {
     int ret;
-    u8 size_presence_reg;
-    u8 buf[35];
+    UInt8 size_presence_reg;
+    UInt8 buf[35];
     int presense_offset = 1;
-    u8 *struct_buf;
+    UInt8 *struct_buf;
     int reg;
     int offset = 0;
     int map_offset = 0;
@@ -397,7 +403,7 @@ int F12::rmi_read_register_desc(u16 addr,
      * I'm not using devm_kzalloc here since it will not be retained
      * after exiting this function
      */
-    struct_buf = reinterpret_cast<u8 *>(IOMalloc(rdesc->struct_size));
+    struct_buf = reinterpret_cast<UInt8 *>(IOMalloc(rdesc->struct_size));
     if (!struct_buf)
         return -ENOMEM;
     
@@ -461,7 +467,7 @@ free_struct_buff:
 }
 
 /* Compute the register offset relative to the base address */
-int F12::rmi_register_desc_calc_reg_offset(rmi_register_descriptor *rdesc, u16 reg)
+int F12::rmi_register_desc_calc_reg_offset(rmi_register_descriptor *rdesc, UInt16 reg)
 {
     const struct rmi_register_desc_item *item;
     int offset = 0;
@@ -489,7 +495,7 @@ size_t F12::rmi_register_desc_calc_size(rmi_register_descriptor *rdesc)
     return size;
 }
 
-rmi_register_desc_item *F12::rmi_get_register_desc_item(rmi_register_descriptor *rdesc, u16 reg)
+rmi_register_desc_item *F12::rmi_get_register_desc_item(rmi_register_descriptor *rdesc, UInt16 reg)
 {
     rmi_register_desc_item *item;
     int i;
@@ -504,7 +510,7 @@ rmi_register_desc_item *F12::rmi_get_register_desc_item(rmi_register_descriptor 
 }
 
 bool F12::rmi_register_desc_has_subpacket(const rmi_register_desc_item *item,
-                                          u8 subpacket)
+                                          UInt8 subpacket)
 {
     return find_next_bit(item->subpacket_map, RMI_REG_DESC_PRESENSE_BITS,
                          subpacket) == subpacket;

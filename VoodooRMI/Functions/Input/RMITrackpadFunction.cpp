@@ -8,8 +8,9 @@
  */
 
 #include "RMITrackpadFunction.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
 #include <IOKit/IOLib.h>
-#include "rmi.h"
 #include "VoodooInputMultitouch/VoodooInputTransducer.h"
 
 OSDefineMetaClassAndStructors(RMITrackpadFunction, RMIFunction)
@@ -396,7 +397,7 @@ void RMITrackpadFunction::invalidateFingers() {
     }
 }
 
-bool RMITrackpadFunction::isForceTouch(u8 pressure) {
+bool RMITrackpadFunction::isForceTouch(UInt8 pressure) {
     const RmiConfiguration &conf = getConfiguration();
     switch (conf.forceTouchType) {
         case RMI_FT_DISABLE:

@@ -55,9 +55,6 @@ struct rmi_f30_ctrl_data {
 
 class F30 : public RMIGPIOFunction {
     OSDeclareDefaultStructors(F30)
-    
-public:
-    bool start(IOService *provider) override;
 
 private:    
     /* Query Data */
@@ -74,7 +71,7 @@ private:
     int initialize() override;
     void rmi_f30_calc_ctrl_data();
     void rmi_f30_set_ctrl_data(rmi_f30_ctrl_data *ctrl,
-                               int *ctrl_addr, int len, u8 **reg);
+                               int *ctrl_addr, int len, UInt8 **reg);
     bool is_valid_button(int button) override;
 };
 

@@ -6,7 +6,9 @@
 
 #include "RMIBus.hpp"
 #include "RMIFunction.hpp"
-#include "Configuration.hpp"
+#include "RMIConfiguration.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
 #include "F01.hpp"
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
@@ -62,8 +64,9 @@ bool RMIBus::start(IOService *provider) {
     // Scan page descripton table to find all functionality
     // This is where trackpad/trackpoint/button capability is found
     retval = rmiScanPdt();
-    if (retval)
+    if (retval) {
         goto err;
+    }
 
     // Configure all functions then enable IRQs
     retval = rmiEnableSensor();
@@ -72,11 +75,13 @@ bool RMIBus::start(IOService *provider) {
     }
     
     // Ready for interrupts
+    setProperty(RMIBusIdentifier, kOSBooleanTrue);
     if (!transport->open(this)) {
         IOLogError("Could not open transport");
-        return false;
+        goto err;
     }
 
+    // Check for any ACPI configuration
     config = transport->createConfig();
     if (config != nullptr) {
         updateConfiguration(config);
@@ -86,6 +91,15 @@ bool RMIBus::start(IOService *provider) {
     registerService();
     return true;
 err:
+    OSIterator *iter = OSCollectionIterator::withCollection(functions);
+    
+    while (RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
+        func->stop(this);
+        func->detach(this);
+    }
+    
+    functions->flushCollection();
+    OSSafeReleaseNULL(iter);
     IOLogError("Could not start");
     return false;
 }
@@ -129,15 +143,6 @@ void RMIBus::handleHostNotifyLegacy() {
      while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
          messageClient(kHandleRMIAttention, func);
      OSSafeReleaseNULL(iter);
- }
-
-void RMIBus::handleReset() {
-    if (controlFunction == nullptr) {
-        IOLogDebug("Device not ready for reset, ignoring...");
-        return;
-    }
-    
-    rmiEnableSensor();
 }
 
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
@@ -150,13 +155,13 @@ IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
             handleHostNotifyLegacy();
             break;
         case kIOMessageRMI4ResetHandler:
-            handleReset();
+            rmiEnableSensor();
             break;
         case kIOMessageRMI4Sleep:
-            IOLogDebug("Sleep");
+            IOLogInfo("Sleep");
             return controlFunction->clearIRQs();
         case kIOMessageRMI4Resume:
-            IOLogDebug("Wakeup");
+            IOLogInfo("Wakeup");
             return rmiEnableSensor();
         default:
             return super::message(type, provider);
@@ -261,8 +266,14 @@ void RMIBus::getGPIOData(OSDictionary *dict) {
 // Make sure all functions are configured, then enable IRQs so we get data
 IOReturn RMIBus::rmiEnableSensor() {
     RMIFunction *func;
+    OSIterator *iter;
     
-    OSIterator* iter = getClientIterator();
+    if (controlFunction == nullptr) {
+        IOLogDebug("Device not ready for reset, ignoring...");
+        return kIOReturnSuccess;
+    }
+    
+    iter = getClientIterator();
     while ((func = OSDynamicCast(RMIFunction, iter->getNextObject()))) {
         if (func->config() != kIOReturnSuccess) {
             IOLogError("Could not start function %s", func->getName());

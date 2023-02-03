@@ -7,6 +7,8 @@
  */
 
 #include "F3A.hpp"
+#include "RMILogging.h"
+#include "LinuxCompat.h"
 
 OSDefineMetaClassAndStructors(F3A, RMIGPIOFunction)
 #define super RMIGPIOFunction
@@ -64,15 +66,6 @@ int F3A::initialize()
         return error;
     }
     return 0;
-}
-
-bool F3A::start(IOService *provider)
-{
-    if (!super::start(provider))
-        return false;
-
-    registerService();
-    return true;
 }
 
 bool F3A::is_valid_button(int button)

@@ -8,7 +8,10 @@
  */
 
 #include "F01.hpp"
-#include <Configuration.hpp>
+#include "RMIConfiguration.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
+#include "LinuxCompat.h"
 
 OSDefineMetaClassAndStructors(F01, RMIFunction);
 #define super RMIFunction
@@ -16,8 +19,12 @@ OSDefineMetaClassAndStructors(F01, RMIFunction);
 bool F01::attach(IOService *provider)
 {
     int error;
-    u16 ctrl_base_addr = getCtrlAddr();
-    u8 temp, device_status;
+    UInt16 ctrl_base_addr = getCtrlAddr();
+    UInt8 temp, device_status;
+    
+    if(!super::attach(provider)) {
+        return false;
+    }
     
     /*
      * Set the configured bit and (optionally) other important stuff
@@ -139,7 +146,7 @@ bool F01::attach(IOService *provider)
         
     publishProps();
     
-    return super::attach(provider);
+    return true;
 }
 
 void F01::publishProps()
@@ -210,7 +217,7 @@ IOReturn F01::config()
 
 int F01::rmi_f01_read_properties()
 {
-    u8 queries[RMI_F01_BASIC_QUERY_LEN] = {0};
+    UInt8 queries[RMI_F01_BASIC_QUERY_LEN] = {0};
     int ret;
     int query_offset = getQryAddr();
     bool has_ds4_queries = false;
@@ -218,8 +225,8 @@ int F01::rmi_f01_read_properties()
     bool has_sensor_id = false;
     bool has_package_id_query = false;
     bool has_build_id_query = false;
-    u16 prod_info_addr;
-    u8 ds4_query_len;
+    UInt16 prod_info_addr;
+    UInt8 ds4_query_len;
     
     ret = readBlock(query_offset,
                     queries, RMI_F01_BASIC_QUERY_LEN);
@@ -292,7 +299,7 @@ int F01::rmi_f01_read_properties()
         
         if (has_package_id_query) {
             ret = readBlock(prod_info_addr,
-                                 queries, sizeof(__le64));
+                                 queries, sizeof(UInt64));
             if (ret) {
                 IOLogError("Failed to read package info: %d",
                         ret);
@@ -369,7 +376,7 @@ int F01::rmi_f01_resume()
 void F01::rmi_f01_attention()
 {
     int error;
-    u8 device_status = 0;
+    UInt8 device_status = 0;
     
     error = readByte(getDataAddr(), &device_status);
     
@@ -460,7 +467,7 @@ IOReturn F01::clearIRQs() const {
     
     // Read current IRQ bits
     error = readBlock(getCtrlAddr() + 1,
-                      reinterpret_cast<UInt8 *>(currentEnabledIRQs),
+                      reinterpret_cast<UInt8 *>(&currentEnabledIRQs),
                       numIrqRegs);
     
     if (error != kIOReturnSuccess) {
@@ -473,7 +480,7 @@ IOReturn F01::clearIRQs() const {
     
     // Write back new IRQ mask
     error = writeBlock(getCtrlAddr() + 1,
-                       reinterpret_cast<UInt8 *>(currentEnabledIRQs),
+                       reinterpret_cast<UInt8 *>(&currentEnabledIRQs),
                        numIrqRegs);
     
     if (error != kIOReturnSuccess) {

@@ -20,9 +20,9 @@
 #define RMI_SMB2_MAP_FLAGS_WE           0x01
 
 struct mapping_table_entry {
-    __le16 rmiaddr;
-    u8 readcount;
-    u8 flags;
+    UInt16 rmiaddr;
+    UInt8 readcount;
+    UInt8 flags;
 };
 
 class RMISMBus : public RMITransport {
@@ -37,8 +37,8 @@ public:
     void stop(IOService *provider) override;
     void free() override;
     
-    int readBlock(u16 rmiaddr, u8 *databuff, size_t len) override;
-    int blockWrite(u16 rmiaddr, u8 *buf, size_t len) override;
+    int readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) override;
+    int blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len) override;
     
     int reset() override;
     virtual OSDictionary *createConfig() APPLE_KEXT_OVERRIDE;
@@ -48,12 +48,12 @@ private:
     IOLock *mapping_table_mutex;
     
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
-    u8 table_index {0};
+    UInt8 table_index {0};
     
     bool rmiStart();
     int rmi_smb_get_version();
-    int rmi_smb_get_command_code(u16 rmiaddr, int bytecount,
-                                 bool isread, u8 *commandcode);
+    int rmi_smb_get_command_code(UInt16 rmiaddr, int bytecount,
+                                 bool isread, UInt8 *commandcode);
 };
 
 #endif /* RMISMBus_h */

@@ -7,6 +7,9 @@
  */
 
 #include "RMIGPIOFunction.hpp"
+#include "RMILogging.h"
+#include "RMIMessages.h"
+#include "LinuxCompat.h"
 #include "VoodooInputMessages.h"
 
 #define TRACKPOINT_RANGE_START      3
@@ -18,12 +21,16 @@ OSDefineMetaClassAndStructors(RMIGPIOFunction, RMIFunction)
 bool RMIGPIOFunction::attach(IOService *provider)
 {
     int error;
+    
+    if (!super::attach(provider)) {
+        return false;
+    }
 
     error = initialize();
     if (error)
         return false;
 
-    return super::attach(provider);
+    return true;
 }
 
 IOReturn RMIGPIOFunction::config()
@@ -116,7 +123,7 @@ void RMIGPIOFunction::reportButton()
     RelativePointerEvent relativeEvent {};
     unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
-    u16 key_code;
+    UInt16 key_code;
     bool key_down;
 
     for (int i = 0; i < min(gpioled_count, TRACKPOINT_RANGE_END); i++) {

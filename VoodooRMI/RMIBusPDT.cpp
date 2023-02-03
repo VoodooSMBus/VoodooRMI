@@ -6,15 +6,15 @@
 //  Copyright © 2023 1Revenger1. All rights reserved.
 //
 
-#include <RMIBusPDT.hpp>
-#include <RMIBus.hpp>
-#include <F01.hpp>
-#include <F03.hpp>
-#include <F11.hpp>
-#include <F12.hpp>
-#include <F17.hpp>
-#include <F30.hpp>
-#include <F3A.hpp>
+#include "RMILogging.h"
+#include "RMIBus.hpp"
+#include "F01.hpp"
+#include "F03.hpp"
+#include "F11.hpp"
+#include "F12.hpp"
+#include "F17.hpp"
+#include "F30.hpp"
+#include "F3A.hpp"
 
 // IRQs
 #define RMI_MAX_IRQS 32
@@ -26,16 +26,16 @@
 #define RMI_PDT_STOP 0x5
 
 // PDT entry data directly from RMI4 device
-struct RmiPdtData {
-    UInt8 functionNum;
+struct __attribute__((__packed__)) RmiPdtData {
+    UInt8 qryBase;
+    UInt8 cmdBase;
+    UInt8 ctrlBase;
+    UInt8 dataBase;
     UInt8 interruptBits : 3;
     UInt8 _ : 2;
-    UInt8 functionVersion : 1;
+    UInt8 functionVersion : 2;
     UInt8 __ : 1;
-    UInt8 dataBase;
-    UInt8 ctrlBase;
-    UInt8 cmdBase;
-    UInt8 qryBase;
+    UInt8 functionNum;
 };
 
 /*
@@ -55,7 +55,7 @@ IOReturn RMIBus::rmiScanPdt() {
     for (UInt16 page = 0; page <= RMI_MAX_PAGE; page++) {
         UInt16 pageBase = page * 0x100;
         UInt8 offset;
-        
+       
         for (offset = RMI_PDT_START; offset >= RMI_PDT_STOP; offset -= sizeof(RmiPdtData)) {
             ret = rmiReadPdtEntry(pdtEntry, pageBase + offset);
             
@@ -63,14 +63,14 @@ IOReturn RMIBus::rmiScanPdt() {
                 return ret;
             }
             
-            ret = rmiHandlePdtEntry(pdtEntry);
-            if (ret != kIOReturnSuccess) {
-                return ret;
-            }
-            
             if (pdtEntry.function == 0 || pdtEntry.function == 0xFF) {
                 // End of descriptors for this page
                 break;
+            }
+ 
+            ret = rmiHandlePdtEntry(pdtEntry);
+            if (ret != kIOReturnSuccess) {
+                return ret;
             }
         }
         
@@ -86,6 +86,7 @@ IOReturn RMIBus::rmiScanPdt() {
         return kIOReturnNotFound;
     }
     
+    IOLogDebug("Setting IRQ Mask: 0x%x Bits: 0x%x", irqMask, irqCount);
     controlFunction->setIRQMask(irqMask, irqCount);
     return kIOReturnSuccess;
 }
@@ -179,8 +180,8 @@ IOReturn RMIBus::rmiHandlePdtEntry(RmiPdtEntry &entry) {
         return kIOReturnNoDevice;
     }
     
-    if (!function->attach(this)) {
-        IOLogError("Function %02X could not attach", entry.function);
+    if (!function->attach(this) || !function->start(this)) {
+        IOLogError("Function %02X could not attach/start", entry.function);
         OSSafeReleaseNULL(function);
         return kIOReturnNoDevice;
     }

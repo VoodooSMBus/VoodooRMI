@@ -327,7 +327,7 @@ void RMIBus::publishVoodooInputProperties() {
     }
     
     setProperty("VoodooInputSupported", kOSBooleanTrue);
-    messageClient(kIOMessageVoodooInputUpdatePropertiesNotification, voodooInputInstance);
+    messageClient(kIOMessageVoodooTrackpointUpdatePropertiesNotification, voodooInputInstance);
 }
 
 bool RMIBus::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {

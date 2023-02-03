@@ -200,8 +200,6 @@ int F12::rmi_f12_read_sensor_tuning()
     int rx_receivers = 0;
     int tx_receivers = 0;
     
-    memset(&sensorSize, 0, sizeof(sensorSize));
-    
     item = rmi_get_register_desc_item(&control_reg_desc, 8);
     if (!item) {
         IOLogError("F12 - No sensor tuning Control register");

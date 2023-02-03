@@ -566,8 +566,6 @@ int F11::rmi_f11_initialize()
     UInt16 max_x_pos, max_y_pos;
     int rc;
     
-    memset(&sensorSize, 0, sizeof(sensorSize));
-    
     // supposed to be default platform data - I can't find it though
     // Going to assume 100ms as in other places
     rezero_wait_ms = REZERO_WAIT_MS;

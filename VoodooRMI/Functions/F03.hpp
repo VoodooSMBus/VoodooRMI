@@ -27,7 +27,7 @@ public:
     void attention() override;
     
 private:
-    IOWorkLoop *work_loop;
+    IOWorkLoop *work_loop {nullptr};
     IOCommandGate *command_gate;
     IOTimerEventSource *timer {nullptr};
     
@@ -48,8 +48,6 @@ private:
     // F03 Data
     UInt8 device_count;
     UInt8 rx_queue_length;
-
-    IOWorkLoop* getWorkLoop();
     
     int rmi_f03_pt_write(unsigned char val);
     int ps2DoSendbyteGated(UInt8 byte, uint64_t timeout);

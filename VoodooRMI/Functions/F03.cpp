@@ -86,7 +86,7 @@ bool F03::start(IOService *provider)
     const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
     UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
     
-    work_loop = reinterpret_cast<IOWorkLoop*>(getWorkLoop());
+    work_loop = IOWorkLoop::workLoop();
     if (!work_loop) {
         IOLogError("F03 - Could not get work loop");
         return false;
@@ -231,27 +231,6 @@ void F03::attention()
         
         handleByte(ob_data);
     }
-}
-
-IOWorkLoop* F03::getWorkLoop()
-{
-    // Do we have a work loop already?, if so return it NOW.
-    if ((vm_address_t) work_loop >> 1)
-        return work_loop;
-    
-    if (OSCompareAndSwap(0, 1, reinterpret_cast<IOWorkLoop*>(&work_loop))) {
-        // Construct the workloop and set the cntrlSync variable
-        // to whatever the result is and return
-        work_loop = IOWorkLoop::workLoop();
-    } else {
-        while (reinterpret_cast<IOWorkLoop*>(work_loop) == reinterpret_cast<IOWorkLoop*>(1)) {
-            // Spin around the cntrlSync variable until the
-            // initialization finishes.
-            thread_block(0);
-        }
-    }
-    
-    return work_loop;
 }
 
 void F03::initPS2()

@@ -23,7 +23,6 @@ enum {
     kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
     kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
     kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051),
-    kHandleRMIInputReport = iokit_vendor_specific_msg(2052),
 };
 
 

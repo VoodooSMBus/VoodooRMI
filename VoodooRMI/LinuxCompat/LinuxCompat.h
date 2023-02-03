@@ -20,8 +20,6 @@
 
 // bits.h
 #define BITS_PER_BYTE           8
-#define BIT_MASK(nr)        ((1) << ((nr) % BITS_PER_LONG))
-#define BIT_WORD(nr)        ((nr) / BITS_PER_LONG)
 
 // kernel.h
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
@@ -29,9 +27,6 @@
 // input.h
 #define KEY_RESERVED        0
 #define BTN_LEFT            1
-
-// bitmap.h
-#define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
 
 // lib/bitmap.c
 static inline void bitmap_set (unsigned long *bitmap, unsigned int start, unsigned int nbits)

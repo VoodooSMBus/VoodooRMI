@@ -110,9 +110,6 @@ IOReturn RMITrackpadFunction::message(UInt32 type, IOService *provider, void *ar
 {
     switch (type)
     {
-        case kHandleRMIInputReport:
-            handleReport(static_cast<RMI2DSensorReport *>(argument));
-            break;
         case kHandleRMIClickpadSet:
             clickpadState = !!(argument);
             break;

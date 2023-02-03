@@ -64,8 +64,12 @@ private:
 protected:
     
     // Useful functions to talk to RMI4 devicce
-    inline const IOService *getVoodooInput() const { return bus->getVoodooInput(); }
-    inline void setVoodooInput(IOService *service) { bus->setVoodooInput(service); }
+    inline void sendVoodooInputPacket(UInt32 msg, void *packet) {
+        IOService *vi = bus->getVoodooInput();
+        if (vi != nullptr) {
+            vi->message(msg, bus, packet);
+        }
+    }
     inline const RmiGpioData &getGPIOData() const { return bus->getGPIOData(); }
     inline const RmiConfiguration &getConfiguration() const { return bus->getConfiguration(); }
     inline IOReturn readByte(UInt16 addr, UInt8 *buf) const { return bus->read(addr, buf); }

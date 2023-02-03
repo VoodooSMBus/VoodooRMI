@@ -29,6 +29,14 @@ static void fillZone (RMI2DSensorZone *zone, int min_x, int min_y, int max_x, in
     zone->y_max = max_y;
 }
 
+void RMITrackpadFunction::setData(const Rmi2DSensorData &data) {
+    this->data = data;
+}
+
+const Rmi2DSensorData &RMITrackpadFunction::getData() const {
+    return data;
+}
+
 bool RMITrackpadFunction::start(IOService *provider)
 {
     memset(freeFingerTypes, true, sizeof(freeFingerTypes));
@@ -39,9 +47,9 @@ bool RMITrackpadFunction::start(IOService *provider)
     }
     
     const RmiConfiguration &conf = getConfiguration();
-    const int palmRejectWidth = max_x * cfgToPercent(conf.palmRejectionWidth);
-    const int palmRejectHeight = max_y * cfgToPercent(conf.palmRejectionHeight);
-    const int trackpointRejectHeight = max_y * cfgToPercent(conf.palmRejectionHeightTrackpoint);
+    const int palmRejectWidth = data.maxX * cfgToPercent(conf.palmRejectionWidth);
+    const int palmRejectHeight = data.maxY * cfgToPercent(conf.palmRejectionHeight);
+    const int trackpointRejectHeight = data.maxY * cfgToPercent(conf.palmRejectionHeightTrackpoint);
     
     /*
      * Calculate reject zones.
@@ -56,24 +64,16 @@ bool RMITrackpadFunction::start(IOService *provider)
     
     // Top right
     fillZone(&rejectZones[1],
-             max_x - palmRejectWidth, 0,
-             max_x, palmRejectHeight);
+             data.maxX - palmRejectWidth, 0,
+             data.maxX, palmRejectHeight);
 
     // Top band for trackpoint and buttons
     fillZone(&rejectZones[2],
              0, 0,
-             max_x, trackpointRejectHeight);
-    
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, max_x, 16);
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, max_y, 16);
-    // Need to be in 0.01mm units
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, x_mm * 100, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, y_mm * 100, 16);
-    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+             data.maxX, trackpointRejectHeight);
     
     // VoodooPS2 keyboard notifs
     setProperty("RM,deliverNotifications", kOSBooleanTrue);
-    setProperty("VoodooInputSupported", kOSBooleanTrue);
     
     for (int i = 0; i < VOODOO_INPUT_MAX_TRANSDUCERS; i++) {
         auto& transducer = inputEvent.transducers[i];
@@ -83,27 +83,6 @@ bool RMITrackpadFunction::start(IOService *provider)
     }
     
     return super::start(provider);
-}
-
-bool RMITrackpadFunction::handleOpen(IOService *forClient, IOOptionBits options, void *arg)
-{
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)
-        && super::handleOpen(forClient, options, arg)) {
-        voodooInputInstance = forClient;
-        setVoodooInput(voodooInputInstance);
-        return true;
-    }
-    
-    return false;
-}
-
-void RMITrackpadFunction::handleClose(IOService *forClient, IOOptionBits options)
-{
-    if (forClient && forClient == voodooInputInstance) {
-        setVoodooInput(voodooInputInstance);
-        voodooInputInstance = nullptr;
-        super::handleClose(forClient, options);
-    }
 }
 
 IOReturn RMITrackpadFunction::message(UInt32 type, IOService *provider, void *argument)
@@ -139,7 +118,7 @@ IOReturn RMITrackpadFunction::message(UInt32 type, IOService *provider, void *ar
 
 bool RMITrackpadFunction::shouldDiscardReport(AbsoluteTime timestamp)
 {
-    return !trackpadEnable || voodooInputInstance == nullptr;
+    return !trackpadEnable;
 }
 
 // Returns zone that finger is in (or 0 if not in a zone)
@@ -206,7 +185,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
         transducer.timestamp = report->timestamp;
         
         transducer.currentCoordinates.x = obj.x;
-        transducer.currentCoordinates.y = max_y - obj.y;
+        transducer.currentCoordinates.y = data.maxY - obj.y;
         
         int deltaWidth = abs(obj.wx - obj.wy);
         
@@ -305,7 +284,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
     inputEvent.contact_count = reportIdx;
     inputEvent.timestamp = report->timestamp;
     
-    messageClient(kIOMessageVoodooInputMessage, voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
+    sendVoodooInputPacket(kIOMessageVoodooInputMessage, &inputEvent);
     for (int i = 0; i < VOODOO_INPUT_MAX_TRANSDUCERS; i++) {
         inputEvent.transducers[i].isTransducerActive = false;
     }

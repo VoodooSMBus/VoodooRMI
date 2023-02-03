@@ -6,10 +6,12 @@
 
 #include "RMIBus.hpp"
 #include "RMIFunction.hpp"
+#include "RMITrackpadFunction.hpp"
 #include "RMIConfiguration.hpp"
 #include "RMILogging.h"
 #include "RMIMessages.h"
 #include "F01.hpp"
+#include "VoodooInputMessages.h"
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
 OSDefineMetaClassAndStructors(RMITransport, IOService)
@@ -87,6 +89,7 @@ bool RMIBus::start(IOService *provider) {
         OSSafeReleaseNULL(config);
     }
 
+    publishVoodooInputProperties();
     registerService();
     return true;
 err:
@@ -212,6 +215,7 @@ bool RMIBus::willTerminate(IOService *provider, IOOptionBits options) {
 
 IOReturn RMIBus::setProperties(OSObject *properties) {
     commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RMIBus::updateConfiguration), OSDynamicCast(OSDictionary, properties));
+    publishVoodooInputProperties();
     return kIOReturnSuccess;
 }
 
@@ -281,4 +285,76 @@ IOReturn RMIBus::rmiEnableSensor() {
     
     OSSafeReleaseNULL(iter);
     return controlFunction->setIRQs();
+}
+
+// MARK: VoodooInput
+
+void RMIBus::publishVoodooInputProperties() {
+    OSNumber *value;
+    
+    if (trackpadFunction == nullptr) {
+        // VoodooInput requires trackpad properties to exist to attach
+        // Don't bother if there is no trackpad
+        return;
+    }
+    
+    const Rmi2DSensorData &trackpadData = trackpadFunction->getData();
+    
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, trackpadData.maxX, 16);
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, trackpadData.maxY, 16);
+    // Need to be in 0.01mm units
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, trackpadData.sizeX * 100, 16);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, trackpadData.sizeY * 100, 16);
+    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+    
+    if (trackpointFunction != nullptr) {
+        OSDictionary *trackpoint = OSDictionary::withCapacity(5);
+        if (trackpoint == nullptr)
+            return;
+        
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_DEADZONE, conf.trackpointDeadzone, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_BTN_CNT, 3, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_MOUSE_MULT_X, conf.trackpointMult, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_MOUSE_MULT_Y, conf.trackpointMult, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_MOUSE_DIV_X, DEFAULT_MULT, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_MOUSE_DIV_Y, DEFAULT_MULT, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_SCROLL_MULT_X, conf.trackpointScrollXMult, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_SCROLL_MULT_Y, conf.trackpointScrollYMult, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_SCROLL_DIV_X, DEFAULT_MULT, 32);
+        setPropertyNumber(trackpoint, VOODOO_TRACKPOINT_SCROLL_DIV_Y, DEFAULT_MULT, 32);
+        setProperty(VOODOO_TRACKPOINT_KEY, trackpoint);
+        OSSafeReleaseNULL(trackpoint);
+    }
+    
+    setProperty("VoodooInputSupported", kOSBooleanTrue);
+    messageClient(kIOMessageVoodooInputUpdatePropertiesNotification, voodooInputInstance);
+}
+
+bool RMIBus::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
+    if (voodooInputInstance != nullptr) {
+        // Already opened
+        return false;
+    }
+    
+    if (forClient != nullptr && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
+        voodooInputInstance = forClient;
+        voodooInputInstance->retain();
+        return true;
+    }
+    
+    return false;
+}
+
+void RMIBus::handleClose(IOService *forClient, IOOptionBits options) {
+    if (forClient == voodooInputInstance && forClient != nullptr) {
+        OSSafeReleaseNULL(voodooInputInstance);
+    }
+}
+
+bool RMIBus::handleIsOpen(const IOService *forClient) const {
+    if (forClient == nullptr) {
+        return voodooInputInstance != nullptr;
+    } else {
+        return voodooInputInstance == forClient;
+    }
 }

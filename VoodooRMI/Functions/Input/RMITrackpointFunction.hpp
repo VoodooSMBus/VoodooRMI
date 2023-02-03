@@ -16,16 +16,10 @@ struct RMITrackpointReport {
 
 class RMITrackpointFunction : public RMIFunction {
    OSDeclareDefaultStructors(RMITrackpointFunction)
-
-    bool shouldDiscardReport();
+    
     void handleReport(RMITrackpointReport *report);
-    
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
-
 private:
-    RelativePointerEvent relativeEvent {};
-    ScrollWheelEvent scrollEvent {};
-    
     // Used when sending buttons from other functions
     RMITrackpointReport emptyReport {};
     

@@ -74,7 +74,6 @@ private:
     UInt8 *data_pkt;
     size_t pkt_size;
     size_t attn_size;
-    struct rmi_2d_sensor_platform_data sensor_pdata;
     bool has_dribble;
     
     rmi_register_descriptor query_reg_desc;

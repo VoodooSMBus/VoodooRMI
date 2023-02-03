@@ -560,10 +560,13 @@ int F11::rmi_f11_get_query_parameters(f11_2d_sensor_queries *sensor_query,
 
 int F11::rmi_f11_initialize()
 {
+    struct Rmi2DSensorData sensorSize;
     UInt8 query_offset, buf;
     UInt16 query_base_addr, control_base_addr;
     UInt16 max_x_pos, max_y_pos;
     int rc;
+    
+    memset(&sensorSize, 0, sizeof(sensorSize));
     
     // supposed to be default platform data - I can't find it though
     // Going to assume 100ms as in other places
@@ -594,8 +597,8 @@ int F11::rmi_f11_initialize()
     query_offset += rc;
     
     if (sens_query.has_physical_props) {
-        x_mm = sens_query.x_sensor_size_mm;
-        y_mm = sens_query.y_sensor_size_mm;
+        sensorSize.sizeX = sens_query.x_sensor_size_mm;
+        sensorSize.sizeY = sens_query.y_sensor_size_mm;
     } else {
         IOLogError("No size data from Device.");
         return -ENODEV;
@@ -620,8 +623,9 @@ int F11::rmi_f11_initialize()
         return rc;
     }
         
-    max_x = max_x_pos;
-    max_y = max_y_pos;
+    sensorSize.maxX = max_x_pos;
+    sensorSize.maxY = max_y_pos;
+    setData(sensorSize);
     
     rc = f11_2d_construct_data();
     if (rc < 0) {

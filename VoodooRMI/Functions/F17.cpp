@@ -34,24 +34,15 @@ void F17::free()
     super::free();
 }
 
-IOReturn F17::message(UInt32 type, IOService *provider, void *argument)
+void F17::attention()
 {
     int retval = 0;
-    switch (type) {
-        case kHandleRMIAttention:
-            for (int i = 0; i < f17.query.number_of_sticks + 1 && !retval; i++)
-                retval = rmi_f17_process_stick(&f17.sticks[i]);
+    for (int i = 0; i < f17.query.number_of_sticks + 1 && !retval; i++)
+        retval = rmi_f17_process_stick(&f17.sticks[i]);
 
-            if (retval < 0) {
-                IOLogError("%s: Could not read data: %d", __func__, retval);
-            }
-
-            break;
-        default:
-            return super::message(type, provider, argument);
+    if (retval < 0) {
+        IOLogError("%s: Could not read data: %d", __func__, retval);
     }
-
-    return kIOReturnSuccess;
 }
 
 int F17::rmi_f17_init_stick(struct rmi_f17_stick_data *stick,

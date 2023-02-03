@@ -17,8 +17,8 @@ class RMIGPIOFunction : public RMIFunction {
 
 public:
     bool attach(IOService *provider) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn config() override;
+    void attention() override;
     void free() override;
 
 protected:

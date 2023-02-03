@@ -199,48 +199,38 @@ IOReturn F03::setPowerState(unsigned long powerStateOrdinal, IOService *whatDevi
     return kIOPMAckImplied;
 }
 
-IOReturn F03::message(UInt32 type, IOService *provider, void *argument)
+void F03::attention()
 {
+    const UInt16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
+    const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
+    UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
     
-    switch (type) {
-        case kHandleRMIAttention: {
-            const UInt16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
-            const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
-            UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
-            
-            int error = readBlock(data_addr, obs, ob_len);
-            if (error) {
-                IOLogError("F03 - Failed to read output buffers: %d", error);
-                return kIOReturnError;
-            }
-            
-            for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
-                UInt8 ob_status = obs[i];
-                UInt8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
-                
-                if (!(ob_status & RMI_F03_RX_DATA_OFB))
-                    continue;
-                
-                
-                IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
-                if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
-                    IOLogDebug("F03 Timeout Flag");
-                    return kIOReturnSuccess;
-                }
-                if (ob_status & RMI_F03_OB_FLAG_PARITY) {
-                    IOLogDebug("F03 Parity Flag");
-                    return kIOReturnSuccess;
-                }
-                
-                handleByte(ob_data);
-            }
-            break;
-        }
-        default:
-            return super::message(type, provider, argument);
+    int error = readBlock(data_addr, obs, ob_len);
+    if (error) {
+        IOLogError("F03 - Failed to read output buffers: %d", error);
+        return;
     }
-
-    return kIOReturnSuccess;
+    
+    for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
+        UInt8 ob_status = obs[i];
+        UInt8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
+        
+        if (!(ob_status & RMI_F03_RX_DATA_OFB))
+            continue;
+        
+        
+        IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
+        if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
+            IOLogDebug("F03 Timeout Flag");
+            continue;
+        }
+        if (ob_status & RMI_F03_OB_FLAG_PARITY) {
+            IOLogDebug("F03 Parity Flag");
+            continue;
+        }
+        
+        handleByte(ob_data);
+    }
 }
 
 IOWorkLoop* F03::getWorkLoop()

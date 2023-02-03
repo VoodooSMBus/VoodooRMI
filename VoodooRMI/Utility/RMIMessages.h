@@ -19,10 +19,9 @@ enum {
 
 // RMI Bus message types
 enum {
-    kHandleRMIAttention = iokit_vendor_specific_msg(2046),
-    kHandleRMIClickpadSet = iokit_vendor_specific_msg(2047),
-    kHandleRMITrackpoint = iokit_vendor_specific_msg(2050),
-    kHandleRMITrackpointButton = iokit_vendor_specific_msg(2051),
+    kHandleRMIClickpadSet = iokit_vendor_specific_msg(2046),
+    kHandleRMITrackpoint = iokit_vendor_specific_msg(2047),
+    kHandleRMITrackpointButton = iokit_vendor_specific_msg(2048),
 };
 
 

@@ -373,7 +373,7 @@ int F01::rmi_f01_resume()
     return error;
 }
 
-void F01::rmi_f01_attention()
+void F01::attention()
 {
     int error;
     UInt8 device_status = 0;
@@ -411,19 +411,6 @@ IOReturn F01::setPowerState(unsigned long powerStateOrdinal, IOService *whatDevi
     }
     
     return kIOPMAckImplied;
-}
-
-IOReturn F01::message(UInt32 type, IOService *provider, void *argument)
-{
-    int error = 0;
-    switch (type) {
-        case kHandleRMIAttention:
-            rmi_f01_attention();
-            break;
-    }
-    
-    if (error) return kIOReturnError;
-    return kIOReturnSuccess;
 }
 
 // MARK: RMI4 device IRQs

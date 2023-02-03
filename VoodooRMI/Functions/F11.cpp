@@ -40,21 +40,7 @@ void F11::free()
     super::free();
 }
 
-IOReturn F11::message(UInt32 type, IOService *provider, void *argument)
-{
-    switch (type)
-    {
-        case kHandleRMIAttention:
-            getReport();
-            break;
-        default:
-            return super::message(type, provider, argument);
-    }
-    
-    return kIOReturnSuccess;
-}
-
-bool F11::getReport()
+void F11::attention()
 {
     int error, abs_size;
     size_t fingers;
@@ -64,13 +50,13 @@ bool F11::getReport()
     error = readBlock(getDataAddr(), data_pkt, pkt_size);
     if (error < 0) {
         IOLogError("Could not read F11 attention data: %d", error);
-        return false;
+        return;
     }
     
     clock_get_uptime(&timestamp);
     
     if (shouldDiscardReport(timestamp))
-        return true;
+        return;
     
     IOLogDebug("F11 Packet");
     
@@ -112,8 +98,6 @@ bool F11::getReport()
     report.fingers = fingers;
     
     handleReport(&report);
-    
-    return true;
 }
 
 int F11::config()

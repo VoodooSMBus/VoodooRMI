@@ -54,7 +54,7 @@ class F12 : public RMITrackpadFunction {
     
 public:
     bool attach(IOService *provider) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
+    void attention() override;
     void free() override;
     
     IOReturn config() override;
@@ -96,9 +96,6 @@ private:
     int rmi_f12_read_sensor_tuning();
     int rmi_read_register_desc(UInt16 addr,
                                rmi_register_descriptor *rdesc);
-    
-    void getReport();
-    
 };
 
 #endif /* F12_hpp */

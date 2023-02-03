@@ -45,44 +45,25 @@ class RMIFunction : public IOService {
     OSDeclareDefaultStructors(RMIFunction)
     
 public:
-    inline virtual bool init(RmiPdtEntry &pdtEntry) {
-        this->pdtEntry = pdtEntry;
-        return IOService::init();
-    }
+    virtual bool init(RmiPdtEntry &pdtEntry);
+    virtual bool attach(IOService *provider) override;
+    virtual bool start(IOService *provider) override;
     
-    inline virtual bool attach(IOService *provider) override {
-        bus = OSDynamicCast(RMIBus, provider);
-        if (bus == nullptr) {
-            IOLog("%s: Failed to cast bus", getName());
-            return false;
-        }
-        
-        return IOService::attach(provider);
-    }
+    bool hasAttnSig(const UInt32 irq) const;
     
-    inline virtual bool hasAttnSig(const UInt32 irq) const {
-        return pdtEntry.irqMask & irq;
-    }
-    
-    inline virtual bool start(IOService *provider) override {
-        if (provider == nullptr ||
-            !IOService::start(provider)) {
-            return false;
-        }
-        
-        PMinit();
-        provider->joinPMtree(this);
-        registerPowerDriver(this, RMIPowerStates, 2);
-        registerService();
-        return true;
-    }
-    
+    // Methods to override
+    // Config happens after start and is where control registers should be set
     virtual IOReturn config() { return kIOReturnSuccess; };
-    
+    // Attention is called whenever this function has data. Any input data
+    // should be read here.
+    virtual void attention() { };
 private:
     RmiPdtEntry pdtEntry;
     RMIBus *bus {nullptr};
+    
 protected:
+    
+    // Useful functions to talk to RMI4 devicce
     inline const IOService *getVoodooInput() const { return bus->getVoodooInput(); }
     inline void setVoodooInput(IOService *service) { bus->setVoodooInput(service); }
     inline const RmiGpioData &getGPIOData() const { return bus->getGPIOData(); }

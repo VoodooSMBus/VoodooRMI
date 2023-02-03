@@ -49,6 +49,7 @@
 		A46D70DB2517CB6800A60B75 /* F3A.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A46D70D92517CB6800A60B75 /* F3A.cpp */; };
 		A46D70DC2517CB6800A60B75 /* F3A.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A46D70DA2517CB6800A60B75 /* F3A.hpp */; };
 		EE83B6D12989D9040025DF3A /* RMIBusPDT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE83B6CF2989D9040025DF3A /* RMIBusPDT.cpp */; };
+		EE912ED2298C95390003DBFE /* RMIFunction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE912ED1298C95390003DBFE /* RMIFunction.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -118,6 +119,7 @@
 		EE83B6CF2989D9040025DF3A /* RMIBusPDT.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMIBusPDT.cpp; sourceTree = "<group>"; };
 		EE83B6D9298B1B3F0025DF3A /* RMIPowerStates.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RMIPowerStates.h; sourceTree = "<group>"; };
 		EE83B709298C76380025DF3A /* RMIMessages.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RMIMessages.h; sourceTree = "<group>"; };
+		EE912ED1298C95390003DBFE /* RMIFunction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMIFunction.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,6 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				288561FC26E80D1400C7CBFA /* RMIFunction.hpp */,
+				EE912ED1298C95390003DBFE /* RMIFunction.cpp */,
 				6FA2918B26EDC41000496388 /* RMIGPIOFunction.hpp */,
 				6FA2918A26EDC40F00496388 /* RMIGPIOFunction.cpp */,
 				288561F526E80CDC00C7CBFA /* RMITrackpadFunction.hpp */,
@@ -515,6 +518,7 @@
 			files = (
 				A41323E82492077C00907B0D /* RMIConfiguration.cpp in Sources */,
 				A4560F102480757F0009CBE0 /* F03.cpp in Sources */,
+				EE912ED2298C95390003DBFE /* RMIFunction.cpp in Sources */,
 				6FA2918C26EDC41000496388 /* RMIGPIOFunction.cpp in Sources */,
 				288561F626E80CDC00C7CBFA /* RMITrackpadFunction.cpp in Sources */,
 				287EA3C526E8383A00CEDA8B /* RMITrackpointFunction.cpp in Sources */,

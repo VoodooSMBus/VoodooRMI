@@ -96,26 +96,17 @@ int RMIGPIOFunction::mapGpios()
     return 0;
 }
 
-IOReturn RMIGPIOFunction::message(UInt32 type, IOService *provider, void *argument)
+void RMIGPIOFunction::attention()
 {
-    int error;
-    switch (type) {
-        case kHandleRMIAttention:
-            error = readBlock(getDataAddr(),
-                              data_regs, register_count);
+    int error = readBlock(getDataAddr(),
+                          data_regs, register_count);
 
-            if (error < 0) {
-                IOLogError("Could not read %s data: %d", getName(), error);
-            }
-
-            if (has_gpio)
-                reportButton();
-            break;
-        default:
-            return super::message(type, provider, argument);
+    if (error < 0) {
+        IOLogError("Could not read %s data: %d", getName(), error);
     }
 
-    return kIOReturnSuccess;
+    if (has_gpio)
+        reportButton();
 }
 
 void RMIGPIOFunction::reportButton()

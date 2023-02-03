@@ -125,9 +125,9 @@ class F01 : public RMIFunction {
 public:
     bool attach(IOService *provider) override;
     IOReturn config() override;
+    void attention() override;
     
     IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) override;
-    IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
     void setIRQMask(const UInt32 irq, const UInt8 numIrqBits);
     IOReturn readIRQ(UInt32 &irq) const;

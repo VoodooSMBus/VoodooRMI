@@ -138,20 +138,6 @@ void F12::free()
     super::free();
 }
 
-IOReturn F12::message(UInt32 type, IOService *provider, void *argument)
-{
-    switch (type)
-    {
-        case kHandleRMIAttention:
-            getReport();
-            break;
-        default:
-            return super::message(type, provider, argument);
-    }
-    
-    return kIOReturnSuccess;
-}
-
 IOReturn F12::config()
 {
     const struct rmi_register_desc_item *item;
@@ -279,7 +265,7 @@ int F12::rmi_f12_read_sensor_tuning()
     return 0;
 }
 
-void F12::getReport()
+void F12::attention()
 {
     AbsoluteTime timestamp;
     

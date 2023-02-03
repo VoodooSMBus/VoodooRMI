@@ -12,7 +12,6 @@
 #include "F01.hpp"
 
 OSDefineMetaClassAndStructors(RMIBus, IOService)
-OSDefineMetaClassAndStructors(RMIFunction, IOService)
 OSDefineMetaClassAndStructors(RMITransport, IOService)
 #define super IOService
 
@@ -127,7 +126,7 @@ void RMIBus::handleHostNotify() {
     
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         if (func->hasAttnSig(irqStatus)) {
-            messageClient(kHandleRMIAttention, func);
+            func->attention();
         }
     }
     
@@ -141,7 +140,7 @@ void RMIBus::handleHostNotifyLegacy() {
 
      OSIterator* iter = OSCollectionIterator::withCollection(functions);
      while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
-         messageClient(kHandleRMIAttention, func);
+         func->attention();
      OSSafeReleaseNULL(iter);
 }
 

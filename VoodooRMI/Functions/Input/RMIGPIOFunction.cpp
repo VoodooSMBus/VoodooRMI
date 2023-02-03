@@ -111,7 +111,7 @@ void RMIGPIOFunction::attention()
 
 void RMIGPIOFunction::reportButton()
 {
-    RelativePointerEvent relativeEvent {};
+    TrackpointReport relativeEvent {};
     unsigned int mask, trackpointBtns = 0, btns = 0;
     unsigned int reg_num, bit_num;
     UInt16 key_code;
@@ -149,16 +149,14 @@ void RMIGPIOFunction::reportButton()
         }
     }
 
-    const IOService *voodooInputInstance = getVoodooInput();
-    if (numButtons > 1 && voodooInputInstance) {
+    if (numButtons > 1) {
         AbsoluteTime timestamp;
         clock_get_uptime(&timestamp);
 
         relativeEvent.dx = relativeEvent.dy = 0;
         relativeEvent.buttons = btns;
         relativeEvent.timestamp = timestamp;
-
-        messageClient(kIOMessageVoodooTrackpointRelativePointer, const_cast<IOService *>(voodooInputInstance), &relativeEvent, sizeof(RelativePointerEvent));
+        sendVoodooInputPacket(kIOMessageVoodooTrackpointRelativePointer, &relativeEvent);
     }
 
     if (hasTrackpointButtons) {

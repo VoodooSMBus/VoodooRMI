@@ -185,7 +185,7 @@ IOReturn RMIBus::rmiHandlePdtEntry(RmiPdtEntry &entry) {
     }
     
     if (OSDynamicCast(RMITrackpadFunction, function)) {
-        trackpadFunction = function;
+        trackpadFunction = OSDynamicCast(RMITrackpadFunction, function);
     } else if (OSDynamicCast(RMITrackpointFunction, function)) {
         trackpointFunction = function;
     } else if (entry.function == 0x01) {

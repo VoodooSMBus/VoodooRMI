@@ -35,36 +35,11 @@ enum finger_state {
     RMI_FINGER_FORCE_TOUCH,     // Force touch
 };
 
-/**
- * struct rmi_2d_sensor_data - overrides defaults for a 2D sensor.
- * @axis_align - provides axis alignment overrides (see above).
- * @sensor_type - Forces the driver to treat the sensor as an indirect
- * pointing device (trackpad) rather than a direct pointing device
- * (touchscreen).  This is useful when F11_2D_QUERY14 register is not
- * available.
- * @disable_report_mask - Force data to not be reported even if it is supported
- * by the firware.
- * @topbuttonpad - Used with the "5 buttons trackpads" found on the Lenovo 40
- * series
- * @kernel_tracking - most moderns RMI f11 firmwares implement Multifinger
- * Type B protocol. However, there are some corner cases where the user
- * triggers some jumps by tapping with two fingers on the trackpad.
- * Use this setting and dmax to filter out these jumps.
- * Also, when using an old sensor using MF Type A behavior, set to true to
- * report an actual MT protocol B.
- * @dmax - the maximum distance (in sensor units) the kernel tracking allows two
- * distincts fingers to be considered the same.
- */
-struct rmi_2d_sensor_platform_data {
-    int x_mm;
-    int y_mm;
-    int disable_report_mask;
-    UInt16 rezero_wait;
-    bool topbuttonpad;
-    bool kernel_tracking;
-    int dmax;
-    int dribble;
-    int palm_detect;
+struct Rmi2DSensorData {
+    UInt16 sizeX;
+    UInt16 sizeY;
+    UInt16 maxX;
+    UInt16 maxY;
 };
 
 struct rmi_2d_sensor_abs_object {
@@ -102,29 +77,23 @@ class RMITrackpadFunction : public RMIFunction {
     OSDeclareDefaultStructors(RMITrackpadFunction)
 public:
     bool start(IOService *provider) override;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     
-protected:
-    UInt16 min_x{0};
-    UInt16 min_y{0};
-    UInt16 max_x;
-    UInt16 max_y;
-    UInt8 x_mm;
-    UInt8 y_mm;
+    const Rmi2DSensorData &getData() const;
     
+protected:
     UInt8 report_abs {0};
     UInt8 report_rel {0};
     
     UInt8 nbr_fingers;
-    IOService *voodooInputInstance {nullptr};
     
     void handleReport(RMI2DSensorReport *report);
     bool shouldDiscardReport(AbsoluteTime timestamp);
+    void setData(const Rmi2DSensorData &data);
 private:
     VoodooInputEvent inputEvent {};
     RMI2DSensorZone rejectZones[3];
+    Rmi2DSensorData data;
     
     bool freeFingerTypes[kMT2FingerTypeCount];
     finger_state fingerState[MAX_FINGERS];

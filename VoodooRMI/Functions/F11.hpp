@@ -533,7 +533,6 @@ private:
     size_t attn_size;
     struct f11_2d_sensor_queries sens_query;
     struct f11_2d_data data_2d;
-    struct rmi_2d_sensor_platform_data sensor_pdata;
     unsigned long *abs_mask;
     unsigned long *rel_mask;
     

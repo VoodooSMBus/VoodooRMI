@@ -21,6 +21,7 @@
 
 struct RmiPdtEntry;
 class F01;
+class RMITrackpadFunction;
 
 class RMIBus : public IOService {
     OSDeclareDefaultStructors(RMIBus);
@@ -31,6 +32,10 @@ public:
     virtual void stop(IOService *provider) override;
     virtual bool willTerminate(IOService *provider, IOOptionBits options) override;
     virtual void free() override;
+    
+    virtual bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    virtual void handleClose(IOService *forClient, IOOptionBits options) override;
+    virtual bool handleIsOpen(const IOService *forClient) const override;
     
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setProperties(OSObject* properties) override;
@@ -56,10 +61,6 @@ public:
         return voodooInputInstance;
     }
     
-    inline void setVoodooInput(IOService *service) {
-        voodooInputInstance = service;
-    }
-    
     inline const RmiGpioData &getGPIOData() const {
         return gpio;
     }
@@ -75,13 +76,14 @@ private:
     IOService *voodooInputInstance {nullptr};
     OSSet *functions {nullptr};
     
+    void publishVoodooInputProperties();
     void getGPIOData(OSDictionary *dict);
     void updateConfiguration(OSDictionary *dictionary);
     RmiConfiguration conf {};
     RmiGpioData gpio {};
     
     RMITransport *transport {nullptr};
-    IOService *trackpadFunction {nullptr};
+    RMITrackpadFunction *trackpadFunction {nullptr};
     IOService *trackpointFunction {nullptr};
     F01 *controlFunction {nullptr};
 

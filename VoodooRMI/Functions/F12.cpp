@@ -191,6 +191,7 @@ IOReturn F12::config()
 int F12::rmi_f12_read_sensor_tuning()
 {
     const rmi_register_desc_item *item;
+    struct Rmi2DSensorData sensorSize;
     int ret;
     int offset;
     UInt8 buf[15];
@@ -219,8 +220,8 @@ int F12::rmi_f12_read_sensor_tuning()
     
     offset = 0;
     if (rmi_register_desc_has_subpacket(item, 0)) {
-        max_x = (buf[offset + 1] << 8) | buf[offset];
-        max_y = (buf[offset + 3] << 8) | buf[offset + 2];
+        sensorSize.maxX = (buf[offset + 1] << 8) | buf[offset];
+        sensorSize.maxY = (buf[offset + 3] << 8) | buf[offset + 2];
         offset += 4;
     } else {
         IOLogError("F12 - No size register");
@@ -259,8 +260,9 @@ int F12::rmi_f12_read_sensor_tuning()
     if (rmi_register_desc_has_subpacket(item, 4))
         offset += 1;
     
-    x_mm = (pitch_x * rx_receivers) >> 12;
-    y_mm = (pitch_y * tx_receivers) >> 12;
+    sensorSize.sizeX = (pitch_x * rx_receivers) >> 12;
+    sensorSize.sizeY = (pitch_y * tx_receivers) >> 12;
+    setData(sensorSize);
     
     return 0;
 }

@@ -66,6 +66,10 @@ void F11::attention()
         fingers = pkt_size / RMI_F11_ABS_BYTES;
     else fingers = nbr_fingers;
     
+    UInt8 *gestures = &data_2d.abs_pos[fingers * (RMI_F11_ABS_BYTES + 2)];
+    
+    IOLogDebug("F11 Gestures: 0x%x, 0x%x", gestures[0], gestures[1]);
+    
     for (size_t i = 0; i < fingers; i++) {
         finger_state = rmi_f11_parse_finger_state(i);
         UInt8 *pos_data = &data_2d.abs_pos[i * RMI_F11_ABS_BYTES];
@@ -93,6 +97,9 @@ void F11::attention()
                 report.objs[i].type = RMI_2D_OBJECT_NONE;
         }
     }
+    
+    report.tapSupported = true;
+    report.isTap = gestures[0] & (0x08 | 0x04);
     
     report.timestamp = timestamp;
     report.fingers = fingers;

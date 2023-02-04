@@ -155,6 +155,10 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
     
     size_t maxIdx = report->fingers > MAX_FINGERS ? MAX_FINGERS : report->fingers;
     size_t reportIdx = 0;
+    
+    nanosecond_ts timestamp;
+    absolutetime_to_nanoseconds(report->timestamp, &timestamp);
+    
     for (int i = 0; i < maxIdx; i++) {
         rmi_2d_sensor_abs_object obj = report->objs[i];
         
@@ -173,7 +177,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
             if (fingerState[i] != RMI_FINGER_LIFTED) reportIdx++;
             fingerState[i] = RMI_FINGER_LIFTED;
             transducer.isPhysicalButtonDown = false;
-            transducer.currentCoordinates.pressure = 0;
+            transducer.currentCoordinates = transducer.previousCoordinates;
             continue;
         }
         
@@ -186,6 +190,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
         
         transducer.currentCoordinates.x = obj.x;
         transducer.currentCoordinates.y = data.maxY - obj.y;
+        transducer.isPhysicalButtonDown = clickpadState;
         
         int deltaWidth = abs(obj.wx - obj.wy);
         
@@ -194,11 +199,13 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 fingerState[i] = RMI_FINGER_STARTED_IN_ZONE;
                 // Current position is starting position, make sure velocity is zero
                 transducer.previousCoordinates = transducer.currentCoordinates;
+                fingerContactTime[i] = timestamp;
+                fingerContactLoc[i] = transducer.currentCoordinates;
                 
                 /* fall through */
             case RMI_FINGER_STARTED_IN_ZONE: {
                 size_t zone = checkInZone(transducer);
-                if (zone == 0) {
+                if (zone == 0 || (timestamp - lastValidTime[i]) < 1000 * MILLI_TO_NANO) {
                     fingerState[i] = RMI_FINGER_VALID;
                 }
                 
@@ -217,9 +224,9 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                     deltaWidth > conf.fingerMajorMinorMax) {
                     
                     fingerState[i] = RMI_FINGER_INVALID;
+                    freeFingerTypes[transducer.fingerType] = true;
+                    transducer.fingerType = (MT2FingerType) 7;
                 }
-                
-                transducer.isPhysicalButtonDown = clickpadState;
                 
                 // Force touch emulation only works with clickpads (button underneath trackpad)
                 // Lock finger in place and in force touch until lifted
@@ -227,6 +234,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                     fingerState[i] = RMI_FINGER_FORCE_TOUCH;
                 }
                 
+                lastValidTime[i] = timestamp;
                 break;
             case RMI_FINGER_FORCE_TOUCH:
                 if (!isForceTouch(obj.z)) {
@@ -235,17 +243,18 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                     break;
                 }
                 
-                transducer.isPhysicalButtonDown = false;
                 transducer.currentCoordinates = transducer.previousCoordinates;
                 transducer.currentCoordinates.pressure = RMI_MT2_MAX_PRESSURE;
                 break;
             case RMI_FINGER_INVALID:
-                transducer.isTransducerActive = false;
+                transducer.fingerType = (MT2FingerType) 7;
                 continue;
         }
         
-        transducer.isTransducerActive = fingerState[i] == RMI_FINGER_VALID || fingerState[i] == RMI_FINGER_FORCE_TOUCH;
-        
+        transducer.isTransducerActive = fingerState[i] != RMI_FINGER_LIFTED && fingerState[i] != RMI_FINGER_STARTED_IN_ZONE;
+        //beep boop, am typing something, let me see if I accidently tap something if anyhting happens
+        // nothing so far, this eems to be going preetty well
+        // way better than usual
         IOLogDebug("Finger num: %d (%s) (%d, %d) [Z: %u WX: %u WY: %u FingerType: %d Pressure : %d Button: %d]",
                    i,
                    transducer.isTransducerActive ? "valid" : "invalid",
@@ -283,6 +292,23 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
     
     inputEvent.contact_count = reportIdx;
     inputEvent.timestamp = report->timestamp;
+    ;
+    if (inputEvent.transducers[0].secondaryId < MAX_FINGERS) {
+        if (reportIdx == 1 && fingerState[inputEvent.transducers[0].secondaryId] == RMI_FINGER_LIFTED &&
+            timestamp - fingerContactTime[inputEvent.transducers[0].secondaryId] < 400 * MILLI_TO_NANO &&
+            abs((int) inputEvent.transducers[0].currentCoordinates.x - (int) fingerContactLoc[inputEvent.transducers[0].secondaryId].x) < 50 &&
+            abs((int) inputEvent.transducers[0].currentCoordinates.y - (int) fingerContactLoc[inputEvent.transducers[0].secondaryId].y) < 50 &&
+            report->tapSupported && !report->isTap) {
+            IOLogError("Not a tap :(");
+            inputEvent.transducers[0].isTransducerActive = true;
+            inputEvent.transducers[0].fingerType = (MT2FingerType) 7;
+            
+            sendVoodooInputPacket(kIOMessageVoodooInputMessage, &inputEvent);
+            
+            inputEvent.transducers[0].isTransducerActive = false;
+            inputEvent.transducers[0].fingerType = kMT2FingerTypeUndefined;
+        }
+    }
     
     sendVoodooInputPacket(kIOMessageVoodooInputMessage, &inputEvent);
     for (int i = 0; i < VOODOO_INPUT_MAX_TRANSDUCERS; i++) {
@@ -368,8 +394,10 @@ void RMITrackpadFunction::invalidateFingers() {
             fingerState[i] == RMI_FINGER_INVALID)
             continue;
         
-        if (checkInZone(finger) > 0)
+        if (checkInZone(finger) > 0) {
+            freeFingerTypes[finger.fingerType] = true;
             fingerState[i] = RMI_FINGER_INVALID;
+        }
     }
 }
 

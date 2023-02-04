@@ -54,6 +54,8 @@ struct rmi_2d_sensor_abs_object {
 struct RMI2DSensorReport {
     rmi_2d_sensor_abs_object objs[10];
     size_t fingers;
+    bool tapSupported;
+    bool isTap;
     AbsoluteTime timestamp;
 };
 
@@ -63,6 +65,8 @@ struct RMI2DSensorZone {
     UInt16 x_max;
     UInt16 y_max;
 };
+
+typedef UInt64 nanosecond_ts;
 
 /**
  * @axis_align - controls parameters that are useful in system prototyping
@@ -97,6 +101,9 @@ private:
     
     bool freeFingerTypes[kMT2FingerTypeCount];
     finger_state fingerState[MAX_FINGERS];
+    nanosecond_ts fingerContactTime[MAX_FINGERS];
+    nanosecond_ts lastValidTime[MAX_FINGERS];
+    TouchCoordinates fingerContactLoc[MAX_FINGERS];
     bool clickpadState {false};
     bool trackpadEnable {true};
     

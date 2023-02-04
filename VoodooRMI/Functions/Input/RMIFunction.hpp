@@ -11,7 +11,7 @@
 #include "RMIPowerStates.h"
 
 // macOS kernel/math has absolute value in it. It's only for doubles though
-#define abs(x) ((x < 0) ? -(x) : (x))
+#define abs(x) (((x) < 0) ? -(x) : (x))
 
 #define MILLI_TO_NANO 1000000
 

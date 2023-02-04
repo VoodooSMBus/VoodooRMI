@@ -205,7 +205,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 /* fall through */
             case RMI_FINGER_STARTED_IN_ZONE: {
                 size_t zone = checkInZone(transducer);
-                if (zone == 0 || (timestamp - lastValidTime[i]) < 1000 * MILLI_TO_NANO) {
+                if (zone == 0 || (timestamp - lastValidTime[i]) < conf.validTimeAfterLift * MILLI_TO_NANO) {
                     fingerState[i] = RMI_FINGER_VALID;
                 }
                 
@@ -295,7 +295,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
     ;
     if (inputEvent.transducers[0].secondaryId < MAX_FINGERS) {
         if (reportIdx == 1 && fingerState[inputEvent.transducers[0].secondaryId] == RMI_FINGER_LIFTED &&
-            timestamp - fingerContactTime[inputEvent.transducers[0].secondaryId] < 400 * MILLI_TO_NANO &&
+            timestamp - fingerContactTime[inputEvent.transducers[0].secondaryId] < conf.tapRejectionTimeout * MILLI_TO_NANO &&
             abs((int) inputEvent.transducers[0].currentCoordinates.x - (int) fingerContactLoc[inputEvent.transducers[0].secondaryId].x) < 50 &&
             abs((int) inputEvent.transducers[0].currentCoordinates.y - (int) fingerContactLoc[inputEvent.transducers[0].secondaryId].y) < 50 &&
             report->tapSupported && !report->isTap) {

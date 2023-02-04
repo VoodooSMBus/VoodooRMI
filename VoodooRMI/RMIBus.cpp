@@ -237,6 +237,8 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
     update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionWidth", &conf.palmRejectionWidth);
     update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionHeight", &conf.palmRejectionHeight);
     update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionTrackpointHeight", &conf.palmRejectionHeightTrackpoint);
+    update |= Configuration::loadUInt64Configuration(dictionary, "TapRejectionTimeout", &conf.tapRejectionTimeout);
+    update |= Configuration::loadUInt64Configuration(dictionary, "ValidTimeAfterLift", &conf.validTimeAfterLift);
 
     if (update) {
         IOLogDebug("Updating Configuration");

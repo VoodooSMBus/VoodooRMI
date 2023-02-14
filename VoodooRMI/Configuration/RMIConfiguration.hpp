@@ -60,6 +60,8 @@ struct RmiConfiguration {
     uint8_t palmRejectionWidth {15};
     uint8_t palmRejectionHeight {80};
     uint8_t palmRejectionHeightTrackpoint {20};
+    uint64_t tapRejectionTimeout {300};
+    uint64_t validTimeAfterLift {1000};
     RmiForceTouchMode forceTouchType {RMI_FT_CLICK_AND_SIZE};
 };
 

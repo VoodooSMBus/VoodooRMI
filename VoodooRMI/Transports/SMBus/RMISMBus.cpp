@@ -92,6 +92,9 @@ bool RMISMBus::makePS2DriverBowToUs() {
     IOService *ps2Controller = waitForMatchingService(ps2contDict);
     IOService *ps2Trackpad = waitForMatchingService(trackpadDict);
     
+    OSSafeReleaseNULL(trackpadDict);
+    OSSafeReleaseNULL(ps2contDict);
+    
     if (ps2Trackpad == nullptr || ps2Controller == nullptr) {
         IOLogError("Could not find PS2 Trackpad driver! Aborting...");
         OSSafeReleaseNULL(ps2Trackpad);

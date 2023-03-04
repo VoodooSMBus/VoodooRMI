@@ -369,21 +369,7 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
         // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
-        IOSleep(1000);
-        
-        // Put trackpad in SMBus mode again
-        int retval = reset();
-        if (retval < 0) {
-            IOLogError("Failed to reset trackpad!");
-            return kIOPMAckImplied;
-        }
-        
-        // Reconfigure and enable trackpad again
-        retval = messageClient(kIOMessageRMI4Resume, bus);
-        if (retval < 0) {
-            IOLogError("Failed to resume trackpad!");
-            return kIOPMAckImplied;
-        }
+//        IOSleep(1000);
     }
 
     return kIOPMAckImplied;
@@ -426,6 +412,22 @@ IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned 
 }
 
 IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
-    // Do stuff here. Only reinit when PS/2 is ready and SMBus is ready
+    // TODO: Do stuff here. Only reinit when PS/2 is ready and SMBus is ready
+    IOLogDebug("PS2 Ready! Reinitializing...");
+    
+    // Put trackpad in SMBus mode again
+    int retval = reset();
+    if (retval < 0) {
+        IOLogError("Failed to reset trackpad!");
+        return kIOPMAckImplied;
+    }
+    
+    // Reconfigure and enable trackpad again
+    retval = messageClient(kIOMessageRMI4Resume, bus);
+    if (retval < 0) {
+        IOLogError("Failed to resume trackpad!");
+        return kIOPMAckImplied;
+    }
+    
     return kIOPMAckImplied;
 }

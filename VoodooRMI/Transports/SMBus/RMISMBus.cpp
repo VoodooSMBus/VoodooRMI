@@ -125,7 +125,7 @@ bool RMISMBus::makePS2DriverBowToUs() {
     }
     
     // Kill PS/2 driver and replace it with a stub to do our own bidding (heheheh)
-    const OSSymbol *funcName = OSSymbol::withCString("replaceTrackpadWithSMBusStub");
+    const OSSymbol *funcName = OSSymbol::withCString("PS2CreateSMBusStub");
     IOReturn ret = ps2Controller->callPlatformFunction(funcName,
                                                        true,
                                                        reinterpret_cast<void *>(ps2PortNum->unsigned8BitValue()),
@@ -416,4 +416,13 @@ OSDictionary *RMISMBus::createConfig() {
     OSSafeReleaseNULL(acpiReturn);
     
     return config;
+}
+
+IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    return kIOPMAckImplied;
+}
+
+IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    // Do stuff here. Only reinit when PS/2 is ready and SMBus is ready
+    return kIOPMAckImplied;
 }

@@ -37,6 +37,9 @@ public:
     void stop(IOService *provider) override;
     void free() override;
     
+    IOReturn powerStateDidChangeTo(IOPMPowerFlags, unsigned long, IOService *) override;
+    IOReturn powerStateWillChangeTo(IOPMPowerFlags, unsigned long, IOService *) override;
+    
     int readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) override;
     int blockWrite(UInt16 rmiaddr, UInt8 *buf, size_t len) override;
     

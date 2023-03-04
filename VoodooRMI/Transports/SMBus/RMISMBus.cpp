@@ -8,6 +8,7 @@
  */
 
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
+#include <IOKit/IOCatalogue.h>
 #include "RMISMBus.hpp"
 #include "RMIMessages.h"
 #include "RMIConfiguration.hpp"
@@ -44,83 +45,128 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
     return this;
 }
 
-bool RMISMBus::start(IOService *provider)
-{
-    auto dict = IOService::nameMatching("ApplePS2SynapticsTouchPad");
-    if (!dict) {
-        IOLogError("Unable to create name matching dictionary");
+bool RMISMBus::acidantheraTrackpadExists() {
+    SInt32 generation;
+    
+    OSDictionary *trackpadDict = IOService::serviceMatching("ApplePS2SynapticsTouchPad");
+    if (trackpadDict == nullptr) {
+        IOLogError("Unable to create service matching dictionary");
         return false;
     }
     
-    
-    // Do a reset over PS2 if possible
-    // If ApplePS2Synaptics isn't there, we can *likely* assume that they did not inject VoodooPS2Trackpad
-    // In which case, resetting isn't important unless it's a broken HP machine
-    auto ps2 = waitForMatchingService(dict, UInt64 (7) * kSecondScale);
-    
-    if (ps2) {
-        // VoodooPS2Trackpad is currently initializing.
-        // We don't know what state it is in, so wait for registerService()
-        IOLogInfo("Found PS2 Trackpad driver! Waiting for registerService()");
-        
-        IONotifier *notifierStatus = addMatchingNotification(gIOMatchedNotification,
-                                                             dict, 0,
-                                                             ^bool (IOService *newService, IONotifier *notifier) {
-            if (!newService->getProperty("VoodooInputSupported")) {
-                IOLogDebug("Too early notification - No VoodooInput on PS2 yet");
-                return true;
-            }
-            
-            if (OSObject *gpio = newService->getProperty("GPIO Data")) {
-                IOLogDebug("Found GPIO data!");
-                setProperty("GPIO Data", gpio);
-            }
-            
-            IOLogInfo("VoodooPS2Trackpad finished init, starting...");
-            messageClient(kPS2M_SMBusStart, newService);
-            notifier->remove();
-            rmiStart();
-            
-            return true;
-        });
-        
-        if (!notifierStatus) {
-            IOLogError("Notifier not installed");
-        }
-        
-        // Retained by addMatchingNotification
-        OSSafeReleaseNULL(dict);
-        OSSafeReleaseNULL(ps2);
-        return !!notifierStatus;
+    OSOrderedSet *personalities = gIOCatalogue->findDrivers(trackpadDict, &generation);
+    if (personalities == nullptr) {
+        OSSafeReleaseNULL(trackpadDict);
+        IOLogError("Error retrieving PS2 personalities");
+        return false;
     }
     
-    OSSafeReleaseNULL(dict);
+    OSDictionary *personality = OSDynamicCast(OSDictionary, personalities->getFirstObject());
+    if (personality == nullptr) {
+        OSSafeReleaseNULL(personalities);
+        OSSafeReleaseNULL(trackpadDict);
+        IOLogError("No ApplePS2SynapticsTouchPad personality found");
+        return false;
+    }
     
-    // No VoodooPS2Trackpad, start now
-    return rmiStart();
+    OSString *bundle = OSDynamicCast(OSString, personality->getObject(gIOModuleIdentifierKey));
+    
+    bool ret = bundle != nullptr &&
+               bundle->isEqualTo("as.acidanthera.voodoo.driver.PS2Trackpad");
+    
+    OSSafeReleaseNULL(personalities);
+    OSSafeReleaseNULL(trackpadDict);
+    return ret;
 }
 
-bool RMISMBus::rmiStart()
+bool RMISMBus::makePS2DriverBowToUs() {
+    // Find PS2 Controller and Synpatics Trackpad PS/2 Driver
+    auto trackpadDict = IOService::serviceMatching("ApplePS2SynapticsTouchPad");
+    auto ps2contDict = IOService::serviceMatching("ApplePS2Controller");
+    
+    if (trackpadDict == nullptr || ps2contDict == nullptr) {
+        IOLogError("Unable to create service matching dictionaries");
+        return false;
+    }
+    
+    IOService *ps2Controller = waitForMatchingService(ps2contDict);
+    IOService *ps2Trackpad = waitForMatchingService(trackpadDict);
+    
+    if (ps2Trackpad == nullptr || ps2Controller == nullptr) {
+        IOLogError("Could not find PS2 Trackpad driver! Aborting...");
+        OSSafeReleaseNULL(ps2Trackpad);
+        OSSafeReleaseNULL(ps2Controller);
+        return false;
+    }
+    
+    // Grab any useful information from Trackpad driver
+    OSObject *gpio = ps2Trackpad->getProperty("GPIO Data");
+    if (gpio != nullptr) {
+        IOLogDebug("Found GPIO data!");
+        setProperty("GPIO Data", gpio);
+    }
+    
+    // Register for power notifications so we know when it's safe to reinit over SMBus
+    ps2Controller->registerInterestedDriver(this);
+    
+    IOService *ps2Nub = ps2Trackpad->getProvider();
+    if (ps2Nub == nullptr) {
+        OSSafeReleaseNULL(ps2Trackpad);
+        OSSafeReleaseNULL(ps2Controller);
+        return false;
+    }
+    
+    // Grab port number for trackpad so we can tell the controller the right driver to kill
+    OSNumber *ps2PortNum = OSDynamicCast(OSNumber, ps2Nub->getProperty("Port Num"));
+    if (ps2PortNum == nullptr) {
+        OSSafeReleaseNULL(ps2Trackpad);
+        OSSafeReleaseNULL(ps2Controller);
+        return false;
+    }
+    
+    // Kill PS/2 driver and replace it with a stub to do our own bidding (heheheh)
+    const OSSymbol *funcName = OSSymbol::withCString("replaceTrackpadWithSMBusStub");
+    IOReturn ret = ps2Controller->callPlatformFunction(funcName,
+                                                       true,
+                                                       reinterpret_cast<void *>(ps2PortNum->unsigned8BitValue()),
+                                                       nullptr,
+                                                       nullptr,
+                                                       nullptr);
+    
+    OSSafeReleaseNULL(funcName);
+    OSSafeReleaseNULL(ps2Trackpad);
+    OSSafeReleaseNULL(ps2Controller);
+    return ret == kIOReturnSuccess;
+}
+
+bool RMISMBus::start(IOService *provider)
 {
-    int retval = 0, attempts = 0;
+    int version;
     
-    do {
-        retval = rmi_smb_get_version();
-        IOSleep(500);
-    } while (retval < 0 && attempts++ < 5);
-    
-    if (retval < 0) {
-        IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", retval);
+    if (!acidantheraTrackpadExists()) {
+        IOLogError("Acidanthera ApplePS2SynapticsTouchPad does not exist!");
         return false;
     }
     
-    if (retval != 2 && retval != 3) {
-        IOLogError("Unrecognized SMB Version %d", retval);
+    // Do a reset over PS2, replace the PS2 Synaptics Driver with a stub driver, and get GPIO data
+    if (!makePS2DriverBowToUs()) {
+        IOLogError("Failed to disable PS2 Trackpad");
         return false;
     }
     
-    setProperty("SMBus Version", retval, 32);
-    IOLogInfo("SMBus version %u", retval);
+    version = rmi_smb_get_version();
+    if (version < 0) {
+        IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", version);
+        return false;
+    }
+    
+    if (version != 2 && version != 3) {
+        IOLogError("Unrecognized SMB Version %d", version);
+        return false;
+    }
+    
+    setProperty("SMBus Version", version, 32);
+    IOLogInfo("SMBus version %u", version);
     
     PMinit();
     device_nub->joinPMtree(this);

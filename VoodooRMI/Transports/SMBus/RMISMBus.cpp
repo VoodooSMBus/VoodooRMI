@@ -413,20 +413,22 @@ IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned 
 
 IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
     // TODO: Do stuff here. Only reinit when PS/2 is ready and SMBus is ready
-    IOLogDebug("PS2 Ready! Reinitializing...");
     
-    // Put trackpad in SMBus mode again
-    int retval = reset();
-    if (retval < 0) {
-        IOLogError("Failed to reset trackpad!");
-        return kIOPMAckImplied;
-    }
-    
-    // Reconfigure and enable trackpad again
-    retval = messageClient(kIOMessageRMI4Resume, bus);
-    if (retval < 0) {
-        IOLogError("Failed to resume trackpad!");
-        return kIOPMAckImplied;
+    if (capabilities & kIOPMPowerOn) {
+        IOLogDebug("PS2 Ready! Reinitializing...");
+        // Put trackpad in SMBus mode again
+        int retval = reset();
+        if (retval < 0) {
+            IOLogError("Failed to reset trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        // Reconfigure and enable trackpad again
+        retval = messageClient(kIOMessageRMI4Resume, bus);
+        if (retval < 0) {
+            IOLogError("Failed to resume trackpad!");
+            return kIOPMAckImplied;
+        }
     }
     
     return kIOPMAckImplied;

@@ -46,36 +46,37 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 }
 
 bool RMISMBus::acidantheraTrackpadExists() {
+    OSOrderedSet *personalitiesSet = nullptr;
+    OSDictionary *personality = nullptr;
+    bool ret = false;
     SInt32 generation;
     
-    OSDictionary *trackpadDict = IOService::serviceMatching("ApplePS2SynapticsTouchPad");
-    if (trackpadDict == nullptr) {
-        IOLogError("Unable to create service matching dictionary");
-        return false;
+    OSDictionary *trackpadDict = OSDictionary::withCapacity(1);
+    OSString *bundleStr = OSString::withCString("as.acidanthera.voodoo.driver.PS2Trackpad");
+    if (trackpadDict == nullptr || bundleStr == nullptr) {
+        IOLogError("Unable to create driver matching dictionary");
+        goto error;
     }
     
-    OSOrderedSet *personalities = gIOCatalogue->findDrivers(trackpadDict, &generation);
-    if (personalities == nullptr) {
-        OSSafeReleaseNULL(trackpadDict);
+    personalitiesSet = gIOCatalogue->findDrivers(trackpadDict, &generation);
+    if (personalitiesSet == nullptr) {
         IOLogError("Error retrieving PS2 personalities");
-        return false;
+        goto error;
     }
     
-    OSDictionary *personality = OSDynamicCast(OSDictionary, personalities->getFirstObject());
+    personality = OSDynamicCast(OSDictionary, personalitiesSet->getFirstObject());
     if (personality == nullptr) {
-        OSSafeReleaseNULL(personalities);
-        OSSafeReleaseNULL(trackpadDict);
         IOLogError("No ApplePS2SynapticsTouchPad personality found");
-        return false;
+        goto error;
     }
     
-    OSString *bundle = OSDynamicCast(OSString, personality->getObject(gIOModuleIdentifierKey));
-    
-    bool ret = bundle != nullptr &&
-               bundle->isEqualTo("as.acidanthera.voodoo.driver.PS2Trackpad");
-    
-    OSSafeReleaseNULL(personalities);
+    // Personality found
+    ret = true;
+
+error:
+    OSSafeReleaseNULL(bundleStr);
     OSSafeReleaseNULL(trackpadDict);
+    OSSafeReleaseNULL(personalitiesSet);
     return ret;
 }
 
@@ -368,8 +369,8 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
-        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
-//        IOSleep(1000);
+        OSTestAndSet(1, &powerFlags);
+        return 5000;
     }
 
     return kIOPMAckImplied;
@@ -412,9 +413,11 @@ IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned 
 }
 
 IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
-    // TODO: Do stuff here. Only reinit when PS/2 is ready and SMBus is ready
-    
-    if (capabilities & kIOPMPowerOn) {
+    if (capabilities & kIOPMDeviceUsable) {
+        if (OSTestAndSet(0, &powerFlags)) {
+            return kIOPMAckImplied;
+        }
+        
         IOLogDebug("PS2 Ready! Reinitializing...");
         // Put trackpad in SMBus mode again
         int retval = reset();
@@ -429,6 +432,12 @@ IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned l
             IOLogError("Failed to resume trackpad!");
             return kIOPMAckImplied;
         }
+        
+        if (!OSTestAndClear(1, &powerFlags)) {
+            acknowledgeSetPowerState();
+        }
+    } else if ((capabilities & (kIOPMPowerOn | kIOPMDoze)) == 0) {
+        OSTestAndClear(0, &powerFlags);
     }
     
     return kIOPMAckImplied;

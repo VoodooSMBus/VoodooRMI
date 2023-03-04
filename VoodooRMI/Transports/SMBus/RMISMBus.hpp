@@ -25,6 +25,11 @@ struct mapping_table_entry {
     UInt8 flags;
 };
 
+enum {
+    kRMIPowerOn = 0x01,
+    kRMIAckPwr  = 0x02,
+};
+
 class RMISMBus : public RMITransport {
     OSDeclareDefaultStructors(RMISMBus);
     
@@ -49,6 +54,7 @@ private:
     VoodooSMBusDeviceNub *device_nub;
     IOLock *page_mutex;
     IOLock *mapping_table_mutex;
+    UInt8 powerFlags {kRMIPowerOn};
     
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
     UInt8 table_index {0};

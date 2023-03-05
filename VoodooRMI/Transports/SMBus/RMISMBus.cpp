@@ -45,117 +45,25 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
     return this;
 }
 
-bool RMISMBus::acidantheraTrackpadExists() {
-    OSOrderedSet *personalitiesSet = nullptr;
-    OSDictionary *personality = nullptr;
-    bool ret = false;
-    SInt32 generation;
-    
-    OSDictionary *trackpadDict = OSDictionary::withCapacity(1);
-    OSString *bundleStr = OSString::withCString("as.acidanthera.voodoo.driver.PS2Trackpad");
-    if (trackpadDict == nullptr || bundleStr == nullptr) {
-        IOLogError("Unable to create driver matching dictionary");
-        goto error;
-    }
-    
-    personalitiesSet = gIOCatalogue->findDrivers(trackpadDict, &generation);
-    if (personalitiesSet == nullptr) {
-        IOLogError("Error retrieving PS2 personalities");
-        goto error;
-    }
-    
-    personality = OSDynamicCast(OSDictionary, personalitiesSet->getFirstObject());
-    if (personality == nullptr) {
-        IOLogError("No ApplePS2SynapticsTouchPad personality found");
-        goto error;
-    }
-    
-    // Personality found
-    ret = true;
-
-error:
-    OSSafeReleaseNULL(bundleStr);
-    OSSafeReleaseNULL(trackpadDict);
-    OSSafeReleaseNULL(personalitiesSet);
-    return ret;
-}
-
-bool RMISMBus::makePS2DriverBowToUs() {
-    // Find PS2 Controller and Synpatics Trackpad PS/2 Driver
-    auto trackpadDict = IOService::serviceMatching("ApplePS2SynapticsTouchPad");
-    auto ps2contDict = IOService::serviceMatching("ApplePS2Controller");
-    
-    if (trackpadDict == nullptr || ps2contDict == nullptr) {
-        IOLogError("Unable to create service matching dictionaries");
-        return false;
-    }
-    
-    IOService *ps2Controller = waitForMatchingService(ps2contDict);
-    IOService *ps2Trackpad = waitForMatchingService(trackpadDict);
-    
-    OSSafeReleaseNULL(trackpadDict);
-    OSSafeReleaseNULL(ps2contDict);
-    
-    if (ps2Trackpad == nullptr || ps2Controller == nullptr) {
-        IOLogError("Could not find PS2 Trackpad driver! Aborting...");
-        OSSafeReleaseNULL(ps2Trackpad);
-        OSSafeReleaseNULL(ps2Controller);
-        return false;
-    }
-    
-    // Grab any useful information from Trackpad driver
-    OSObject *gpio = ps2Trackpad->getProperty("GPIO Data");
-    if (gpio != nullptr) {
-        IOLogDebug("Found GPIO data!");
-        setProperty("GPIO Data", gpio);
-    }
-    
-    // Register for power notifications so we know when it's safe to reinit over SMBus
-    ps2Controller->registerInterestedDriver(this);
-    
-    IOService *ps2Nub = ps2Trackpad->getProvider();
-    if (ps2Nub == nullptr) {
-        OSSafeReleaseNULL(ps2Trackpad);
-        OSSafeReleaseNULL(ps2Controller);
-        return false;
-    }
-    
-    // Grab port number for trackpad so we can tell the controller the right driver to kill
-    OSNumber *ps2PortNum = OSDynamicCast(OSNumber, ps2Nub->getProperty("Port Num"));
-    if (ps2PortNum == nullptr) {
-        OSSafeReleaseNULL(ps2Trackpad);
-        OSSafeReleaseNULL(ps2Controller);
-        return false;
-    }
-    
-    // Kill PS/2 driver and replace it with a stub to do our own bidding (heheheh)
-    const OSSymbol *funcName = OSSymbol::withCString("PS2CreateSMBusStub");
-    IOReturn ret = ps2Controller->callPlatformFunction(funcName,
-                                                       true,
-                                                       reinterpret_cast<void *>(ps2PortNum->unsigned8BitValue()),
-                                                       nullptr,
-                                                       nullptr,
-                                                       nullptr);
-    
-    OSSafeReleaseNULL(funcName);
-    OSSafeReleaseNULL(ps2Trackpad);
-    OSSafeReleaseNULL(ps2Controller);
-    return ret == kIOReturnSuccess;
-}
-
 bool RMISMBus::start(IOService *provider)
 {
     int version;
     
-    if (!acidantheraTrackpadExists()) {
+    if (!device_nub->acidantheraTrackpadExists()) {
         IOLogError("Acidanthera ApplePS2SynapticsTouchPad does not exist!");
         return false;
     }
     
-    // Do a reset over PS2, replace the PS2 Synaptics Driver with a stub driver, and get GPIO data
-    if (!makePS2DriverBowToUs()) {
-        IOLogError("Failed to disable PS2 Trackpad");
+    if (!device_nub->createPS2Stub("ApplePS2SynapticsTouchPad", "GPIO Data", &ps2Controller)) {
+        IOLogError("Could not create PS2 Stub!");
+        OSSafeReleaseNULL(ps2Controller);
         return false;
+    }
+    
+    OSDictionary *gpio = device_nub->grabPS2Info();
+    if (gpio != nullptr) {
+        IOLogInfo("Found PS/2 GPIO Data");
+        setProperty("GPIO Data", gpio);
     }
     
     version = rmi_smb_get_version();
@@ -176,6 +84,9 @@ bool RMISMBus::start(IOService *provider)
     device_nub->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);
     
+    // Register for power notifications so we know when it's safe to reinit over SMBus
+    ps2Controller->registerInterestedDriver(this);
+    
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
     return true;
@@ -184,6 +95,10 @@ bool RMISMBus::start(IOService *provider)
 void RMISMBus::stop(IOService *provider)
 {
     PMstop();
+    if (ps2Controller != nullptr) {
+        ps2Controller->deRegisterInterestedDriver(this);
+        OSSafeReleaseNULL(ps2Controller);
+    }
     super::stop(provider);
 }
 

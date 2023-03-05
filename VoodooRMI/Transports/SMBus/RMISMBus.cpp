@@ -56,11 +56,10 @@ bool RMISMBus::start(IOService *provider)
     
     if (!device_nub->createPS2Stub("ApplePS2SynapticsTouchPad", "GPIO Data", &ps2Controller)) {
         IOLogError("Could not create PS2 Stub!");
-        OSSafeReleaseNULL(ps2Controller);
         return false;
     }
     
-    OSDictionary *gpio = device_nub->grabPS2Info();
+    OSDictionary *gpio = device_nub->getPS2Info();
     if (gpio != nullptr) {
         IOLogInfo("Found PS/2 GPIO Data");
         setProperty("GPIO Data", gpio);
@@ -69,11 +68,13 @@ bool RMISMBus::start(IOService *provider)
     version = rmi_smb_get_version();
     if (version < 0) {
         IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", version);
+        OSSafeReleaseNULL(ps2Controller);
         return false;
     }
     
     if (version != 2 && version != 3) {
         IOLogError("Unrecognized SMB Version %d", version);
+        OSSafeReleaseNULL(ps2Controller);
         return false;
     }
     

@@ -228,17 +228,23 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 }
                 
                 break;
-            case RMI_FINGER_FORCE_TOUCH:
+            case RMI_FINGER_FORCE_TOUCH: {
                 if (!isForceTouch(obj.z)) {
                     fingerState[i] = RMI_FINGER_VALID;
                     transducer.currentCoordinates.pressure = 0;
                     break;
                 }
-                
+                // checks if in zone
+                size_t zone = checkInZone(transducer);
+                if (zone != 0) {
+                    fingerState[i] = RMI_FINGER_INVALID;
+                    break;
+                }
                 transducer.isPhysicalButtonDown = false;
                 transducer.currentCoordinates = transducer.previousCoordinates;
                 transducer.currentCoordinates.pressure = RMI_MT2_MAX_PRESSURE;
                 break;
+            }
             case RMI_FINGER_INVALID:
                 transducer.isTransducerActive = false;
                 continue;

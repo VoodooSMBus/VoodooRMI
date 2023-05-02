@@ -223,7 +223,8 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 
                 // Force touch emulation only works with clickpads (button underneath trackpad)
                 // Lock finger in place and in force touch until lifted
-                if (isForceTouch(obj.z)) {
+                // Checks for VALID input before registering as force touch
+                if (isForceTouch(obj.z) && fingerState[i] == RMI_FINGER_VALID) {
                     fingerState[i] = RMI_FINGER_FORCE_TOUCH;
                 }
                 
@@ -234,7 +235,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                     transducer.currentCoordinates.pressure = 0;
                     break;
                 }
-                
+
                 transducer.isPhysicalButtonDown = false;
                 transducer.currentCoordinates = transducer.previousCoordinates;
                 transducer.currentCoordinates.pressure = RMI_MT2_MAX_PRESSURE;

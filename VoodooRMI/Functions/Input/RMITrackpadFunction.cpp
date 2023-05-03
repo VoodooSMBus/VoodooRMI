@@ -237,7 +237,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 }
 
                 transducer.isPhysicalButtonDown = false;
-                transducer.currentCoordinates = transducer.previousCoordinates;
+//                 transducer.currentCoordinates = transducer.previousCoordinates;
                 transducer.currentCoordinates.pressure = RMI_MT2_MAX_PRESSURE;
                 break;
             case RMI_FINGER_INVALID:

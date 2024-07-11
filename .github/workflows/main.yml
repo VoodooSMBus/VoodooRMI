@@ -7,7 +7,7 @@ jobs:
 
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Checkout submodules
       run: git submodule update --init --recursive
     - name: Clone Acidanthera/MacKernelSDK
@@ -15,7 +15,7 @@ jobs:
     - name: get shortsha
       id: vars
       run: |
-        echo ::set-output name=sha_short::$(git rev-parse --short=8 ${{ github.sha }})
+        echo "sha_short=$(git rev-parse --short=8 ${{ github.sha }})" >> $GITHUB_OUTPUT
     - name: build
       env:
           VOODOORMI_SHA: VoodooRMI-${{ steps.vars.outputs.sha_short }}
@@ -23,7 +23,7 @@ jobs:
         mkdir -p build/${VOODOORMI_SHA}/{Debug,Release}
         xcodebuild -configuration Debug -scheme VoodooRMI -derivedDataPath build clean build
         xcodebuild -configuration Release -scheme VoodooRMI -derivedDataPath build build
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: VoodooRMI
         path: build/Build/Products/*/*.zip

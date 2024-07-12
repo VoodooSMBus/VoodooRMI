@@ -8,6 +8,7 @@
  */
 
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
+#include <IOKit/IOCatalogue.h>
 #include "RMISMBus.hpp"
 #include "RMIMessages.h"
 #include "RMIConfiguration.hpp"
@@ -46,85 +47,46 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 
 bool RMISMBus::start(IOService *provider)
 {
-    auto dict = IOService::nameMatching("ApplePS2SynapticsTouchPad");
-    if (!dict) {
-        IOLogError("Unable to create name matching dictionary");
+    int version;
+    
+    if (!device_nub->acidantheraTrackpadExists()) {
+        IOLogError("Acidanthera ApplePS2SynapticsTouchPad does not exist!");
         return false;
     }
     
-    
-    // Do a reset over PS2 if possible
-    // If ApplePS2Synaptics isn't there, we can *likely* assume that they did not inject VoodooPS2Trackpad
-    // In which case, resetting isn't important unless it's a broken HP machine
-    auto ps2 = waitForMatchingService(dict, UInt64 (7) * kSecondScale);
-    
-    if (ps2) {
-        // VoodooPS2Trackpad is currently initializing.
-        // We don't know what state it is in, so wait for registerService()
-        IOLogInfo("Found PS2 Trackpad driver! Waiting for registerService()");
-        
-        IONotifier *notifierStatus = addMatchingNotification(gIOMatchedNotification,
-                                                             dict, 0,
-                                                             ^bool (IOService *newService, IONotifier *notifier) {
-            if (!newService->getProperty("VoodooInputSupported")) {
-                IOLogDebug("Too early notification - No VoodooInput on PS2 yet");
-                return true;
-            }
-            
-            if (OSObject *gpio = newService->getProperty("GPIO Data")) {
-                IOLogDebug("Found GPIO data!");
-                setProperty("GPIO Data", gpio);
-            }
-            
-            IOLogInfo("VoodooPS2Trackpad finished init, starting...");
-            messageClient(kPS2M_SMBusStart, newService);
-            notifier->remove();
-            rmiStart();
-            
-            return true;
-        });
-        
-        if (!notifierStatus) {
-            IOLogError("Notifier not installed");
-        }
-        
-        // Retained by addMatchingNotification
-        OSSafeReleaseNULL(dict);
-        OSSafeReleaseNULL(ps2);
-        return !!notifierStatus;
-    }
-    
-    OSSafeReleaseNULL(dict);
-    
-    // No VoodooPS2Trackpad, start now
-    return rmiStart();
-}
-
-bool RMISMBus::rmiStart()
-{
-    int retval = 0, attempts = 0;
-    
-    do {
-        retval = rmi_smb_get_version();
-        IOSleep(500);
-    } while (retval < 0 && attempts++ < 5);
-    
-    if (retval < 0) {
-        IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", retval);
+    if (!device_nub->createPS2Stub("ApplePS2SynapticsTouchPad", "GPIO Data", &ps2Controller)) {
+        IOLogError("Could not create PS2 Stub!");
         return false;
     }
     
-    if (retval != 2 && retval != 3) {
-        IOLogError("Unrecognized SMB Version %d", retval);
+    OSDictionary *gpio = device_nub->getPS2Info();
+    if (gpio != nullptr) {
+        IOLogInfo("Found PS/2 GPIO Data");
+        setProperty("GPIO Data", gpio);
+    }
+    
+    version = rmi_smb_get_version();
+    if (version < 0) {
+        IOLogError("Error: Failed to read SMBus version. Code: 0x%02X", version);
+        OSSafeReleaseNULL(ps2Controller);
         return false;
     }
     
-    setProperty("SMBus Version", retval, 32);
-    IOLogInfo("SMBus version %u", retval);
+    if (version != 2 && version != 3) {
+        IOLogError("Unrecognized SMB Version %d", version);
+        OSSafeReleaseNULL(ps2Controller);
+        return false;
+    }
+    
+    setProperty("SMBus Version", version, 32);
+    IOLogInfo("SMBus version %u", version);
     
     PMinit();
     device_nub->joinPMtree(this);
     registerPowerDriver(this, RMIPowerStates, 2);
+    
+    // Register for power notifications so we know when it's safe to reinit over SMBus
+    ps2Controller->registerInterestedDriver(this);
     
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService();
@@ -134,6 +96,10 @@ bool RMISMBus::rmiStart()
 void RMISMBus::stop(IOService *provider)
 {
     PMstop();
+    if (ps2Controller != nullptr) {
+        ps2Controller->deRegisterInterestedDriver(this);
+        OSSafeReleaseNULL(ps2Controller);
+    }
     super::stop(provider);
 }
 
@@ -319,22 +285,8 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
-        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
-        IOSleep(1000);
-        
-        // Put trackpad in SMBus mode again
-        int retval = reset();
-        if (retval < 0) {
-            IOLogError("Failed to reset trackpad!");
-            return kIOPMAckImplied;
-        }
-        
-        // Reconfigure and enable trackpad again
-        retval = messageClient(kIOMessageRMI4Resume, bus);
-        if (retval < 0) {
-            IOLogError("Failed to resume trackpad!");
-            return kIOPMAckImplied;
-        }
+        OSTestAndSet(1, &powerFlags);
+        return 5000;
     }
 
     return kIOPMAckImplied;
@@ -370,4 +322,39 @@ OSDictionary *RMISMBus::createConfig() {
     OSSafeReleaseNULL(acpiReturn);
     
     return config;
+}
+
+IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    return kIOPMAckImplied;
+}
+
+IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    if (capabilities & kIOPMDeviceUsable) {
+        if (OSTestAndSet(0, &powerFlags)) {
+            return kIOPMAckImplied;
+        }
+        
+        IOLogDebug("PS2 Ready! Reinitializing...");
+        // Put trackpad in SMBus mode again
+        int retval = reset();
+        if (retval < 0) {
+            IOLogError("Failed to reset trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        // Reconfigure and enable trackpad again
+        retval = messageClient(kIOMessageRMI4Resume, bus);
+        if (retval < 0) {
+            IOLogError("Failed to resume trackpad!");
+            return kIOPMAckImplied;
+        }
+        
+        if (!OSTestAndClear(1, &powerFlags)) {
+            acknowledgeSetPowerState();
+        }
+    } else if ((capabilities & (kIOPMPowerOn | kIOPMDoze)) == 0) {
+        OSTestAndClear(0, &powerFlags);
+    }
+    
+    return kIOPMAckImplied;
 }

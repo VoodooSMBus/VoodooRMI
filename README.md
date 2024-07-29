@@ -120,7 +120,6 @@ The values below can be edited under Info.plist within the kext itself - these c
 | `TrackpointScrollMultiplierY` | 20 | Same as the above, except applied to the Y axis |
 | `TrackpointDeadzone` | 1 | Minimum value at which trackpoint reports will be accepted. This is subtracted from the input of the trackpoint, so setting this extremely high will reduce trackpoint resolution |
 | `MinYDiffThumbDetection` | 200 | Minimum distance between the second lowest and lowest finger in which Minimum Y logic is used to detect the thumb rather than using the z value from the trackpad. Setting this higher means that the thumb must be farther from the other fingers before the y coordinate is used to detect the thumb, rather than using finger area. Keeping this smaller is preferable as finger area logic seems to only be useful when all 4 fingers are grouped together closely, where the thumb is more likely to be pressing down more |
-| `FingerMajorMinorDiffMax` | 10 | Max difference between the width and height of a touch input before it's invalid |
 | `PalmRejectionWidth` | 10 | Percent (out of 100) width of trackpad which is used for palm rejection on the left and right side of the trackpad |
 | `PalmRejectionWidth` | 60 | Percent (out of 100) height of trackpad which is used for palm rejection on the left and right side of the trackpad (starting from the top) |
 | `PalmRejectionTrackpointHeight` | 20 | Percent (out of 100) height of trackpad which is used for palm rejection across the top of the trackpad |

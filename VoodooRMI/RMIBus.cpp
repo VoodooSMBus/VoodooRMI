@@ -303,8 +303,8 @@ void RMIBus::publishVoodooInputProperties() {
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, trackpadData.maxX, 16);
     setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, trackpadData.maxY, 16);
     // Need to be in 0.01mm units
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, trackpadData.sizeX * 100, 16);
-    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, trackpadData.sizeY * 100, 16);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, trackpadData.mmSizeX * 100, 16);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, trackpadData.mmSizeY * 100, 16);
     setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
     
     if (trackpointFunction != nullptr) {

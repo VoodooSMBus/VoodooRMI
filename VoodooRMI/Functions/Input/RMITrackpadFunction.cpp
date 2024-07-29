@@ -192,7 +192,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 /* fall through */
             case RMI_FINGER_STARTED_IN_ZONE: {
                 size_t zone = checkInZone(transducer);
-                if (zone == 0 && obj.z > 20) {
+                if (zone == 0) {
                     fingerState[i] = RMI_FINGER_VALID;
                 }
                 

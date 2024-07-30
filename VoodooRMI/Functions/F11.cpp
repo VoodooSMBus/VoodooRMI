@@ -595,8 +595,10 @@ int F11::rmi_f11_initialize()
     query_offset += rc;
     
     if (sens_query.has_physical_props) {
-        sensorSize.sizeX = sens_query.x_sensor_size_mm;
-        sensorSize.sizeY = sens_query.y_sensor_size_mm;
+        sensorSize.mmSizeX = sens_query.x_sensor_size_mm;
+        sensorSize.mmSizeY = sens_query.y_sensor_size_mm;
+        sensorSize.umPerTraceX = sens_query.x_sensor_size_mm * 10 / sens_query.nr_x_electrodes;
+        sensorSize.umPerTraceY = sens_query.y_sensor_size_mm * 10 / sens_query.nr_y_electrodes;
     } else {
         IOLogError("No size data from Device.");
         return -ENODEV;

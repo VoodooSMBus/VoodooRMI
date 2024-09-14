@@ -34,6 +34,7 @@ public:
     bool start(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
+    IOReturn powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) override;
     void stop(IOService *provider) override;
     void free() override;
     

@@ -65,7 +65,7 @@ bool RMISMBus::start(IOService *provider)
     }
     
     setProperty(RMIBusSupported, kOSBooleanTrue);
-    registerService();
+    registerService(kIOServiceAsynchronous);
     return true;
 }
 
@@ -281,9 +281,6 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
-        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
-        IOSleep(1000);
-        
         // Put trackpad in SMBus mode again
         int retval = reset();
         if (retval < 0) {
@@ -304,10 +301,11 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
 
 IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
     unsigned long newState;
-    if (capabilities & kIOPMPowerOn) {
-        newState = 1;
+    IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
+    if (capabilities & kIOPMDeviceUsable) {
+        newState = RMI_POWER_ON;
     } else {
-        newState = 0;
+        newState = RMI_POWER_OFF;
     }
     
     return setPowerState(newState, this);

@@ -46,58 +46,27 @@ RMISMBus *RMISMBus::probe(IOService *provider, SInt32 *score)
 
 bool RMISMBus::start(IOService *provider)
 {
-    auto dict = IOService::nameMatching("ApplePS2SynapticsTouchPad");
-    if (!dict) {
-        IOLogError("Unable to create name matching dictionary");
+    OSObject *props = device_nub->getProperty("PS/2 Properties");
+    if (props) {
+        setProperty("GPIO Data", props);
+    }
+    
+    if (!rmiStart()) {
         return false;
     }
-    
-    
-    // Do a reset over PS2 if possible
-    // If ApplePS2Synaptics isn't there, we can *likely* assume that they did not inject VoodooPS2Trackpad
-    // In which case, resetting isn't important unless it's a broken HP machine
-    auto ps2 = waitForMatchingService(dict, UInt64 (7) * kSecondScale);
-    
+ 
+    IOService *ps2 = OSDynamicCast(IOService, device_nub->getProperty("PS/2 Parent"));
     if (ps2) {
-        // VoodooPS2Trackpad is currently initializing.
-        // We don't know what state it is in, so wait for registerService()
-        IOLogInfo("Found PS2 Trackpad driver! Waiting for registerService()");
-        
-        IONotifier *notifierStatus = addMatchingNotification(gIOMatchedNotification,
-                                                             dict, 0,
-                                                             ^bool (IOService *newService, IONotifier *notifier) {
-            if (!newService->getProperty("VoodooInputSupported")) {
-                IOLogDebug("Too early notification - No VoodooInput on PS2 yet");
-                return true;
-            }
-            
-            if (OSObject *gpio = newService->getProperty("GPIO Data")) {
-                IOLogDebug("Found GPIO data!");
-                setProperty("GPIO Data", gpio);
-            }
-            
-            IOLogInfo("VoodooPS2Trackpad finished init, starting...");
-            messageClient(kPS2M_SMBusStart, newService);
-            notifier->remove();
-            rmiStart();
-            
-            return true;
-        });
-        
-        if (!notifierStatus) {
-            IOLogError("Notifier not installed");
-        }
-        
-        // Retained by addMatchingNotification
-        OSSafeReleaseNULL(dict);
-        OSSafeReleaseNULL(ps2);
-        return !!notifierStatus;
+        (void) ps2->registerInterestedDriver(this);
+    } else {
+        PMinit();
+        device_nub->joinPMtree(this);
+        registerPowerDriver(this, RMIPowerStates, 2);
     }
     
-    OSSafeReleaseNULL(dict);
-    
-    // No VoodooPS2Trackpad, start now
-    return rmiStart();
+    setProperty(RMIBusSupported, kOSBooleanTrue);
+    registerService(kIOServiceAsynchronous);
+    return true;
 }
 
 bool RMISMBus::rmiStart()
@@ -121,13 +90,6 @@ bool RMISMBus::rmiStart()
     
     setProperty("SMBus Version", retval, 32);
     IOLogInfo("SMBus version %u", retval);
-    
-    PMinit();
-    device_nub->joinPMtree(this);
-    registerPowerDriver(this, RMIPowerStates, 2);
-    
-    setProperty(RMIBusSupported, kOSBooleanTrue);
-    registerService();
     return true;
 }
 
@@ -319,9 +281,6 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whichState == 0) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
-        // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
-        IOSleep(1000);
-        
         // Put trackpad in SMBus mode again
         int retval = reset();
         if (retval < 0) {
@@ -338,6 +297,18 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     }
 
     return kIOPMAckImplied;
+}
+
+IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    unsigned long newState;
+    IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
+    if (capabilities & kIOPMDeviceUsable) {
+        newState = RMI_POWER_ON;
+    } else {
+        newState = RMI_POWER_OFF;
+    }
+    
+    return setPowerState(newState, this);
 }
 
 OSDictionary *RMISMBus::createConfig() {

@@ -106,7 +106,7 @@ There is no support for this kext being loaded into Library/Extensions or System
 
 ## Configuration
 
-The values below can be edited under Info.plist within the kext itself - these can be changed without recompiling  
+The values below can be configured through either `ioio` or ACPI. An example SSDT can be found under [the ACPI examples folder](/docs/Acpi_Examples).
 **Note** that using non-integer value causes undefined behaviour which may prevent the kext from loading
 
 | Value | Default | Description |

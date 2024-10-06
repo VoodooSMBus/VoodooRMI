@@ -208,8 +208,8 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
                 /* fall through */
             case RMI_FINGER_VALID:
                 if (obj.z > RMI_2D_MAX_Z ||
-                    obj.wx > 4 ||
-                    obj.wy > 4 ||
+                    obj.wx > conf.palmRejectionMaxObjWidth ||
+                    obj.wy > conf.palmRejectionMaxObjHeight ||
                     obj.type == RMI_2D_OBJECT_INACCURATE) {
                     
                     fingerState[i] = RMI_FINGER_INVALID;

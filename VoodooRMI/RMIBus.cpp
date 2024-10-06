@@ -233,6 +233,8 @@ void RMIBus::updateConfiguration(OSDictionary* dictionary) {
     update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchMinPressure", &conf.forceTouchMinPressure);
     update |= Configuration::loadUInt32Configuration(dictionary, "ForceTouchType", reinterpret_cast<UInt32 *>(&conf.forceTouchType));
     update |= Configuration::loadUInt32Configuration(dictionary, "MinYDiffThumbDetection", &conf.minYDiffGesture);
+    update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionMaxObjWidth", &conf.palmRejectionMaxObjWidth);
+    update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionMaxObjHeight", &conf.palmRejectionMaxObjHeight);
     update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionWidth", &conf.palmRejectionWidth);
     update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionHeight", &conf.palmRejectionHeight);
     update |= Configuration::loadUInt8Configuration(dictionary, "PalmRejectionTrackpointHeight", &conf.palmRejectionHeightTrackpoint);

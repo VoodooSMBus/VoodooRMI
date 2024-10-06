@@ -36,12 +36,10 @@ enum finger_state {
 };
 
 struct Rmi2DSensorData {
-    UInt16 mmSizeX;
-    UInt16 mmSizeY;
+    UInt16 sizeX;
+    UInt16 sizeY;
     UInt16 maxX;
     UInt16 maxY;
-    UInt32 umPerTraceX;
-    UInt32 umPerTraceY;
 };
 
 struct rmi_2d_sensor_abs_object {

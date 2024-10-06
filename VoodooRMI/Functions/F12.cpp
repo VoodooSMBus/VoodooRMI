@@ -260,10 +260,8 @@ int F12::rmi_f12_read_sensor_tuning()
     if (rmi_register_desc_has_subpacket(item, 4))
         offset += 1;
     
-    sensorSize.mmSizeX = (pitch_x * rx_receivers) >> 12;
-    sensorSize.mmSizeY = (pitch_y * tx_receivers) >> 12;
-    sensorSize.umPerTraceX = (pitch_x >> 12) * 10;
-    sensorSize.umPerTraceY = (pitch_y >> 12) * 10;
+    sensorSize.sizeX = (pitch_x * rx_receivers) >> 12;
+    sensorSize.sizeY = (pitch_y * tx_receivers) >> 12;
     setData(sensorSize);
     
     return 0;

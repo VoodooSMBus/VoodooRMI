@@ -52,10 +52,12 @@ struct RmiConfiguration {
     /* RMI2DSensor */
     uint32_t forceTouchMinPressure {80};
     uint32_t minYDiffGesture {200};
-    uint32_t fingerMajorMinorMax {10};
     // Time units are in milliseconds
     uint64_t disableWhileTypingTimeout {2000};
     uint64_t disableWhileTrackpointTimeout {2000};
+    // Palm Rejection
+    uint8_t palmRejectionMaxObjWidth {0xFF};
+    uint8_t palmRejectionMaxObjHeight {0xFF};
     // Percentage out of 100
     uint8_t palmRejectionWidth {15};
     uint8_t palmRejectionHeight {80};

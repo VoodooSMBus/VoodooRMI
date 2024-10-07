@@ -30,8 +30,6 @@
 				<integer>250</integer>
 				<key>DisableWhileTypingTimeout</key>
 				<integer>250</integer>
-				<key>FingerMajorMinorDiffMax</key>
-				<integer>10</integer>
 				<key>ForceTouchType</key>
 				<integer>1</integer>
 				<key>ForceTouchMinPressure</key>

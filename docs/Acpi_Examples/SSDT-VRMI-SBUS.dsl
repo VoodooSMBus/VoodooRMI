@@ -16,6 +16,11 @@ DefinitionBlock ("", "SSDT", 2, "GWYD", "Set", 0) {
             // 1 = Clickpad button + Size threshold
             // 2 = Size threshold 
             "ForceTouchType", 0,
+            // Configure max contact size. These 
+            // will very likely be different on
+            // other laptops.
+            "PalmRejectionMaxObjWidth", 5,
+            "PalmRejectionMaxObjHeight", 6
         })
     }
 }

@@ -453,6 +453,7 @@ void RMII2C::startInterrupt() {
     } else if (interrupt_source) {
         interrupt_source->enable();
     }
+    ready = true;
 }
 
 void RMII2C::stopInterrupt() {

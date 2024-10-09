@@ -33,8 +33,8 @@ jobs:
       run: |
         echo "sha_short=$(git rev-parse --short=8 ${{ github.sha }})" >> $GITHUB_OUTPUT
 
-    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Debug -derivedDataPath build
-    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Release -derivedDataPath build
+    - run: xcodebuild -scheme VoodooRMI -derivedDataPath build -configuration Debug
+    - run: xcodebuild -scheme VoodooRMI -derivedDataPath build -configuration Release
     
     - uses: actions/upload-artifact@v4
       with:

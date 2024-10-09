@@ -1,29 +1,75 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  PROJECT_TYPE: KEXT
 
 jobs:
   build:
-
+    name: Build
     runs-on: macos-latest
+    env:
+      JOB_TYPE: BUILD
     steps:
-    - uses: actions/checkout@v4
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
-    - name: Clone Acidanthera/MacKernelSDK
-      run: git clone --depth 1 https://github.com/acidanthera/MacKernelSDK.git 
-    - name: get shortsha
+    - name: Checkout VRMI
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: Checkout MacKernelSDK
+      uses: actions/checkout@v4
+      with:
+        repository: acidanthera/MacKernelSDK
+        path: MacKernelSDK
+    - name: CI Bootstrap
+      run: |
+        src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) && eval "$src" || exit 1
+
+    - name: Link MacKernelSDK to VSMB
+      run: ln -s ${{ github.workspace }}/MacKernelSDK ${{ github.workspace }}/Dependencies/VoodooSMBus/MacKernelSDK
+    - name: Get Commit SHA
       id: vars
       run: |
         echo "sha_short=$(git rev-parse --short=8 ${{ github.sha }})" >> $GITHUB_OUTPUT
-    - name: build
-      env:
-          VOODOORMI_SHA: VoodooRMI-${{ steps.vars.outputs.sha_short }}
+
+    - name: Build Debug VSMB
+      run: xcodebuild -configuration Debug
+      working-directory: ${{ github.workspace }}/Dependencies/VoodooSMBus
+    - name: Build Release VSMB
+      run: xcodebuild -configuration Release
+      working-directory: ${{ github.workspace }}/Dependencies/VoodooSMBus
+
+    - name: Build Debug VRMI
+      run: xcodebuild -scheme VoodooRMI -derivedDataPath build -configuration Debug
+    - name: Build Release VRMI
+      run: xcodebuild -scheme VoodooRMI -derivedDataPath build -configuration Release
+
+    - name: Zip Release
+      working-directory: ${{ github.workspace }}/build/Build/Products/Release/
       run: |
-        mkdir -p build/${VOODOORMI_SHA}/{Debug,Release}
-        xcodebuild -configuration Debug -scheme VoodooRMI -derivedDataPath build clean build
-        xcodebuild -configuration Release -scheme VoodooRMI -derivedDataPath build build
+        cp -r ${{ github.workspace }}/Dependencies/VoodooSMBus/build/Release/*.dSYM dSYM/ |
+        cp -r ${{ github.workspace }}/Dependencies/VoodooSMBus/build/Release/*.kext ./ |
+        zip -ur *.zip dSYM/ VoodooSMBus.kext
+    - name: Zip Debug
+      working-directory: ${{ github.workspace }}/build/Build/Products/Debug/
+      run: |
+        cp -r ${{ github.workspace }}/Dependencies/VoodooSMBus/build/Debug/*.kext ./ |
+        zip -ur *.zip VoodooSMBus.kext
+
+    - uses: svenstaro/upload-release-action@v2
+      if: github.event_name == 'release'
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/Build/Products/*/*.zip
+        tag: ${{ github.ref }}
+        file_glob: true
+
     - uses: actions/upload-artifact@v4
       with:
-        name: VoodooRMI
+        name: VoodooRMI-${{ steps.vars.outputs.sha_short }}
         path: build/Build/Products/*/*.zip

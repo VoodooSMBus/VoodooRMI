@@ -477,7 +477,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# From Acidanthera's VoodooPS2\ncd \"${TARGET_BUILD_DIR}\"\ncp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\ndist=(\"VoodooRMI.kext\")\nif [ -d \"$DWARF_DSYM_FILE_NAME\" ]; then\n  rm -rf dSYM\n  mkdir dSYM\n  mv \"$DWARF_DSYM_FILE_NAME\" dSYM/\n  find ${FULL_PRODUCT_NAME} -name *.dSYM -exec mv {} dSYM/ \\;\n  dist+=(dSYM);\nfi\n\narchive=\"VoodooRMI-${CURRENT_PROJECT_VERSION}-$(echo $CONFIGURATION | tr /a-z/ /A-Z/).zip\"\nrm -rf *.zip\nzip -qry -FS \"${archive}\" \"${dist[@]}\"\n\n";
+			shellScript = "# From Acidanthera's VoodooPS2\ncd \"${TARGET_BUILD_DIR}\"\nrm -rf \"${FULL_PRODUCT_NAME}/Contents/PlugIns/VoodooInput.kext\"\nmkdir -p \"${FULL_PRODUCT_NAME}/Contents/PlugIns\"\ncp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}\"/* \"${FULL_PRODUCT_NAME}/Contents/PlugIns/\"\ndist=(\"VoodooRMI.kext\")\nif [ -d \"$DWARF_DSYM_FILE_NAME\" ]; then\n  rm -rf dSYM\n  mkdir dSYM\n  mv \"$DWARF_DSYM_FILE_NAME\" dSYM/\n  find ${FULL_PRODUCT_NAME} -name *.dSYM -exec mv {} dSYM/ \\;\n  dist+=(dSYM);\nfi\n\narchive=\"VoodooRMI-${CURRENT_PROJECT_VERSION}-$(echo $CONFIGURATION | tr /a-z/ /A-Z/).zip\"\nrm -rf *.zip\nzip -qry -FS \"${archive}\" \"${dist[@]}\"\n\n";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;

@@ -30,10 +30,10 @@
 				<integer>250</integer>
 				<key>DisableWhileTypingTimeout</key>
 				<integer>250</integer>
-				<key>ForceTouchType</key>
-				<integer>1</integer>
 				<key>ForceTouchMinPressure</key>
 				<integer>90</integer>
+				<key>ForceTouchType</key>
+				<integer>1</integer>
 				<key>MinYDiffThumbDetection</key>
 				<integer>200</integer>
 				<key>PalmRejectionHeight</key>

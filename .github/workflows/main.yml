@@ -28,6 +28,9 @@ jobs:
       run: |
         src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) && eval "$src" || exit 1
     
+    - name: Link MacKernelSDK to VoodooSMBus
+      run: ln -s ${{ github.workspace }}/MacKernelSDK ${{ github.workspace }}/Dependencies/VoodooSMBus/MacKernelSDK
+
     - name: Get Commit SHA
       id: vars
       run: |
@@ -36,6 +39,13 @@ jobs:
     - run: xcodebuild -scheme VoodooRMI -derivedDataPath build -configuration Debug
     - run: xcodebuild -scheme VoodooRMI -derivedDataPath build -configuration Release
     
+    - uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/Build/Products/*/*.zip
+        tag: ${{ github.ref }}
+        file_glob: true
+
     - uses: actions/upload-artifact@v4
       with:
         name: VoodooRMI-${{ steps.vars.outputs.sha_short }}

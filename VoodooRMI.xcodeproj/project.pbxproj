@@ -67,6 +67,20 @@
 			remoteGlobalIDString = 6F4B4A8C24C1A0B80018F1F0;
 			remoteInfo = RMII2C;
 		};
+		EEDAAB152CB631B50063AA4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEDAAB112CB631B50063AA4A /* VoodooSMBus.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B3953FF922D8DBC100473323;
+			remoteInfo = VoodooSMBus;
+		};
+		EEDAAB172CB631D50063AA4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEDAAB112CB631B50063AA4A /* VoodooSMBus.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = B3953FF822D8DBC100473323;
+			remoteInfo = VoodooSMBus;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -120,6 +134,7 @@
 		EE83B6D9298B1B3F0025DF3A /* RMIPowerStates.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RMIPowerStates.h; sourceTree = "<group>"; };
 		EE83B709298C76380025DF3A /* RMIMessages.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RMIMessages.h; sourceTree = "<group>"; };
 		EE912ED1298C95390003DBFE /* RMIFunction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RMIFunction.cpp; sourceTree = "<group>"; };
+		EEDAAB112CB631B50063AA4A /* VoodooSMBus.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = VoodooSMBus.xcodeproj; path = Dependencies/VoodooSMBus/VoodooSMBus.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -206,6 +221,7 @@
 		A4560EBD247F29EC0009CBE0 = {
 			isa = PBXGroup;
 			children = (
+				EEDAAB112CB631B50063AA4A /* VoodooSMBus.xcodeproj */,
 				A4560F02247F381B0009CBE0 /* Headers */,
 				A4560EC9247F29EC0009CBE0 /* VoodooRMI */,
 				A4560EC8247F29EC0009CBE0 /* Products */,
@@ -300,6 +316,14 @@
 				2850FFBC24904435000FA6BC /* PS2.hpp */,
 			);
 			path = LinuxCompat;
+			sourceTree = "<group>";
+		};
+		EEDAAB122CB631B50063AA4A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EEDAAB162CB631B50063AA4A /* VoodooSMBus.kext */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -402,6 +426,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				EEDAAB182CB631D50063AA4A /* PBXTargetDependency */,
 				6F4B4AA924C1AEEA0018F1F0 /* PBXTargetDependency */,
 				286587DD24C1426600E74848 /* PBXTargetDependency */,
 			);
@@ -438,6 +463,12 @@
 			mainGroup = A4560EBD247F29EC0009CBE0;
 			productRefGroup = A4560EC8247F29EC0009CBE0 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = EEDAAB122CB631B50063AA4A /* Products */;
+					ProjectRef = EEDAAB112CB631B50063AA4A /* VoodooSMBus.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A4560EC6247F29EC0009CBE0 /* VoodooRMI */,
@@ -446,6 +477,16 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		EEDAAB162CB631B50063AA4A /* VoodooSMBus.kext */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = VoodooSMBus.kext;
+			remoteRef = EEDAAB152CB631B50063AA4A /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		286587D224C13D9600E74848 /* Resources */ = {
@@ -477,7 +518,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# From Acidanthera's VoodooPS2\ncd \"${TARGET_BUILD_DIR}\"\ncp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}/VoodooInput.kext\" \"${BUILT_PRODUCTS_DIR}/VoodooRMI.kext/Contents/PlugIns/\"\ndist=(\"VoodooRMI.kext\")\nif [ -d \"$DWARF_DSYM_FILE_NAME\" ]; then\n  rm -rf dSYM\n  mkdir dSYM\n  mv \"$DWARF_DSYM_FILE_NAME\" dSYM/\n  find ${FULL_PRODUCT_NAME} -name *.dSYM -exec mv {} dSYM/ \\;\n  dist+=(dSYM);\nfi\n\narchive=\"VoodooRMI-${CURRENT_PROJECT_VERSION}-$(echo $CONFIGURATION | tr /a-z/ /A-Z/).zip\"\nrm -rf *.zip\nzip -qry -FS \"${archive}\" \"${dist[@]}\"\n\n";
+			shellScript = "# From Acidanthera's VoodooPS2\ncd \"${TARGET_BUILD_DIR}\"\nrm -rf \"${FULL_PRODUCT_NAME}/Contents/PlugIns/VoodooInput.kext\"\nmkdir -p \"${FULL_PRODUCT_NAME}/Contents/PlugIns\"\ncp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}\"/* \"${FULL_PRODUCT_NAME}/Contents/PlugIns/\"\ndist=(\"VoodooRMI.kext\" \"VoodooSMBus.kext\")\nif [ -d \"$DWARF_DSYM_FILE_NAME\" ]; then\n  rm -rf dSYM\n  mkdir dSYM\n  mv \"$DWARF_DSYM_FILE_NAME\" dSYM/\n  mv \"VoodooSMBus.kext.dSYM\" dSYM/\n  find ${FULL_PRODUCT_NAME} -name *.dSYM -exec mv {} dSYM/ \\;\n  dist+=(dSYM);\nfi\n\narchive=\"VoodooRMI-${CURRENT_PROJECT_VERSION}-$(echo $CONFIGURATION | tr /a-z/ /A-Z/).zip\"\nrm -rf *.zip\nzip -qry -FS \"${archive}\" \"${dist[@]}\"\n\n";
 		};
 		A4560EE8247F2CC00009CBE0 /* Bootstrap VoodooInput */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -545,6 +586,11 @@
 			isa = PBXTargetDependency;
 			target = 6F4B4A8C24C1A0B80018F1F0 /* RMII2C */;
 			targetProxy = 6F4B4AA824C1AEEA0018F1F0 /* PBXContainerItemProxy */;
+		};
+		EEDAAB182CB631D50063AA4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = VoodooSMBus;
+			targetProxy = EEDAAB172CB631D50063AA4A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

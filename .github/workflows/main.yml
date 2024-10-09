@@ -33,10 +33,10 @@ jobs:
       run: |
         echo "sha_short=$(git rev-parse --short=8 ${{ github.sha }})" >> $GITHUB_OUTPUT
 
-    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Debug
-    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Release
+    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Debug -derivedDataPath build
+    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Release -derivedDataPath build
     
     - uses: actions/upload-artifact@v4
       with:
         name: VoodooRMI-${{ steps.vars.outputs.sha_short }}
-        path: build/*/*.zip
+        path: build/Build/Products/*/*.zip

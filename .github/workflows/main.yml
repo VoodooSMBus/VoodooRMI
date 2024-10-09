@@ -1,29 +1,42 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  PROJECT_TYPE: KEXT
 
 jobs:
   build:
-
+    name: Build
     runs-on: macos-latest
+    env:
+      JOB_TYPE: BUILD
     steps:
     - uses: actions/checkout@v4
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
-    - name: Clone Acidanthera/MacKernelSDK
-      run: git clone --depth 1 https://github.com/acidanthera/MacKernelSDK.git 
-    - name: get shortsha
+      with:
+        submodules: 'recursive'
+    - uses: actions/checkout@v4
+      with:
+        repository: acidanthera/MacKernelSDK
+        path: MacKernelSDK
+    - name: CI Bootstrap
+      run: |
+        src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) && eval "$src" || exit 1
+    
+    - name: Get Commit SHA
       id: vars
       run: |
         echo "sha_short=$(git rev-parse --short=8 ${{ github.sha }})" >> $GITHUB_OUTPUT
-    - name: build
-      env:
-          VOODOORMI_SHA: VoodooRMI-${{ steps.vars.outputs.sha_short }}
-      run: |
-        mkdir -p build/${VOODOORMI_SHA}/{Debug,Release}
-        xcodebuild -configuration Debug -scheme VoodooRMI -derivedDataPath build clean build
-        xcodebuild -configuration Release -scheme VoodooRMI -derivedDataPath build build
+
+    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Debug
+    - run: xcodebuild -scheme VoodooRMI -jobs 1 -configuration Release
+    
     - uses: actions/upload-artifact@v4
       with:
-        name: VoodooRMI
-        path: build/Build/Products/*/*.zip
+        name: VoodooRMI-${{ steps.vars.outputs.sha_short }}
+        path: build/*/*.zip

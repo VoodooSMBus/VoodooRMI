@@ -17,10 +17,12 @@ jobs:
     env:
       JOB_TYPE: BUILD
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout VRMI
+      uses: actions/checkout@v4
       with:
         submodules: 'recursive'
-    - uses: actions/checkout@v4
+    - name: Checkout MacKernelSDK
+      uses: actions/checkout@v4
       with:
         repository: acidanthera/MacKernelSDK
         path: MacKernelSDK
@@ -28,6 +30,8 @@ jobs:
       run: |
         src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) && eval "$src" || exit 1
 
+    - name: Link MacKernelSDK to VSMB
+      run: ln -s ${{ github.workspace }}/MacKernelSDK ${{ github.workspace }}/Dependencies/VoodooSMBus/MacKernelSDK
     - name: Get Commit SHA
       id: vars
       run: |

@@ -54,12 +54,14 @@ jobs:
       run: |
         cp -r ${{ github.workspace }}/Dependencies/VoodooSMBus/build/Release/*.dSYM dSYM/ |
         cp -r ${{ github.workspace }}/Dependencies/VoodooSMBus/build/Release/*.kext ./ |
-        zip -ur *.zip dSYM/ *.kext
+        ls -l |
+        zip -ur *.zip dSYM/ VoodooSMBus.kext
     - name: Zip Debug
       working-directory: ${{ github.workspace }}/build/Build/Products/Debug/
       run: |
         cp -r ${{ github.workspace }}/Dependencies/VoodooSMBus/build/Debug/*.kext ./ |
-        zip -ur *.zip *.kext
+        ls -l |
+        zip -ur *.zip VoodooSMBus.kext
 
     - uses: svenstaro/upload-release-action@v2
       if: github.event_name == 'release'

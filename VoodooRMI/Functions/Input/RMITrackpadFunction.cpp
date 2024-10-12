@@ -280,7 +280,7 @@ void RMITrackpadFunction::handleReport(RMI2DSensorReport *report)
     }
     
     inputEvent.transducers[0].isPhysicalButtonDown = clickpadState;
-    inputEvent.contact_count = validFingerCount;
+    inputEvent.contact_count = maxIdx;
     inputEvent.timestamp = report->timestamp;
     
     sendVoodooInputPacket(kIOMessageVoodooInputMessage, &inputEvent);

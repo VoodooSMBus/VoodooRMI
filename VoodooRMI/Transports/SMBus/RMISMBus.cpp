@@ -278,7 +278,7 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whatDevice != this)
         return kIOPMAckImplied;
     
-    if (whichState == 0) {
+    if (whichState == RMI_POWER_OFF) {
         messageClient(kIOMessageRMI4Sleep, bus);
     } else {
         // Put trackpad in SMBus mode again

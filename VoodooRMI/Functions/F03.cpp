@@ -273,11 +273,6 @@ void F03::initPS2()
     if (error)
         IOLogError("Failed to set resolution: %d", error);
     
-    error = ps2Command(NULL, PS2_CMD_SETSCALE21);
-//    error = ps2Command(NULL, PS2_CMD_SETSCALE11);
-    if (error)
-        IOLogError("Failed to set scale: %d", error);
-    
     // TODO: Actually set this - my trackpoint does not respond to this ~ 1Rev
     UInt8 rate[1] = {100};
     error = ps2Command(rate, PS2_CMD_SETRATE);

@@ -215,7 +215,6 @@ int F17::config() {
 
 int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
     int retval = 0;
-    const RmiConfiguration &conf = getConfiguration();
     RMITrackpointReport report;
     
     if (stick->query.general.has_absolute) {

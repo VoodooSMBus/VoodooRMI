@@ -373,7 +373,7 @@ int F01::rmi_f01_resume()
     return error;
 }
 
-void F01::attention([[maybe_unused]] AbsoluteTime time, UInt8 *data[], size_t *size)
+void F01::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
     UInt8 device_status = 0;
     

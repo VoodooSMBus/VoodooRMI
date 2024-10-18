@@ -395,7 +395,12 @@ void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int 
         return;
     }
     
-    handleAttention(mach_absolute_time(), &inputBuffer[3], size - 3);
+    AbsoluteTime timestamp = mach_absolute_time();
+    if (src != nullptr) {
+        timestamp = src->getPimaryInterruptTimestamp();
+    }
+    
+    handleAttention(timestamp, &inputBuffer[3], size - 3);
 }
 
 void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {

@@ -108,6 +108,7 @@ err:
 
 void RMIBus::handleHostNotify(AbsoluteTime time, UInt8 *data, size_t size) {
     UInt32 irqStatus;
+    UInt8 *dataPtr = nullptr;
     if (controlFunction == nullptr) {
         IOLogError("Interrupt - No F01");
         return;
@@ -115,6 +116,8 @@ void RMIBus::handleHostNotify(AbsoluteTime time, UInt8 *data, size_t size) {
     
     if (data) {
         irqStatus = data[0];
+        dataPtr = &data[1];
+        size -= sizeof(UInt8);
     } else {
         IOReturn error = controlFunction->readIRQ(irqStatus);
         if (error != kIOReturnSuccess){
@@ -129,7 +132,6 @@ void RMIBus::handleHostNotify(AbsoluteTime time, UInt8 *data, size_t size) {
         return;
     }
     
-    UInt8 *dataPtr = &data[1];
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         if (func->hasAttnSig(irqStatus)) {
             func->attention(time, &dataPtr, &size);

@@ -500,7 +500,7 @@ class F11 : public RMITrackpadFunction {
     
 public:
     bool attach(IOService *provider) override;
-    void attention() override;
+    void attention(AbsoluteTime time, UInt8 *data[], size_t *size) override;
     void free() override;
     
     IOReturn config() override;

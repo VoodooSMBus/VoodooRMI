@@ -9,14 +9,11 @@
 OSDefineMetaClassAndStructors(RMITrackpointFunction, RMIFunction)
 
 void RMITrackpointFunction::handleReport(RMITrackpointReport *report) {
-    AbsoluteTime timestamp;
-    clock_get_uptime(&timestamp);
-    
     TrackpointReport trackpointReport;
+    trackpointReport.timestamp = report->timestamp;
     trackpointReport.dx = report->dx;
     trackpointReport.dy = report->dy;
     trackpointReport.buttons = report->buttons | overwrite_buttons;
-    trackpointReport.timestamp = timestamp;
     
     sendVoodooInputPacket(kIOMessageVoodooTrackpointMessage, &trackpointReport);
     if (report->dx || report->dy) {

@@ -268,7 +268,8 @@ IOReturn RMISMBus::message(UInt32 type, IOService *provider, void *argument) {
     
     switch (type) {
         case kIOMessageVoodooSMBusHostNotify:
-            return messageClient(kIOMessageVoodooSMBusHostNotify, bus);
+            handleAttention(mach_absolute_time(), nullptr, 0);
+            return kIOReturnSuccess;
         default:
             return IOService::message(type, provider, argument);
     }

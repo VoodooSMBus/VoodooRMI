@@ -18,7 +18,7 @@ class RMIGPIOFunction : public RMIFunction {
 public:
     bool attach(IOService *provider) override;
     IOReturn config() override;
-    void attention() override;
+    void attention(AbsoluteTime time, UInt8 *data[], size_t *size) override;
     void free() override;
 
 protected:
@@ -42,7 +42,7 @@ protected:
     virtual inline bool is_valid_button(int button) {return false;};
 
     int mapGpios();
-    void reportButton();
+    void reportButton(AbsoluteTime time);
 };
 
 #endif /* RMIGPIOFunction_hpp */

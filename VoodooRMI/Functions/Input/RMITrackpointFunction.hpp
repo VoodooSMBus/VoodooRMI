@@ -9,6 +9,7 @@
 #include <VoodooInputMessages.h>
 
 struct RMITrackpointReport {
+    AbsoluteTime timestamp;
     SInt32 dx;
     SInt32 dy;
     UInt32 buttons;

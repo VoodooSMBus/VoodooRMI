@@ -87,8 +87,7 @@ private:
     IOService *trackpointFunction {nullptr};
     F01 *controlFunction {nullptr};
 
-    void handleHostNotify();
-    void handleHostNotifyLegacy();
+    void handleHostNotify(AbsoluteTime time, UInt8 *data, size_t size);
     
     // IRQ information
     UInt8 irqCount {0};

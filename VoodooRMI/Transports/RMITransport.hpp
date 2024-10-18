@@ -15,13 +15,13 @@
 #include <IOKit/IOService.h>
 
 #define kIOMessageVoodooSMBusHostNotify     iokit_vendor_specific_msg(420)
-#define kIOMessageVoodooI2CHostNotify       iokit_vendor_specific_msg(421)
-#define kIOMessageVoodooI2CLegacyHostNotify iokit_vendor_specific_msg(422)
 #define kIOMessageRMI4ResetHandler          iokit_vendor_specific_msg(423)
 #define kIOMessageRMI4Sleep                 iokit_vendor_specific_msg(424)
 #define kIOMessageRMI4Resume                iokit_vendor_specific_msg(425)
 #define RMIBusIdentifier "Synaptics RMI4 Device"
 #define RMIBusSupported "RMI4 Supported"
+
+typedef void (*RMIAttentionAction)(OSObject *target, AbsoluteTime timestamp, UInt8 *data, size_t size);
 
 /*
  * read/write/reset APIs can be used before opening. Opening/Closing is needed to recieve interrupts
@@ -38,30 +38,35 @@ public:
     virtual int reset() { return 0; };
     
     virtual OSDictionary *createConfig() { return nullptr; };
-
-    /*
-     * IMPORTANT: These handleClose/handleOpen must be called. These can be overriden,
-     * but said implementation must call the ones below.
-     */
-    inline virtual void handleClose(IOService *forClient, IOOptionBits options) override {
-        OSSafeReleaseNULL(bus);
-        IOService::handleClose(forClient, options);
-    }
     
-    inline virtual bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override {
-        if (forClient && forClient->getProperty(RMIBusIdentifier)
-            && IOService::handleOpen(forClient, options, arg)) {
-            bus = forClient;
-            bus->retain();
-            
-            return true;
+    virtual bool open(IOService *client, IOOptionBits options, RMIAttentionAction action) {
+        if (!IOService::open(client, options)) {
+            return false;
         }
         
-        return false;
+        bus = client;
+        interruptAction = action;
+        return true;
+    }
+    
+    virtual void close(IOService *client, IOOptionBits options = 0) override {
+        bus = nullptr;
+        interruptAction = nullptr;
+        IOService::close(client);
+    }
+    
+    void handleAttention(AbsoluteTime timestamp, UInt8 *data, size_t size) {
+        if (!interruptAction) {
+            return;
+        }
+        
+        (*interruptAction)(bus, timestamp, data, size);
     }
     
 protected:
     IOService *bus {nullptr};
+private:
+    RMIAttentionAction interruptAction {nullptr};
 };
 
 #endif // RMITransport_H

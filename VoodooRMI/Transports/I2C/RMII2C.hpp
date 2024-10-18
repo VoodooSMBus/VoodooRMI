@@ -92,7 +92,6 @@ private:
     bool ready {false};
     unsigned long currentPowerState {1};
     int page {0};
-    int reportMode {RMI_MODE_ATTN_REPORTS};
     UInt8 *inputBuffer {nullptr};
 
     VoodooI2CDeviceNub *device_nub {nullptr};

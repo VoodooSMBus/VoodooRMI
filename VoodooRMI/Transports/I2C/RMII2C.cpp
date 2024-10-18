@@ -28,14 +28,6 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     name = provider->getName();
     IOLogDebug("%s::%s probing", getName(), name);
 
-    OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
-    if (isLegacy == nullptr) {
-        IOLogInfo("%s::%s Legacy mode not set, default to false", getName(), name);
-    } else if (isLegacy->getValue()) {
-        reportMode = RMI_MODE_ATTN_REPORTS;
-        IOLogInfo("%s::%s running in legacy mode", getName(), name);
-    }
-
     device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
     if (!device_nub) {
         IOLogError("%s::%s Could not cast nub", getName(), name);
@@ -57,7 +49,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
 
     do {
         IOLogDebug("%s::%s Trying to set mode, attempt %d", getName(), name, attempts);
-        error = rmi_set_mode(reportMode);
+        error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
 
@@ -271,7 +263,7 @@ int RMII2C::rmi_set_mode(UInt8 mode) {
 }
 
 int RMII2C::reset() {
-    int retval = rmi_set_mode(reportMode);
+    int retval = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
 
     if (retval < 0)
         return retval;
@@ -341,16 +333,7 @@ int RMII2C::readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) {
         goto exit;
     }
 
-    // FIXME: whether to rebuild packet
-    if (reportMode == RMI_MODE_ATTN_REPORTS && len == 68) {
-        memcpy(databuff, i2cInput+4, 16);
-        device_nub->readI2C(i2cInput, len+4);
-        memcpy(databuff+16, i2cInput+4, 16);
-        device_nub->readI2C(i2cInput, len+4);
-        memcpy(databuff+32, i2cInput+4, 16);
-    } else {
-        memcpy(databuff, i2cInput+4, len);
-    }
+    memcpy(databuff, i2cInput+4, len);
 exit:
     delete[] i2cInput;
     IOLockUnlock(page_mutex);
@@ -430,7 +413,7 @@ IOReturn RMII2C::setPowerStateGated() {
         // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
         IOSleep(1000);
         
-        int retval = rmi_set_mode(reportMode);
+        int retval = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         if (retval < 0) {
             IOLogError("Failed to config trackpad!");
             return kIOPMAckImplied;

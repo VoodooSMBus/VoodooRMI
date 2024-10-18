@@ -40,22 +40,31 @@ void F11::free()
     super::free();
 }
 
-void F11::attention()
+void F11::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
     int error, abs_size;
     size_t fingers;
     UInt8 finger_state;
-    AbsoluteTime timestamp;
     
-    error = readBlock(getDataAddr(), data_pkt, pkt_size);
-    if (error < 0) {
-        IOLogError("Could not read F11 attention data: %d", error);
-        return;
+    if (*data) {
+        if (*size < attn_size) {
+            IOLogError("F11 attention larger than remaining data");
+            return;
+        }
+
+        memcpy(data_pkt, *data, attn_size);
+        (*data) += attn_size;
+        (*size) -= attn_size;
+    } else {
+        error = readBlock(getDataAddr(), data_pkt, pkt_size);
+        
+        if (error < 0) {
+            IOLogError("F11 Could not read attention data: %d", error);
+            return;
+        }
     }
     
-    clock_get_uptime(&timestamp);
-    
-    if (shouldDiscardReport(timestamp))
+    if (shouldDiscardReport(time))
         return;
     
     IOLogDebug("F11 Packet");
@@ -94,7 +103,7 @@ void F11::attention()
         }
     }
     
-    report.timestamp = timestamp;
+    report.timestamp = time;
     report.fingers = fingers;
     
     handleReport(&report);

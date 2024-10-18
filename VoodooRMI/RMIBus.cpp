@@ -77,7 +77,7 @@ bool RMIBus::start(IOService *provider) {
     
     // Ready for interrupts
     setProperty(RMIBusIdentifier, kOSBooleanTrue);
-    if (!transport->open(this)) {
+    if (!transport->open(this, 0, OSMemberFunctionCast(RMIAttentionAction, this, &RMIBus::handleHostNotify))) {
         IOLogError("Could not open transport");
         goto err;
     }
@@ -106,19 +106,24 @@ err:
     return false;
 }
 
-void RMIBus::handleHostNotify() {
+void RMIBus::handleHostNotify(AbsoluteTime time, UInt8 *data, size_t size) {
     UInt32 irqStatus;
-    
+    UInt8 *dataPtr = nullptr;
     if (controlFunction == nullptr) {
         IOLogError("Interrupt - No F01");
         return;
     }
     
-    IOReturn error = controlFunction->readIRQ(irqStatus);
-    
-    if (error != kIOReturnSuccess){
-        IOLogError("Unable to read IRQ");
-        return;
+    if (data) {
+        irqStatus = data[0];
+        dataPtr = &data[1];
+        size -= sizeof(UInt8);
+    } else {
+        IOReturn error = controlFunction->readIRQ(irqStatus);
+        if (error != kIOReturnSuccess){
+            IOLogError("Unable to read IRQ");
+            return;
+        }
     }
     
     OSIterator* iter = OSCollectionIterator::withCollection(functions);
@@ -129,33 +134,15 @@ void RMIBus::handleHostNotify() {
     
     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject())) {
         if (func->hasAttnSig(irqStatus)) {
-            func->attention();
+            func->attention(time, &dataPtr, &size);
         }
     }
     
     OSSafeReleaseNULL(iter);
 }
 
-void RMIBus::handleHostNotifyLegacy() {
-     if (controlFunction == nullptr) {
-         IOLogError("Interrupt - No F01");
-     }
-
-     OSIterator* iter = OSCollectionIterator::withCollection(functions);
-     while(RMIFunction *func = OSDynamicCast(RMIFunction, iter->getNextObject()))
-         func->attention();
-     OSSafeReleaseNULL(iter);
-}
-
 IOReturn RMIBus::message(UInt32 type, IOService *provider, void *argument) {
     switch (type) {
-        case kIOMessageVoodooI2CHostNotify:
-        case kIOMessageVoodooSMBusHostNotify:
-            handleHostNotify();
-            break;
-        case kIOMessageVoodooI2CLegacyHostNotify:
-            handleHostNotifyLegacy();
-            break;
         case kIOMessageRMI4ResetHandler:
             rmiEnableSensor();
             break;

@@ -96,20 +96,16 @@ int RMIGPIOFunction::mapGpios()
     return 0;
 }
 
-void RMIGPIOFunction::attention()
+void RMIGPIOFunction::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
-    int error = readBlock(getDataAddr(),
-                          data_regs, register_count);
-
-    if (error < 0) {
-        IOLogError("Could not read %s data: %d", getName(), error);
-    }
-
+    if (!getInputData(data_regs, register_count, data, size))
+        return;
+    
     if (has_gpio)
-        reportButton();
+        reportButton(time);
 }
 
-void RMIGPIOFunction::reportButton()
+void RMIGPIOFunction::reportButton(AbsoluteTime time)
 {
     TrackpointReport relativeEvent {};
     unsigned int mask, trackpointBtns = 0, btns = 0;
@@ -150,12 +146,9 @@ void RMIGPIOFunction::reportButton()
     }
 
     if (numButtons > 1) {
-        AbsoluteTime timestamp;
-        clock_get_uptime(&timestamp);
-
         relativeEvent.dx = relativeEvent.dy = 0;
         relativeEvent.buttons = btns;
-        relativeEvent.timestamp = timestamp;
+        relativeEvent.timestamp = time;
         sendVoodooInputPacket(kIOMessageVoodooTrackpointRelativePointer, &relativeEvent);
     }
 

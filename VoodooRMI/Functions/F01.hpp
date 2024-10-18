@@ -125,7 +125,7 @@ class F01 : public RMIFunction {
 public:
     bool attach(IOService *provider) override;
     IOReturn config() override;
-    void attention() override;
+    void attention(AbsoluteTime time, UInt8 *data[], size_t *size) override;
     
     IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) override;
     

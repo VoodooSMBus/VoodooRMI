@@ -267,22 +267,30 @@ int F12::rmi_f12_read_sensor_tuning()
     return 0;
 }
 
-void F12::attention()
+void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
-    AbsoluteTime timestamp;
-    
     if (!data1)
         return;
     
-    int retval = readBlock(getDataAddr(), data_pkt, pkt_size);
-    
-    if (retval < 0) {
-        IOLogError("F12 - Failed to read object data. Code: %d", retval);
-        return;
+    if (data) {
+        if (*size < attn_size) {
+            IOLogError("F12 attention larger than remaining data");
+            return;
+        }
+
+        memcpy(data_pkt, *data, attn_size);
+        (*data) += attn_size;
+        (*size) -= attn_size;
+    } else {
+        IOReturn error = readBlock(getDataAddr(), data_pkt, pkt_size);
+        
+        if (error < 0) {
+            IOLogError("F12 Could not read attention data: %d", error);
+            return;
+        }
     }
     
-    clock_get_uptime(&timestamp);
-    if (shouldDiscardReport(timestamp))
+    if (shouldDiscardReport(time))
         return;
     
     IOLogDebug("F12 Packet");
@@ -293,12 +301,12 @@ void F12::attention()
 #endif // debug
     
     int fingers = min (nbr_fingers, 5);
-    UInt8 *data = &data_pkt[data1_offset];
+    UInt8 *fingerData = &data_pkt[data1_offset];
     
     for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];
         
-        switch (data[0]) {
+        switch (fingerData[0]) {
             case RMI_F12_OBJECT_FINGER:
                 obj->type = RMI_2D_OBJECT_FINGER;
                 break;
@@ -309,16 +317,16 @@ void F12::attention()
                 obj->type = RMI_2D_OBJECT_NONE;
         }
         
-        obj->x = (data[2] << 8) | data[1];
-        obj->y = (data[4] << 8) | data[3];
-        obj->z = data[5];
-        obj->wx = data[6];
-        obj->wy = data[7];
+        obj->x = (fingerData[2] << 8) | fingerData[1];
+        obj->y = (fingerData[4] << 8) | fingerData[3];
+        obj->z = fingerData[5];
+        obj->wx = fingerData[6];
+        obj->wy = fingerData[7];
         
         data += F12_DATA1_BYTES_PER_OBJ;
     }
     
-    report.timestamp = timestamp;
+    report.timestamp = time;
     report.fingers = fingers;
     
     handleReport(&report);

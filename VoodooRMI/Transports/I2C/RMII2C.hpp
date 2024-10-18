@@ -72,7 +72,7 @@ typedef struct __attribute__((__packed__)) {
 
 class RMII2C : public RMITransport {
     OSDeclareDefaultStructors(RMII2C);
-    typedef IOService super;
+    typedef RMITransport super;
 
 public:
     const char* name;
@@ -81,7 +81,7 @@ public:
     bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
     void stop(IOService *provider) APPLE_KEXT_OVERRIDE;
     IOReturn setPowerState(unsigned long powerState, IOService *whatDevice) APPLE_KEXT_OVERRIDE;
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) APPLE_KEXT_OVERRIDE;
+    bool open(IOService *client, IOOptionBits options, RMIAttentionAction action) APPLE_KEXT_OVERRIDE;
 
     int reset() APPLE_KEXT_OVERRIDE;
     int readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) APPLE_KEXT_OVERRIDE;
@@ -92,7 +92,8 @@ private:
     bool ready {false};
     unsigned long currentPowerState {1};
     int page {0};
-    int reportMode {RMI_MODE_NO_PACKED_ATTN_REPORTS};
+    int reportMode {RMI_MODE_ATTN_REPORTS};
+    UInt8 *inputBuffer {nullptr};
 
     VoodooI2CDeviceNub *device_nub {nullptr};
 

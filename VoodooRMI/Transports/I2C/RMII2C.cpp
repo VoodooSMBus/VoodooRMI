@@ -102,6 +102,7 @@ bool RMII2C::start(IOService *provider) {
     interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
     
     if (interrupt_source) {
+        interrupt_source->enablePrimaryInterruptTimestamp(true);
         work_loop->addEventSource(interrupt_source);
     } else {
         IOLogInfo("%s::%s Could not get interrupt event source, falling back to polling", getName(), name);
@@ -110,9 +111,11 @@ bool RMII2C::start(IOService *provider) {
             IOLogError("%s::%s Could not get timer event source", getName(), name);
             goto exit;
         }
-        
+
         work_loop->addEventSource(interrupt_simulator);
     }
+    
+    inputBuffer = new UInt8[hdesc.wMaxInputLength];
     
     startInterrupt();
 
@@ -149,6 +152,10 @@ void RMII2C::releaseResources() {
         if (device_nub->isOpen(this))
             device_nub->close(this);
         device_nub = nullptr;
+    }
+    
+    if (inputBuffer) {
+        delete inputBuffer;
     }
 
     OSSafeReleaseNULL(command_gate);
@@ -278,16 +285,13 @@ int RMII2C::reset() {
     return retval;
 };
 
-bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
-    if (forClient && forClient->getProperty(RMIBusIdentifier)) {
-        bus = forClient;
-        bus->retain();
-
-        startInterrupt();
-        return true;
+bool RMII2C::open(IOService *client, IOOptionBits options, RMIAttentionAction action) {
+    if (!super::open(client, options, action)) {
+        return false;
     }
-
-    return IOService::handleOpen(forClient, options, arg);
+    
+    startInterrupt();
+    return true;
 }
 
 int RMII2C::readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) {
@@ -395,8 +399,20 @@ exit:
 void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int intCount) {
     if (!ready || !bus)
         return;
-
-    messageClient(reportMode == RMI_MODE_ATTN_REPORTS ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
+    
+    if (device_nub->readI2C(inputBuffer, hdesc.wMaxInputLength) != kIOReturnSuccess) {
+        IOLogError("%s::%s Unable to read interrupt data", getName(), name);
+        return;
+    }
+    
+    UInt16 size = inputBuffer[0] | (inputBuffer[1] << 8);
+    UInt8 reportId = inputBuffer[2];
+    
+    if (!size || reportId != RMI_ATTN_REPORT_ID) {
+        return;
+    }
+    
+    handleAttention(mach_absolute_time(), &inputBuffer[3], size - 3);
 }
 
 void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {

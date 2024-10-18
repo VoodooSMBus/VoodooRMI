@@ -24,7 +24,7 @@ public:
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
     IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *whatDevice) override;
-    void attention() override;
+    void attention(AbsoluteTime time, UInt8 *data[], size_t *size) override;
     
 private:
     IOWorkLoop *work_loop {nullptr};
@@ -53,11 +53,11 @@ private:
     int ps2DoSendbyteGated(UInt8 byte, uint64_t timeout);
     int ps2CommandGated(UInt8 *param, unsigned int *command);
     int ps2Command(UInt8 *param, unsigned int command);
-    void handleByte(UInt8);
+    void handleByte(AbsoluteTime time, UInt8);
     void initPS2();
     void initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer);
     
-    void handlePacket(UInt8 *packet);
+    void handlePacket(AbsoluteTime time, UInt8 *packet);
 };
 
 #endif /* F03_hpp */

@@ -46,7 +46,7 @@ void F11::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
     size_t fingers;
     UInt8 finger_state;
     
-    if (data) {
+    if (*data) {
         if (*size < attn_size) {
             IOLogError("F11 attention larger than remaining data");
             return;

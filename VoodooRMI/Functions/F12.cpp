@@ -272,7 +272,7 @@ void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
     if (!data1)
         return;
     
-    if (data) {
+    if (*data) {
         if (*size < attn_size) {
             IOLogError("F12 attention larger than remaining data");
             return;

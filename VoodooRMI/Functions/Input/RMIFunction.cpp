@@ -42,7 +42,7 @@ bool RMIFunction::start(IOService *provider) {
 }
 
 bool RMIFunction::getInputData(UInt8 dest[], size_t destSize, UInt8 *srcData[], size_t *srcSize) {
-    if (srcData) {
+    if (*srcData) {
         if (*srcSize < destSize) {
             IOLogError("%s Attention size smaller than expected", getName());
             return false;

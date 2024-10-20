@@ -72,25 +72,14 @@ private:
     
     /* F12 Data */
     UInt8 *data_pkt;
-    size_t pkt_size;
-    size_t attn_size;
+    size_t pkt_size {0};
+    size_t attn_size {0};
     bool has_dribble;
+    size_t data1_offset;
     
     rmi_register_descriptor query_reg_desc;
     rmi_register_descriptor control_reg_desc;
     rmi_register_descriptor data_reg_desc;
-    
-    /* F12 Data1 describes sensed objects */
-    const rmi_register_desc_item *data1 {nullptr};
-    UInt16 data1_offset;
-    
-    /* F12 Data5 describes finger ACM */
-    const rmi_register_desc_item *data5 {nullptr};
-    UInt16 data5_offset;
-    
-    /* F12 Data5 describes Pen */
-    const rmi_register_desc_item *data6 {nullptr};
-    UInt16 data6_offset;
     
     int rmi_f12_read_sensor_tuning();
     int rmi_read_register_desc(UInt16 addr,

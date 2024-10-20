@@ -79,9 +79,9 @@ bool F12::attach(IOService *provider)
     /*
      * Figure out what data is contained in the data registers. HID devices
      * may have registers defined, but their data is not reported in the
-     * HID attention report. Registers which are not reported in the HID
-     * attention report check to see if the device is receiving data from
-     * HID attention reports.
+     * HID attention report. As we don't care about pen or acm data, we can do
+     * a simplified check for ACM data to get attention size and ignore the data
+     * offset.
      */
     item = rmi_get_register_desc_item(&data_reg_desc, 0);
     if (item)
@@ -89,42 +89,22 @@ bool F12::attach(IOService *provider)
     
     item = rmi_get_register_desc_item(&data_reg_desc, 1);
     if (!item) {
-        return false;
         IOLogError("F12 - No Data1 Reg!");
+        return false;
     }
-    
-    data1 = item;
+
     data1_offset = data_offset;
-    data_offset += item->reg_size;
-    nbr_fingers = item->num_subpackets;
-    report_abs = 1;
     attn_size += item->reg_size;
-    
-    item = rmi_get_register_desc_item(&data_reg_desc, 2);
-    if (item)
-        data_offset += item->reg_size;
-    
-    item = rmi_get_register_desc_item(&data_reg_desc, 3);
-    if (item)
-        data_offset += item->reg_size;
-    
-    item = rmi_get_register_desc_item(&data_reg_desc, 4);
-    if (item)
-        data_offset += item->reg_size;
+    nbr_fingers = item->num_subpackets;
     
     item = rmi_get_register_desc_item(&data_reg_desc, 5);
-    if (item) {
-        data5 = item;
-        data5_offset = data_offset;
-        data_offset += item->reg_size;
+    if (item)
         attn_size += item->reg_size;
-    }
     
-    // Skip 6-15 as they do not increase attention size and only gives relative info
+    // Skip 6-15 as they do not increase attention size
     
     setProperty("Number of fingers", nbr_fingers, 8);
     IOLogDebug("F12 - Number of fingers %u", nbr_fingers);
-    
     
     return true;
 }
@@ -269,9 +249,8 @@ int F12::rmi_f12_read_sensor_tuning()
 
 void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
-    if (!data1)
-        return;
-    
+    size_t offset = data1_offset;
+
     if (*data) {
         if (*size < attn_size) {
             IOLogError("F12 attention larger than remaining data");
@@ -281,6 +260,7 @@ void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
         memcpy(data_pkt, *data, attn_size);
         (*data) += attn_size;
         (*size) -= attn_size;
+        offset = 0;
     } else {
         IOReturn error = readBlock(getDataAddr(), data_pkt, pkt_size);
         
@@ -301,7 +281,7 @@ void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 #endif // debug
     
     int fingers = min (nbr_fingers, 5);
-    UInt8 *fingerData = &data_pkt[data1_offset];
+    UInt8 *fingerData = &data_pkt[offset];
     
     for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object *obj = &report.objs[i];

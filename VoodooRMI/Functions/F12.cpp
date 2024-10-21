@@ -284,7 +284,7 @@ void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
     int fingers = min (nbr_fingers, 5);
     for (int i = 0; i < fingers; i++) {
         rmi_2d_sensor_abs_object &obj = report.objs[i];
-        UInt8 *fingerData = &data_pkt[offset + (fingers * F12_DATA1_BYTES_PER_OBJ)];
+        UInt8 *fingerData = &data_pkt[offset + (i * F12_DATA1_BYTES_PER_OBJ)];
         
         switch (fingerData[0]) {
             case RMI_F12_OBJECT_FINGER:

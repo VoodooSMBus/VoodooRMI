@@ -249,6 +249,7 @@ int F12::rmi_f12_read_sensor_tuning()
 
 void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
+    RMI2DSensorReport report {};
     size_t offset = data1_offset;
 
     if (*data) {
@@ -281,29 +282,26 @@ void F12::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 #endif // debug
     
     int fingers = min (nbr_fingers, 5);
-    UInt8 *fingerData = &data_pkt[offset];
-    
     for (int i = 0; i < fingers; i++) {
-        rmi_2d_sensor_abs_object *obj = &report.objs[i];
+        rmi_2d_sensor_abs_object &obj = report.objs[i];
+        UInt8 *fingerData = &data_pkt[offset + (fingers * F12_DATA1_BYTES_PER_OBJ)];
         
         switch (fingerData[0]) {
             case RMI_F12_OBJECT_FINGER:
-                obj->type = RMI_2D_OBJECT_FINGER;
+                obj.type = RMI_2D_OBJECT_FINGER;
                 break;
             case RMI_F12_OBJECT_STYLUS:
-                obj->type = RMI_2D_OBJECT_STYLUS;
+                obj.type = RMI_2D_OBJECT_STYLUS;
                 break;
             default:
-                obj->type = RMI_2D_OBJECT_NONE;
+                obj.type = RMI_2D_OBJECT_NONE;
         }
         
-        obj->x = (fingerData[2] << 8) | fingerData[1];
-        obj->y = (fingerData[4] << 8) | fingerData[3];
-        obj->z = fingerData[5];
-        obj->wx = fingerData[6];
-        obj->wy = fingerData[7];
-        
-        data += F12_DATA1_BYTES_PER_OBJ;
+        obj.x = (fingerData[2] << 8) | fingerData[1];
+        obj.y = (fingerData[4] << 8) | fingerData[3];
+        obj.z = fingerData[5];
+        obj.wx = fingerData[6];
+        obj.wy = fingerData[7];
     }
     
     report.timestamp = time;

@@ -62,8 +62,6 @@ public:
 private:
     IOService *voodooInputInstance {nullptr};
     
-    RMI2DSensorReport report {};
-    
     static rmi_register_desc_item *rmi_get_register_desc_item(rmi_register_descriptor *rdesc, UInt16 reg);
     static size_t rmi_register_desc_calc_size(rmi_register_descriptor *rdesc);
     static int rmi_register_desc_calc_reg_offset(rmi_register_descriptor *rdesc, UInt16 reg);

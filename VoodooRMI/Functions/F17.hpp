@@ -150,7 +150,7 @@ class F17 : public RMITrackpointFunction {
 public:
     bool attach(IOService *provider) override;
     void free() override;
-    void attention() override;
+    void attention(AbsoluteTime time, UInt8 *data[], size_t *size) override;
     
     IOReturn config() override;
 private:

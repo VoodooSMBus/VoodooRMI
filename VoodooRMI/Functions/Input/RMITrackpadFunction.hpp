@@ -82,9 +82,6 @@ public:
     const Rmi2DSensorData &getData() const;
     
 protected:
-    UInt8 report_abs {0};
-    UInt8 report_rel {0};
-    
     UInt8 nbr_fingers;
     
     void handleReport(RMI2DSensorReport *report);

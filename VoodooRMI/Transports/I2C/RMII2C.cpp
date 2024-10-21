@@ -28,14 +28,6 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
     name = provider->getName();
     IOLogDebug("%s::%s probing", getName(), name);
 
-    OSBoolean *isLegacy= OSDynamicCast(OSBoolean, getProperty("Legacy"));
-    if (isLegacy == nullptr) {
-        IOLogInfo("%s::%s Legacy mode not set, default to false", getName(), name);
-    } else if (isLegacy->getValue()) {
-        reportMode = RMI_MODE_ATTN_REPORTS;
-        IOLogInfo("%s::%s running in legacy mode", getName(), name);
-    }
-
     device_nub = OSDynamicCast(VoodooI2CDeviceNub, provider);
     if (!device_nub) {
         IOLogError("%s::%s Could not cast nub", getName(), name);
@@ -57,7 +49,7 @@ RMII2C *RMII2C::probe(IOService *provider, SInt32 *score) {
 
     do {
         IOLogDebug("%s::%s Trying to set mode, attempt %d", getName(), name, attempts);
-        error = rmi_set_mode(reportMode);
+        error = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         IOSleep(500);
     } while (error < 0 && attempts++ < 5);
 
@@ -102,6 +94,7 @@ bool RMII2C::start(IOService *provider) {
     interrupt_source = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventAction, this, &RMII2C::interruptOccured), device_nub, 0);
     
     if (interrupt_source) {
+        interrupt_source->enablePrimaryInterruptTimestamp(true);
         work_loop->addEventSource(interrupt_source);
     } else {
         IOLogInfo("%s::%s Could not get interrupt event source, falling back to polling", getName(), name);
@@ -110,9 +103,11 @@ bool RMII2C::start(IOService *provider) {
             IOLogError("%s::%s Could not get timer event source", getName(), name);
             goto exit;
         }
-        
+
         work_loop->addEventSource(interrupt_simulator);
     }
+    
+    inputBuffer = new UInt8[hdesc.wMaxInputLength];
     
     startInterrupt();
 
@@ -149,6 +144,10 @@ void RMII2C::releaseResources() {
         if (device_nub->isOpen(this))
             device_nub->close(this);
         device_nub = nullptr;
+    }
+    
+    if (inputBuffer) {
+        delete inputBuffer;
     }
 
     OSSafeReleaseNULL(command_gate);
@@ -264,7 +263,7 @@ int RMII2C::rmi_set_mode(UInt8 mode) {
 }
 
 int RMII2C::reset() {
-    int retval = rmi_set_mode(reportMode);
+    int retval = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
 
     if (retval < 0)
         return retval;
@@ -278,16 +277,13 @@ int RMII2C::reset() {
     return retval;
 };
 
-bool RMII2C::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
-    if (forClient && forClient->getProperty(RMIBusIdentifier)) {
-        bus = forClient;
-        bus->retain();
-
-        startInterrupt();
-        return true;
+bool RMII2C::open(IOService *client, IOOptionBits options, RMIAttentionAction action) {
+    if (!super::open(client, options, action)) {
+        return false;
     }
-
-    return IOService::handleOpen(forClient, options, arg);
+    
+    startInterrupt();
+    return true;
 }
 
 int RMII2C::readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) {
@@ -337,16 +333,7 @@ int RMII2C::readBlock(UInt16 rmiaddr, UInt8 *databuff, size_t len) {
         goto exit;
     }
 
-    // FIXME: whether to rebuild packet
-    if (reportMode == RMI_MODE_ATTN_REPORTS && len == 68) {
-        memcpy(databuff, i2cInput+4, 16);
-        device_nub->readI2C(i2cInput, len+4);
-        memcpy(databuff+16, i2cInput+4, 16);
-        device_nub->readI2C(i2cInput, len+4);
-        memcpy(databuff+32, i2cInput+4, 16);
-    } else {
-        memcpy(databuff, i2cInput+4, len);
-    }
+    memcpy(databuff, i2cInput+4, len);
 exit:
     delete[] i2cInput;
     IOLockUnlock(page_mutex);
@@ -395,8 +382,25 @@ exit:
 void RMII2C::interruptOccured(OSObject *owner, IOInterruptEventSource *src, int intCount) {
     if (!ready || !bus)
         return;
-
-    messageClient(reportMode == RMI_MODE_ATTN_REPORTS ? kIOMessageVoodooI2CLegacyHostNotify : kIOMessageVoodooI2CHostNotify, bus);
+    
+    if (device_nub->readI2C(inputBuffer, hdesc.wMaxInputLength) != kIOReturnSuccess) {
+        IOLogError("%s::%s Unable to read interrupt data", getName(), name);
+        return;
+    }
+    
+    UInt16 size = inputBuffer[0] | (inputBuffer[1] << 8);
+    UInt8 reportId = inputBuffer[2];
+    
+    if (!size || reportId != RMI_ATTN_REPORT_ID) {
+        return;
+    }
+    
+    AbsoluteTime timestamp = mach_absolute_time();
+    if (interrupt_source != nullptr) {
+        timestamp = interrupt_source->getPimaryInterruptTimestamp();
+    }
+    
+    handleAttention(timestamp, &inputBuffer[3], size - 3);
 }
 
 void RMII2C::simulateInterrupt(OSObject* owner, IOTimerEventSource* timer) {
@@ -414,7 +418,7 @@ IOReturn RMII2C::setPowerStateGated() {
         // FIXME: Hardcode 1s sleep delay because device will otherwise time out during reconfig
         IOSleep(1000);
         
-        int retval = rmi_set_mode(reportMode);
+        int retval = rmi_set_mode(RMI_MODE_ATTN_REPORTS);
         if (retval < 0) {
             IOLogError("Failed to config trackpad!");
             return kIOPMAckImplied;

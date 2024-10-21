@@ -34,7 +34,7 @@ void F17::free()
     super::free();
 }
 
-void F17::attention()
+void F17::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
     int retval = 0;
     for (int i = 0; i < f17.query.number_of_sticks + 1 && !retval; i++)
@@ -215,7 +215,6 @@ int F17::config() {
 
 int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
     int retval = 0;
-    const RmiConfiguration &conf = getConfiguration();
     RMITrackpointReport report;
     
     if (stick->query.general.has_absolute) {
@@ -244,8 +243,8 @@ int F17::rmi_f17_process_stick(struct rmi_f17_stick_data *stick) {
         } else {
             IOLogDebug("%s: Reporting dx: %d, dy: %d\n", __func__, stick->data.rel.x_delta, stick->data.rel.y_delta);
 
-            report.dx = (SInt32)((SInt64)stick->data.rel.x_delta * conf.trackpointMult / DEFAULT_MULT);
-            report.dy = -(SInt32)((SInt64)stick->data.rel.y_delta * conf.trackpointMult / DEFAULT_MULT);
+            report.dx = (SInt32)((SInt64)stick->data.rel.x_delta);
+            report.dy = -(SInt32)((SInt64)stick->data.rel.y_delta);
             report.buttons = 0;
 
             handleReport(&report);

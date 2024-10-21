@@ -155,7 +155,7 @@ int F03::rmi_f03_pt_write(unsigned char val)
     return error;
 }
 
-void F03::handlePacket(UInt8 *packet)
+void F03::handlePacket(AbsoluteTime time, UInt8 *packet)
 {
     RMITrackpointReport report;
     // Trackpoint isn't initialized!
@@ -172,6 +172,7 @@ void F03::handlePacket(UInt8 *packet)
         timer->enable();
     }
     
+    report.timestamp = time;
     report.buttons = (packet[0] & 0x7);
     report.dx = ((packet[0] & 0x10) ? 0xffffff00 : 0) | packet[1];
     report.dy = -(((packet[0] & 0x20) ? 0xffffff00 : 0) | packet[2]);
@@ -199,25 +200,20 @@ IOReturn F03::setPowerState(unsigned long powerStateOrdinal, IOService *whatDevi
     return kIOPMAckImplied;
 }
 
-void F03::attention()
+void F03::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
-    const UInt16 data_addr = getDataAddr() + RMI_F03_OB_OFFSET;
-    const UInt8 ob_len = rx_queue_length * RMI_F03_OB_SIZE;
-    UInt8 obs[RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE];
+    const UInt8 ob_len = RMI_F03_OB_OFFSET + (rx_queue_length * RMI_F03_OB_SIZE);
+    UInt8 obs[RMI_F03_OB_OFFSET + (RMI_F03_QUEUE_LENGTH * RMI_F03_OB_SIZE)];
     
-    int error = readBlock(data_addr, obs, ob_len);
-    if (error) {
-        IOLogError("F03 - Failed to read output buffers: %d", error);
+    if (!getInputData(obs, ob_len, data, size))
         return;
-    }
     
-    for (int i = 0; i < ob_len; i += RMI_F03_OB_SIZE) {
+    for (int i = RMI_F03_OB_OFFSET; i < ob_len; i += RMI_F03_OB_SIZE) {
         UInt8 ob_status = obs[i];
         UInt8 ob_data = obs[i + RMI_F03_OB_DATA_OFFSET];
         
         if (!(ob_status & RMI_F03_RX_DATA_OFB))
             continue;
-        
         
         IOLogDebug("F03 - Recieved data over PS2: %x", ob_data);
         if (ob_status & RMI_F03_OB_FLAG_TIMEOUT) {
@@ -229,7 +225,7 @@ void F03::attention()
             continue;
         }
         
-        handleByte(ob_data);
+        handleByte(time, ob_data);
     }
 }
 
@@ -296,7 +292,7 @@ void F03::initPS2Interrupt(OSObject *owner, IOTimerEventSource *timer)
     timer->disable();
 }
 
-void F03::handleByte(UInt8 byte)
+void F03::handleByte(AbsoluteTime time, UInt8 byte)
 {
     if (!cmdcnt && !flags) {
         // Wait for start of packets
@@ -306,7 +302,7 @@ void F03::handleByte(UInt8 byte)
         databuf[index++] = byte;
         
         if (index == 3)
-            handlePacket(databuf);
+            handlePacket(time, databuf);
         return;
     }
     

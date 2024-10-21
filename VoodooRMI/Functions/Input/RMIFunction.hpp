@@ -56,12 +56,14 @@ public:
     virtual IOReturn config() { return kIOReturnSuccess; };
     // Attention is called whenever this function has data. Any input data
     // should be read here.
-    virtual void attention() { };
+    virtual void attention(AbsoluteTime time, UInt8 *data[], size_t *size) { };
 private:
     RmiPdtEntry pdtEntry;
     RMIBus *bus {nullptr};
     
 protected:
+    
+    bool getInputData(UInt8 dest[], size_t destSize, UInt8 *srcData[], size_t *srcSize);
     
     // Useful functions to talk to RMI4 devicce
     inline void sendVoodooInputPacket(UInt32 msg, void *packet) {

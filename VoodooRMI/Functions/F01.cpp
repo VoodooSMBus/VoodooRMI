@@ -373,17 +373,12 @@ int F01::rmi_f01_resume()
     return error;
 }
 
-void F01::attention()
+void F01::attention(AbsoluteTime time, UInt8 *data[], size_t *size)
 {
-    int error;
     UInt8 device_status = 0;
     
-    error = readByte(getDataAddr(), &device_status);
-    
-    if (error) {
-        IOLogError("F01: Failed to read device status: %d", error);
+    if (!getInputData(&device_status, sizeof(device_status), data, size))
         return;
-    }
     
     if (RMI_F01_STATUS_BOOTLOADER(device_status))
         IOLogError("Device in bootloader mode, please update firmware");

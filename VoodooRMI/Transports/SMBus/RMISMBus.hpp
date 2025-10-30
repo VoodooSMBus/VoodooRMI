@@ -51,7 +51,13 @@ private:
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
     UInt8 table_index {0};
     
+    bool ps2PowerDriver {false};
+    bool ps2Awake {true};
+    bool smbusAwake {true};
+    bool vrmiAwake {true};
+    
     bool rmiStart();
+    IOReturn processPowerState(unsigned long whichState);
     int rmi_smb_get_version();
     int rmi_smb_get_command_code(UInt16 rmiaddr, int bytecount,
                                  bool isread, UInt8 *commandcode);

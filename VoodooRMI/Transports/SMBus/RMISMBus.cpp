@@ -58,7 +58,7 @@ bool RMISMBus::start(IOService *provider)
     IOService *ps2 = OSDynamicCast(IOService, device_nub->getProperty("PS/2 Parent"));
     if (ps2) {
         (void) ps2->registerInterestedDriver(this);
-        ps2PowerDriver = true;
+        ps2Parent = ps2;
     }
     
     // Receive power notifications for sleep/wake
@@ -286,22 +286,28 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     return processPowerState(whichState);
 }
 
-IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
-    unsigned long newState;
+IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    // Shut down touchpad before PS/2 starts disabling PS/2 ports
+    if ((capabilities & kIOPMDeviceUsable) || whatDevice != ps2Parent)
+        return kIOPMAckImplied;
     
     IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
-    ps2Awake = capabilities & kIOPMDeviceUsable;
-    if (capabilities & kIOPMDeviceUsable) {
-        newState = RMI_POWER_ON;
-    } else {
-        newState = RMI_POWER_OFF;
-    }
+    ps2Awake = false;
+    return processPowerState(RMI_POWER_OFF);
+}
+
+IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    // Start up SMBus interface after PS/2 reset/reinit
+    if (!(capabilities & kIOPMDeviceUsable) || whatDevice != ps2Parent)
+        return kIOPMAckImplied;
     
-    return processPowerState(newState);
+    IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
+    ps2Awake = true;
+    return processPowerState(RMI_POWER_ON);
 }
 
 IOReturn RMISMBus::processPowerState(unsigned long whichState) {
-    if (ps2PowerDriver && ps2Awake != smbusAwake) {
+    if (ps2Parent && ps2Awake != smbusAwake) {
         IOLogDebug("PS2 Power State (%b) != SMB Power State (%b) - Waiting!",
                    ps2Awake, smbusAwake);
         return kIOPMAckImplied;

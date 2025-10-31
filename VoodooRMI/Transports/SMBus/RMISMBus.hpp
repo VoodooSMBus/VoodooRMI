@@ -34,6 +34,7 @@ public:
     bool start(IOService *provider) override;
     IOReturn message(UInt32 type, IOService *provider, void *argument = 0) override;
     IOReturn setPowerState(unsigned long whichState, IOService* whatDevice) override;
+    IOReturn powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) override;
     IOReturn powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) override;
     void stop(IOService *provider) override;
     void free() override;
@@ -47,11 +48,11 @@ private:
     VoodooSMBusDeviceNub *device_nub;
     IOLock *page_mutex;
     IOLock *mapping_table_mutex;
+    IOService *ps2Parent {nullptr};
     
     struct mapping_table_entry mapping_table[RMI_SMB2_MAP_SIZE];
     UInt8 table_index {0};
     
-    bool ps2PowerDriver {false};
     bool ps2Awake {true};
     bool smbusAwake {true};
     bool vrmiAwake {true};

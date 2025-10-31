@@ -58,11 +58,13 @@ bool RMISMBus::start(IOService *provider)
     IOService *ps2 = OSDynamicCast(IOService, device_nub->getProperty("PS/2 Parent"));
     if (ps2) {
         (void) ps2->registerInterestedDriver(this);
-    } else {
-        PMinit();
-        device_nub->joinPMtree(this);
-        registerPowerDriver(this, RMIPowerStates, 2);
+        ps2Parent = ps2;
     }
+    
+    // Receive power notifications for sleep/wake
+    PMinit();
+    device_nub->joinPMtree(this);
+    registerPowerDriver(this, RMIPowerStates, 2);
     
     setProperty(RMIBusSupported, kOSBooleanTrue);
     registerService(kIOServiceAsynchronous);
@@ -279,9 +281,42 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
     if (whatDevice != this)
         return kIOPMAckImplied;
     
-    if (whichState == RMI_POWER_OFF) {
+    IOLogInfo("Received SMBus Power State Change: 0x%lx", whichState);
+    smbusAwake = whichState == RMI_POWER_ON;
+    return processPowerState(whichState);
+}
+
+IOReturn RMISMBus::powerStateWillChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    // Shut down touchpad before PS/2 starts disabling PS/2 ports
+    if ((capabilities & kIOPMDeviceUsable) || whatDevice != ps2Parent)
+        return kIOPMAckImplied;
+    
+    IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
+    ps2Awake = false;
+    return processPowerState(RMI_POWER_OFF);
+}
+
+IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
+    // Start up SMBus interface after PS/2 reset/reinit
+    if (!(capabilities & kIOPMDeviceUsable) || whatDevice != ps2Parent)
+        return kIOPMAckImplied;
+    
+    IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
+    ps2Awake = true;
+    return processPowerState(RMI_POWER_ON);
+}
+
+IOReturn RMISMBus::processPowerState(unsigned long whichState) {
+    if (ps2Parent && ps2Awake != smbusAwake) {
+        IOLogDebug("PS2 Power State (%b) != SMB Power State (%b) - Waiting!",
+                   ps2Awake, smbusAwake);
+        return kIOPMAckImplied;
+    }
+    
+    if (whichState == RMI_POWER_OFF && vrmiAwake) {
         messageClient(kIOMessageRMI4Sleep, bus);
-    } else {
+        vrmiAwake = false;
+    } else if (whichState == RMI_POWER_ON && !vrmiAwake) {
         // Put trackpad in SMBus mode again
         int retval = reset();
         if (retval < 0) {
@@ -295,21 +330,11 @@ IOReturn RMISMBus::setPowerState(unsigned long whichState, IOService* whatDevice
             IOLogError("Failed to resume trackpad!");
             return kIOPMAckImplied;
         }
-    }
-
-    return kIOPMAckImplied;
-}
-
-IOReturn RMISMBus::powerStateDidChangeTo(IOPMPowerFlags capabilities, unsigned long stateNumber, IOService *whatDevice) {
-    unsigned long newState;
-    IOLogInfo("Received PS2 Power State Change: 0x%lx", capabilities);
-    if (capabilities & kIOPMDeviceUsable) {
-        newState = RMI_POWER_ON;
-    } else {
-        newState = RMI_POWER_OFF;
+        
+        vrmiAwake = true;
     }
     
-    return setPowerState(newState, this);
+    return kIOPMAckImplied;
 }
 
 OSDictionary *RMISMBus::createConfig() {
